@@ -1,0 +1,230 @@
+﻿.machine CommanderX16R41
+.byte $0C, $08, $0A, $00, $9E, $20, $32, $30, $36, $34, $00, $00, $00, $00, $00
+.org $810
+    sei
+
+    lda #02
+    sta DC_BORDER
+
+    lda #$40        ; 1bpp bitmap
+    sta L0_CONFIG
+    sta L1_CONFIG
+    
+    ; set colour 0
+    lda #$01
+    sta ADDRx_H
+    lda #$fa
+    sta ADDRx_M
+    stz ADDRx_L
+
+    lda #$12
+    sta DATA0
+
+    jsr create_sprites
+    jsr map_sprites
+    jsr set_colours
+
+    lda #$41        ; Sprites
+    sta DC_VIDEO       
+
+    lda #128
+    sta DC_HSCALE
+    sta DC_VSCALE
+
+    lda #$05    ; VSYNC + SPRCOL
+    sta IEN
+
+    lda ISR     ; clear anything thats hanging around
+    sta ISR
+
+    lda #01
+    sta CTRL
+
+    lda #$01
+    sta ADDRx_H
+    lda #$fc
+    sta ADDRx_M
+    lda #$07
+    sta ADDRx_L
+
+    stz CTRL
+    ldy #$f0
+
+.loop:
+    sta ISR
+    wai
+    lda ISR
+    tax
+    sta ISR
+    and #$05
+    beq loop
+
+    sty DATA1   ; reset offset
+
+    and #$04
+    beq no_collision
+
+    ; change pallete offset
+ 
+    txa
+    lsr
+    lsr
+    lsr
+    lsr
+    ora #$f0
+
+    sta DATA1
+
+.no_collision:
+
+    ; change x
+    lda #$11
+    sta ADDRx_H
+    lda #$fc
+    sta ADDRx_M
+    lda #$02
+    sta ADDRx_L
+    
+.const spritex_l = $02
+.const spritex_h = $03
+
+    clc
+    lda spritex_l
+    adc #1
+    sta spritex_l
+    lda spritex_h
+    adc #0
+    sta spritex_h
+
+    cmp #2
+    bne no_reset
+
+    stz spritex_l
+    stz spritex_h
+    stz DATA0
+    stz DATA0
+
+    jmp loop
+
+.no_reset:
+    
+    lda spritex_l
+    sta DATA0
+    lda spritex_h
+    sta DATA0
+
+    jmp loop
+
+.proc create_sprites    
+    ; create 64x64 8bpp square
+    
+    lda #$10
+    sta ADDRx_H
+    stz ADDRx_M
+    stz ADDRx_L
+
+    ldy #64
+    ldx #64
+    lda #$ff
+
+    .sprite_loop:
+
+    sta DATA0
+    dex
+
+    bne sprite_loop
+
+    ldx #64
+    dey
+
+    bne sprite_loop
+
+    rts
+.endproc
+
+.proc set_colours
+    lda #$61
+    sta ADDRx_H
+    lda #$fa
+    sta ADDRx_M
+    lda #30
+    sta ADDRx_L  
+
+    lda #$01
+    sta CTRL
+
+    lda #$61
+    sta ADDRx_H
+    lda #$fa
+    sta ADDRx_M
+    lda #31
+    sta ADDRx_L  
+
+    stz CTRL
+
+    ; moving block
+    lda #$55
+    sta DATA0
+    lda #$05
+    sta DATA1
+
+    ; R
+    stz DATA0
+    lda #$0f
+    sta DATA1
+
+    ; G
+    lda #$f0
+    sta DATA0
+    stz DATA1
+
+    ; R+G
+    lda #$f0
+    sta DATA0
+    lda #$0f
+    sta DATA1
+
+    ; B
+    lda #$0f
+    sta DATA0
+    stz DATA1
+
+    ; unused
+    stz DATA0
+    stz DATA1
+
+    ; B+G
+    lda #$ff
+    sta DATA0
+    stz DATA1
+
+    rts
+
+.endproc
+
+.proc map_sprites
+    lda #$11
+    sta ADDRx_H
+    lda #$fc
+    sta ADDRx_M
+    stz ADDRx_L
+
+    ldx #0
+.sprite_loopx:
+    lda positions, x
+    sta DATA0
+    inx
+    cpx #(4 * 8)
+    bne sprite_loopx
+
+    rts
+
+.align $100
+.positions:
+    ;     Address   X         Y         Dep  HWOff
+    .byte $00, $00, $00, $00, $60, $00, $f4, $f0
+    .byte $00, $00, $64, $00, $40, $00, $14, $f1
+    .byte $00, $00, $c2, $00, $40, $00, $24, $f2
+    .byte $00, $00, $20, $01, $40, $00, $44, $f4
+
+.endproc

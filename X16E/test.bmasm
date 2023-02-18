@@ -1,0 +1,90 @@
+﻿.machine CommanderX16R40
+.org $801
+
+.byte $0C, $08, $0A, $00, $9E, $20, $32, $30, $36, $34, $00, $00, $00, $00, $00
+.org $810
+    
+    sei    
+
+    stz CTRL
+    lda #64
+    sta DC_HSCALE 
+    sta DC_VSCALE
+
+    lda #$11        ; enable bitmap
+    sta DC_VIDEO
+
+    lda #$04+3        ; bitmap, 8bpp
+    sta L0_CONFIG
+
+    stz L0_MAPBASE
+    stz L0_TILEBASE
+
+    ; set colour 0
+    lda #$01
+    sta ADDRx_H
+    lda #$fa
+    sta ADDRx_M
+    stz ADDRx_L
+
+    lda #$12
+    sta DATA0
+
+    lda #$01
+    sta IEN     ; vsync
+
+    lda ISR
+    sta ISR
+
+    lda #$10
+    sta ADDRx_H
+    stz ADDRx_M
+    stz ADDRx_L
+
+
+.const addl = $02
+.const addm = $03
+.const addh = $04
+    stz addl
+    stz addm
+    stz addh
+
+.loop:
+    wai
+    lda ISR
+    sta DATA0
+    sta ISR
+
+    clc
+    lda addl
+    adc #1
+    sta addl
+    lda addm
+    adc #0
+    sta addm
+    lda addh
+    adc #0
+    sta addh
+
+    lda addh
+    cmp #$01
+    bne loop
+
+    lda addm
+    cmp #$2c
+    bne loop
+
+    lda addl
+    bne loop
+
+    lda #$10
+    sta ADDRx_H
+    stz ADDRx_M
+    stz ADDRx_L
+
+    stz addl
+    stz addm
+    stz addh
+
+    jmp loop
+    

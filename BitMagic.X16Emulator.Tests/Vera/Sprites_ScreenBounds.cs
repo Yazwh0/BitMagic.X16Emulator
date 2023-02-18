@@ -78,7 +78,7 @@ public class Sprites_ScreenBounds
                 stp
         ", emulator);
 
-        //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator.Tests\Vera\Images\sprites_8bpp_64x64_abovescreen.png");
+        //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator\BitMagic.X16Emulator.Tests\Vera\Images\sprites_8bpp_64x64_abovescreen.png");
 
         emulator.CompareImage(@"Vera\Images\sprites_8bpp_64x64_abovescreen.png");
     }
@@ -156,7 +156,7 @@ public class Sprites_ScreenBounds
                 stp
         ", emulator);
 
-        //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator.Tests\Vera\Images\sprites_8bpp_64x64_leftscreen.png");
+        //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator\BitMagic.X16Emulator.Tests\Vera\Images\sprites_8bpp_64x64_leftscreen.png");
 
         emulator.CompareImage(@"Vera\Images\sprites_8bpp_64x64_leftscreen.png");
     }
@@ -234,7 +234,7 @@ public class Sprites_ScreenBounds
                 stp
         ", emulator);
 
-        //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator.Tests\Vera\Images\sprites_8bpp_64x64_alloffleftscreen.png");
+        //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator\BitMagic.X16Emulator.Tests\Vera\Images\sprites_8bpp_64x64_alloffleftscreen.png");
 
         emulator.CompareImage(@"Vera\Images\sprites_8bpp_64x64_alloffleftscreen.png");
     }
@@ -312,7 +312,7 @@ public class Sprites_ScreenBounds
                 stp
         ", emulator);
 
-        //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator.Tests\Vera\Images\sprites_8bpp_64x64_rightscreen.png");
+        //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator\BitMagic.X16Emulator.Tests\Vera\Images\sprites_8bpp_64x64_rightscreen.png");
 
         emulator.CompareImage(@"Vera\Images\sprites_8bpp_64x64_rightscreen.png");
     }
@@ -392,7 +392,7 @@ public class Sprites_ScreenBounds
                 stp
         ", emulator);
 
-        //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator.Tests\Vera\Images\sprites_8bpp_64x64_alloffrightscreen.png");
+        //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator\BitMagic.X16Emulator.Tests\Vera\Images\sprites_8bpp_64x64_alloffrightscreen.png");
 
         emulator.CompareImage(@"Vera\Images\sprites_8bpp_64x64_alloffrightscreen.png");
     }

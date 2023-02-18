@@ -183,7 +183,12 @@ asm_func proc state_ptr:QWORD
     call copy_rambank_to_memory
     call copy_rombank_to_memory
 
+    jmp skip_stepping
 main_loop::
+    mov eax, [rdx].state.stepping
+    test eax, eax
+    jnz step_exit
+skip_stepping:
     ; check for control
     mov eax, dword ptr [rdx].state.control
     cmp eax, 1
@@ -194,7 +199,7 @@ main_loop::
     jg exit_loop
 
     pause
-    jmp main_loop	; spin while waiting for control
+    jmp skip_stepping	; spin while waiting for control
 
 cpu_running:
     mov qword ptr [rdx].state.clock_previous, r14	; need prev clock so we know the delta
@@ -451,6 +456,14 @@ exit_loop:
 
 not_supported:
     mov rax, -1
+    ret
+
+step_exit:
+    write_state_obj
+    mov rax, 05h    ; stepping
+
+    restore_registers
+    ;leave - masm adds this.
     ret
 asm_func ENDP
 

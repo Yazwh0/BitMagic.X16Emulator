@@ -37,7 +37,7 @@ static class Program
         public string? SdCardFileName { get; set; }
 
         [Option("sdcard-size", Required = false, HelpText = "SD Card size in mb if the card is being created by the emulator.")]
-        public ulong SdCardSize { get; set; } = 32;
+        public ulong SdCardSize { get; set; } = 16;
 
         [Option('d', "sdcard-folder", Required = false, HelpText = "Set the home folder for the SD Card.")]
         public string? SdCardFolder { get; set; }
@@ -267,6 +267,9 @@ static class Program
             syncThread.Start();
         }
 
+
+        emulator.Stepping = true;
+
         EmulatorWork.Emulator = emulator;
         EmulatorThread = new Thread(EmulatorWork.DoWork);
 
@@ -313,17 +316,20 @@ static class Program
                     var history = Emulator.History;
                     var idx = (int)Emulator.HistoryPosition - 1;
                     if (idx == -1)
-                        idx = 1024;
+                        idx = 1023;
 
-                    Console.WriteLine("Last 50 steps:");
+                    var steps = Emulator.Stepping ? 1 : 1000;
+
+                    if (!Emulator.Stepping)
+                        Console.WriteLine($"Last {steps} steps:");
 
                     var toOutput = new List<string>();
-                    for (var i = 0; i < 1000; i++)
+                    for (var i = 0; i < steps; i++)
                     {
                         var opCodeDef = OpCodes.GetOpcode(history[idx].OpCode);
                         var opCode = $"{opCodeDef.OpCode.ToLower()} {AddressModes.GetModeText(opCodeDef.AddressMode, history[idx].Params)}".PadRight(15);
 
-                        toOutput.Add($"Ram:${history[idx].RamBank:X2} Rom:${history[idx].RomBank:X2} ${history[idx].PC:X4} - ${history[idx].OpCode:X2}: {opCode} -> A:${history[idx].A:X2} X:${history[idx].X:X2} Y:${history[idx].Y:X2} SP:${history[idx].SP:X2} {Flags(history[idx].Flags)}");
+                        toOutput.Add($"Ram:${history[idx].RamBank:X2} Rom:${history[idx].RomBank:X2} ${history[idx].PC:X4} A:${history[idx].A:X2} X:${history[idx].X:X2} Y:${history[idx].Y:X2} SP:${history[idx].SP:X2} {Flags(history[idx].Flags)} - ${history[idx].OpCode:X2}: {opCode}");
                         if (idx <= 0)
                             idx = 1024;
                         idx--;
@@ -356,15 +362,25 @@ static class Program
                 //DisplayMemory(0x800-1, 0xd00 - 0x800);
                 //DisplayMemory(0x9f30, 16);
 
-                var fsImage = new FsImage(Emulator.RamBank.Slice(0xb40c - 0xa000, 100).ToArray());
+                //var fsImage = new FsImage(Emulator.RamBank.Slice(0xb40c - 0xa000, 100).ToArray());
 
-                if (Return == Emulator.EmulatorResult.DebugOpCode)
+                if (Return == Emulator.EmulatorResult.DebugOpCode || Return == Emulator.EmulatorResult.Stepping)
                 {
-                    Console.WriteLine("(C)ontinue?");
+                    Console.WriteLine("(C)ontinue, (S)tep?");
                     var inp = Console.ReadKey(true);
-                    if (inp.Key != ConsoleKey.C)
+                    switch(inp.Key)
                     {
-                        done = true;
+                        case ConsoleKey.C:
+                            done = false;
+                            Emulator.Stepping = false;
+                            break;
+                        case ConsoleKey.S:
+                            done = false;
+                            Emulator.Stepping = true;
+                            break;
+                        default:
+                            done = true;
+                            break;
                     }
                 }
                 else
@@ -373,7 +389,7 @@ static class Program
             }
 
 
-            if (Emulator.Control != Control.Stop)
+            if (Emulator.Control != Control.Stop && Return != Emulator.EmulatorResult.Stepping)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("*** Close emulator window to exit ***");

@@ -227,6 +227,7 @@ public class Emulator : IDisposable
         public uint Brk_Causes_stop = 0;
         public uint Control = 0;
         public uint Frame_Control = 0; // just run
+        public uint Stepping = 0; // 1 to only process one step each time
         public uint Frame_Sprite_Collision = 0;
 
         public uint I2cPosition = 0;
@@ -410,6 +411,7 @@ public class Emulator : IDisposable
         DebugOpCode,
         BrkHit,
         SmcPowerOff,
+        Stepping,
         Unsupported = -1
     }
 
@@ -440,6 +442,7 @@ public class Emulator : IDisposable
 
     public Control Control { get => (Control)_state.Control; set => _state.Control = (uint)value; }
     public FrameControl FrameControl { get => (FrameControl)_state.Frame_Control; set => _state.Frame_Control = (uint)value; }
+    public bool Stepping { get => _state.Stepping != 0; set => _state.Stepping = (uint)(value ? 1 : 0); }
 
     public ulong Spi_CsdRegister_0 { get => _state.SpiCsdRegister_0; set => _state.SpiCsdRegister_0= value; }
     public ulong Spi_CsdRegister_1 { get => _state.SpiCsdRegister_1; set => _state.SpiCsdRegister_1 = value; }

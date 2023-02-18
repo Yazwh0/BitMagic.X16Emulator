@@ -65,6 +65,7 @@ state struct
 	brk_causes_stop			dword ?	
 	control					dword ?
 	frame_control			dword ?
+	stepping				dword ?
 	frame_sprite_collision	dword ?
 
 	i2c_position			dword ?

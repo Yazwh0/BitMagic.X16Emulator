@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace X16E;
+namespace BitMagic.X16Emulator.Display;
 
 public class VertexArrayObject<TVertexType, TIndexType> : IDisposable
     where TVertexType : unmanaged

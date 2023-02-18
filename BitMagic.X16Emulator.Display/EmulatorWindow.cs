@@ -17,9 +17,9 @@ using Silk.NET.Input;
 using SixLabors.ImageSharp.PixelFormats;
 using Silk.NET.Core.Attributes;
 
-namespace X16E;
+namespace BitMagic.X16Emulator.Display;
 
-internal class EmulatorWindow
+public class EmulatorWindow
 {
     private static GL? _gl;
     private static IWindow? _window;
@@ -87,32 +87,34 @@ internal class EmulatorWindow
         _shader = new Shader(_gl, @"shader.vert", @"shader.frag");
         _emulator!.Control = Control.Run;
 
-        var assembly = Assembly.GetExecutingAssembly();
-        string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith("butterfly.jpg"));
-        using (Stream stream = assembly.GetManifestResourceStream(resourceName) ?? throw new Exception("butterfly.jpg not found"))
-        using (BinaryReader reader = new BinaryReader(stream))
+        var assembly = Assembly.GetEntryAssembly();
+        if (assembly != null)
         {
-            var icon = Image.Load<Rgba32>(reader.ReadBytes((int)stream.Length)) ?? throw new Exception("icon image is null");
-            var silkIcon = new byte[icon.Width * icon.Height * 4];
-
-            var index = 0;
-            for(var y = 0; y < icon.Height; y++)
+            string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith("butterfly.jpg"));
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName) ?? throw new Exception("butterfly.jpg not found"))
+            using (BinaryReader reader = new BinaryReader(stream))
             {
-                for(var x = 0; x < icon.Width; x++)
+                var icon = Image.Load<Rgba32>(reader.ReadBytes((int)stream.Length)) ?? throw new Exception("icon image is null");
+                var silkIcon = new byte[icon.Width * icon.Height * 4];
+
+                var index = 0;
+                for (var y = 0; y < icon.Height; y++)
                 {
-                    var pixel = icon[x, y];
-                    silkIcon[index++] = pixel.R;
-                    silkIcon[index++] = pixel.G;
-                    silkIcon[index++] = pixel.B;
-                    silkIcon[index++] = pixel.A;
+                    for (var x = 0; x < icon.Width; x++)
+                    {
+                        var pixel = icon[x, y];
+                        silkIcon[index++] = pixel.R;
+                        silkIcon[index++] = pixel.G;
+                        silkIcon[index++] = pixel.B;
+                        silkIcon[index++] = pixel.A;
+                    }
                 }
+
+                var rawIcon = new RawImage(icon.Width, icon.Height, new Memory<byte>(silkIcon));
+
+                _window.SetWindowIcon(ref rawIcon);
             }
-
-            var rawIcon = new RawImage(icon.Width, icon.Height, new Memory<byte>(silkIcon));
-
-            _window.SetWindowIcon(ref rawIcon);
         }
-
     }
 
     private static unsafe void OnRender(double deltaTime)

@@ -1,7 +1,9 @@
 ﻿
 using BitMagic.Compiler;
 using BitMagic.X16Emulator;
+using BitMagic.X16Emulator.Display;
 using CommandLine;
+using System.Diagnostics;
 using System.Text;
 using System.Transactions;
 using static X16E.Program.AddressModes;
@@ -13,12 +15,14 @@ static class Program
 {
     private static Thread? EmulatorThread;
 
+    private const string RomEnvironmentVariable = "BITMAGIC_ROM";
+
     public class Options
     {
         [Option('p', "prg", Required = false, HelpText = ".prg file to load.")]
         public string PrgFilename { get; set; } = "";
 
-        [Option('r', "rom", Required = false, HelpText = ".rom file to load, will look for rom.bin otherwise.")]
+        [Option('r', "rom", Required = false, HelpText = "rom file to load, will look for rom.bin using locally or falling back to the BITMAGIC_ROM environment variable.")]
         public string RomFilename { get; set; } = "rom.bin";
 
         [Option('a', "address", Required = false, HelpText = "Start address.")]
@@ -63,7 +67,6 @@ static class Program
 
         [Option('u', "sdcard-update", Required = false, HelpText = "Sets 'sdcard-write' to the 'sdcard' parameter and enables overwrite.")]
         public bool SdCardUpdate { get; set; } = false;
-
 
         //[Option('m', "autorun", Required = false, HelpText = "Automatically run at startup. Ignored if address is specified. NOT YET IMPLEMENTED")]
         public bool AutoRun { get; set; } = false;
@@ -179,10 +182,31 @@ static class Program
             }
         }
 
-        if (File.Exists(options.RomFilename))
+        var rom = options.RomFilename;
+
+        if (rom == null || !File.Exists(rom))
         {
-            Console.WriteLine($"Loading '{options.RomFilename}'.");
-            var romData = await File.ReadAllBytesAsync(options.RomFilename);
+            rom = "rom.bin";
+        }
+
+        if (!File.Exists(rom))
+        {
+            var env = Environment.GetEnvironmentVariable(RomEnvironmentVariable);
+            if (!string.IsNullOrWhiteSpace(env))
+            {
+                rom = env;
+
+                if (!File.Exists(rom))
+                {
+                    rom = @$"{env}\rom.bin";
+                }
+            }
+        }
+
+        if (File.Exists(rom))
+        {
+            Console.WriteLine($"Loading '{rom}'.");
+            var romData = await File.ReadAllBytesAsync(rom);
             for (var i = 0; i < romData.Length; i++)
             {
                 emulator.RomBank[i] = romData[i];
@@ -190,7 +214,7 @@ static class Program
         }
         else
         {
-            Console.WriteLine($"ROM '{options.RomFilename}' not found.");
+            Console.WriteLine($"ROM '{rom}' not found.");
             return 2;
         }
 
@@ -256,7 +280,7 @@ static class Program
             }
             else
             {
-                Console.WriteLine("Cannot set the update source Sd Card when the source SD Card is not set. Use with --sdcard.");
+                Console.WriteLine("Cannot set `update source SD Card` when the source SD Card is not set. Use with --sdcard.");
             }
         }
 
@@ -267,9 +291,6 @@ static class Program
             syncThread.Start();
         }
 
-
-        emulator.Stepping = true;
-
         EmulatorWork.Emulator = emulator;
         EmulatorThread = new Thread(EmulatorWork.DoWork);
 
@@ -279,6 +300,7 @@ static class Program
         EmulatorWindow.Run(emulator);
 
         EmulatorThread.Join();
+
         if (syncThread != null)
         {
             emulator.SdCard!.StopX16Watcher();

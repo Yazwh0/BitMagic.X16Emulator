@@ -3,7 +3,7 @@ using Silk.NET.OpenGL;
 using System;
 using System.Runtime.InteropServices;
 
-namespace X16E;
+namespace BitMagic.X16Emulator.Display;
 
 public class Texture : IDisposable
 {

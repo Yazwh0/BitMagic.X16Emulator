@@ -8,7 +8,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace X16E;
+namespace BitMagic.X16Emulator.Display;
 
 public class Shader : IDisposable
 {

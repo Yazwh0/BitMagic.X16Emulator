@@ -417,6 +417,7 @@ public class Emulator : IDisposable
 
     private CpuState _state;
 
+    public bool DebugMode { get; set; } // lets users of the enumlator know the application is in debug mode.
 
     public byte A { get => _state.A; set => _state.A = value; }
     public byte X { get => _state.X; set => _state.X = value; }

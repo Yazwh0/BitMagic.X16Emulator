@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace X16E;
+namespace BitMagic.X16Emulator.Display;
 
 public class X16EImage
 {

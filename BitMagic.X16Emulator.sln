@@ -42,12 +42,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_SolutionItems", "_SolutionItems", "{5645BC95-F572-4A58-9358-D9A4703650F5}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		launch.json = launch.json
 		LICENSE = LICENSE
-		testfile.txt = testfile.txt
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMagic.X16Emulator.Display", "BitMagic.X16Emulator.Display\BitMagic.X16Emulator.Display.csproj", "{E6A36F44-4E06-4E31-929B-647B6AEA01D1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitMagic.X16Emulator.Display", "BitMagic.X16Emulator.Display\BitMagic.X16Emulator.Display.csproj", "{E6A36F44-4E06-4E31-929B-647B6AEA01D1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

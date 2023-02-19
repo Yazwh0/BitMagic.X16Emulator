@@ -62,7 +62,13 @@ public struct Sprite // 64 bytes
 
 public class Emulator : IDisposable
 {
-    [DllImport(@"..\..\..\..\X16Emulator\EmulatorCore\x64\Debug\EmulatorCore.dll")]
+#if DEBUG
+    //[DllImport(@"..\..\..\..\X16Emulator\EmulatorCore\x64\Debug\EmulatorCore.dll")]
+    [DllImport(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator\X16Emulator\EmulatorCore\x64\Debug\EmulatorCore.dll")]
+#endif
+#if RELEASE
+    [DllImport(@"EmulatorCore\EmulatorCore.dll")]
+#endif
     private static extern int fnEmulatorCode(ref CpuState state);
 
     public class VeraState

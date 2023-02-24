@@ -188,7 +188,7 @@ main_loop::
     mov eax, [rdx].state.stepping
     test eax, eax
     jnz step_exit
-skip_stepping:
+skip_stepping:    
     ; check for control
     mov eax, dword ptr [rdx].state.control
     cmp eax, 1
@@ -221,10 +221,14 @@ nmi_already_set:
     jnz cpu_is_waiting				; if we're waiting, dont process next opcode
 
 next_opcode::
-    
-    mov rbx, r11
-    
-    movzx rbx, byte ptr [rsi+rbx]	; Get opcode
+    ; check for breakpoint
+    mov rbx, qword ptr [rdx].state.breakpoint_ptr
+    movzx rbx, byte ptr[rbx + r11]
+
+    test rbx, rbx
+    jnz breakpoint_exit
+
+    movzx rbx, byte ptr [rsi+r11]	; Get opcode
 
     ;cmp r11, 0E38Dh
     ;jne debug_skip
@@ -461,6 +465,14 @@ not_supported:
 step_exit:
     write_state_obj
     mov rax, 05h    ; stepping
+
+    restore_registers
+    ;leave - masm adds this.
+    ret
+
+breakpoint_exit:
+    write_state_obj
+    mov rax, 06h    ; breakpoint
 
     restore_registers
     ;leave - masm adds this.

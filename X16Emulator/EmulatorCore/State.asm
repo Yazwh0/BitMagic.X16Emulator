@@ -26,6 +26,7 @@ state struct
 	spi_inbound_buffer_ptr	qword ?
 	spi_outbound_buffer_ptr	qword ?
 	sdcard_ptr				qword ?
+	breakpoint_ptr			qword ?
 
 	; Vera
 	vram_ptr				qword ?
@@ -58,6 +59,8 @@ state struct
 	spi_command				qword ?
 	spi_csd_register0		qword ?
 	spi_csd_register1		qword ?
+
+	breakpoint_offset		dword ?
 
 	dc_hscale				dword ?
 	dc_vscale				dword ?

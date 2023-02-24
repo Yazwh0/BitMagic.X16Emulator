@@ -6,85 +6,192 @@
     
     sei    
 
+    lda #02
+    sta DC_BORDER
+
     stz CTRL
-    lda #64
+    lda #128
     sta DC_HSCALE 
     sta DC_VSCALE
 
-    lda #$11        ; enable bitmap
+    lda #$11        ; enable layer 0
     sta DC_VIDEO
 
-    lda #$04+3        ; bitmap, 8bpp
-    sta L0_CONFIG
+    lda #$61
+    sta L0_CONFIG ; 128x64 tiles, 2bpp
 
-    stz L0_MAPBASE
-    stz L0_TILEBASE
+    lda #$10        ; map is at $02000
+    sta L0_MAPBASE
 
-    ; set colour 0
-    lda #$01
+    stz L0_TILEBASE ; 8x8, tiles are at $00000
+
+    ; Tile definition
+    lda #$10
+    sta ADDRx_H
+    lda #$00
+    sta ADDRx_M
+    lda #$00
+    sta ADDRx_L
+
+    ; Test Tile
+    lda #$55
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    sta DATA0
+    
+    ; Tile map details
+    lda #$10
+    sta ADDRx_H
+    lda #$20
+    sta ADDRx_M
+    lda #$00
+    sta ADDRx_L
+    
+    ; Fill page
+    lda #$10
+    jsr fill_line
+    lda #$20
+    jsr fill_line
+    lda #$30
+    jsr fill_line
+
+    ldy #60-3
+.line_clear:
+    jsr blank_line
+    dey
+    bne line_clear
+
+
+    ; set colour 1
+    lda #$11
     sta ADDRx_H
     lda #$fa
     sta ADDRx_M
-    stz ADDRx_L
+    lda #$02
+    sta ADDRx_L
 
     lda #$12
     sta DATA0
+    stz DATA0
+
+    ; set colour 1+16
+    lda #$11
+    sta ADDRx_H
+    lda #$fa
+    sta ADDRx_M
+    lda #$22
+    sta ADDRx_L
+
+    ; RED
+    stz DATA0
+    lda #$0F
+    sta DATA0
+
+    ; set colour 1+32
+    lda #$11
+    sta ADDRx_H
+    lda #$fa
+    sta ADDRx_M
+    lda #$42
+    sta ADDRx_L
+
+    ; GREEN
+    lda #$F0
+    sta DATA0
+    stz DATA0
+
+    ; set colour 1+96
+    lda #$11
+    sta ADDRx_H
+    lda #$fa
+    sta ADDRx_M
+    lda #$62
+    sta ADDRx_L
+
+    ; BLUE
+    lda #$0F
+    sta DATA0
+    stz DATA0
+
+    lda #$02
+    sta IEN     ; line int
+
+    lda #4
+    sta IRQLINE_L
+
+
+    lda ISR
+    sta ISR
+
+    ldx #01
+.loop:
+    lda #4
+    sta IRQLINE_L
+
+    wai     ; line 4, turn off layer 0
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
 
     lda #$01
-    sta IEN     ; vsync
-
+    sta DC_VIDEO
+    
     lda ISR
     sta ISR
 
-    lda #$10
-    sta ADDRx_H
-    stz ADDRx_M
-    stz ADDRx_L
-
-
-.const addl = $02
-.const addm = $03
-.const addh = $04
-    stz addl
-    stz addm
-    stz addh
-
-.loop:
+    lda #15
+    sta IRQLINE_L
     wai
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    lda #$11
+    sta DC_VIDEO ; turn layer 1 on.
+    
     lda ISR
-    sta DATA0
     sta ISR
-
-    clc
-    lda addl
-    adc #1
-    sta addl
-    lda addm
-    adc #0
-    sta addm
-    lda addh
-    adc #0
-    sta addh
-
-    lda addh
-    cmp #$01
-    bne loop
-
-    lda addm
-    cmp #$2c
-    bne loop
-
-    lda addl
-    bne loop
-
-    lda #$10
-    sta ADDRx_H
-    stz ADDRx_M
-    stz ADDRx_L
-
-    stz addl
-    stz addm
-    stz addh
 
     jmp loop
     
+
+.proc fill_line
+    ldx #128
+.next_char:
+    stz DATA0   ; tile index 0
+    sta DATA0
+    dex
+    bne next_char
+    rts
+.endproc
+
+.proc blank_line
+    ldx #128
+.next_char:
+    stz DATA0 ; tile index 0
+    stz DATA0
+    dex
+    bne next_char
+    rts
+.endproc

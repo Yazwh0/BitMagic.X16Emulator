@@ -435,23 +435,47 @@ render_sprite macro bpp, inp_height, inp_width, vflip, hflip
 	endif
 
 	if hflip eq 1
-		; rbx is 0, 4, 8, 12, etc... so need to inverse
-		; minus the width -4, -4 as 4 is the size for one read. (4bpp is adjusted later)
-		if inp_width eq 0
-			mov r14d, 8-4
+		if bpp eq 0
+			; rbx is 0, 4, 8, 12, etc... so need to inverse
+			; minus the width -8, -8 as 4 is the size for one read.
+			if inp_width eq 0
+				mov r14d, 8-8
+			endif
+			if inp_width eq 1
+				mov r14d, 16-8
+			endif
+			if inp_width eq 2
+				mov r14d, 32-8
+			endif
+			if inp_width eq 3
+				mov r14d, 64-8
+			endif
+
+			sub r14d, ebx
+
+			add r12d, r14d		; add on position within sprite
 		endif
-		if inp_width eq 1
-			mov r14d, 16-4
-		endif
-		if inp_width eq 2
-			mov r14d, 32-4
-		endif
-		if inp_width eq 3
-			mov r14d, 64-4
-		endif
+
+		if bpp eq 1
+			; rbx is 0, 4, 8, 12, etc... so need to inverse
+			; minus the width -4, -4 as 4 is the size for one read.
+			if inp_width eq 0
+				mov r14d, 8-4
+			endif
+			if inp_width eq 1
+				mov r14d, 16-4
+			endif
+			if inp_width eq 2
+				mov r14d, 32-4
+			endif
+			if inp_width eq 3
+				mov r14d, 64-4
+			endif
+
 		sub r14d, ebx
 
 		add r12d, r14d		; add on position within sprite
+		endif
 	endif
 
 	; if we're 4bpp, then adjust
@@ -472,16 +496,29 @@ render_sprite macro bpp, inp_height, inp_width, vflip, hflip
 	pop rdi
 	
 	push rbx
-	if bpp eq 0
+	if bpp eq 0		
 		; display pixels
-		render_pixel_data 0000000f0h, 04, 0
-		render_pixel_data 00000000fh, 00, 1
-		render_pixel_data 00000f000h, 12, 2
-		render_pixel_data 000000f00h, 08, 3
-		render_pixel_data 000f00000h, 20, 4
-		render_pixel_data 0000f0000h, 16, 5
-		render_pixel_data 0f0000000h, 28, 6
-		render_pixel_data 00f000000h, 24, 7
+		if hflip eq 0
+			render_pixel_data 0000000f0h, 04, 0
+			render_pixel_data 00000000fh, 00, 1
+			render_pixel_data 00000f000h, 12, 2
+			render_pixel_data 000000f00h, 08, 3
+			render_pixel_data 000f00000h, 20, 4
+			render_pixel_data 0000f0000h, 16, 5
+			render_pixel_data 0f0000000h, 28, 6
+			render_pixel_data 00f000000h, 24, 7
+		endif
+
+		if hflip eq 1
+			render_pixel_data 00f000000h, 24, 0
+			render_pixel_data 0f0000000h, 28, 1
+			render_pixel_data 0000f0000h, 16, 2
+			render_pixel_data 000f00000h, 20, 3
+			render_pixel_data 000000f00h, 08, 4
+			render_pixel_data 00000f000h, 12, 5
+			render_pixel_data 00000000fh, 00, 6
+			render_pixel_data 0000000f0h, 04, 7
+		endif
 
 		pop rbx
 		add rbx, 8

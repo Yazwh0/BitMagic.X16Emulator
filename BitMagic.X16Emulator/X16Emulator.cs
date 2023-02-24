@@ -195,6 +195,7 @@ public class Emulator : IDisposable
         public ulong SpiInboundBufferPtr = 0;
         public ulong SpiOutboundBufferPtr = 0;
         public ulong SdCardPtr = 0;
+        public ulong BreadkpointPtr = 0;
 
         public ulong VramPtr = 0;
         public ulong PalettePtr = 0;
@@ -226,6 +227,8 @@ public class Emulator : IDisposable
         public ulong SpiCommand = 0;
         public ulong SpiCsdRegister_0 = 0;
         public ulong SpiCsdRegister_1 = 0;
+
+        public uint BreakpointOffset = 0;
 
         public uint Dc_HScale = 0x00010000;
         public uint Dc_VScale = 0x00010000;
@@ -391,7 +394,8 @@ public class Emulator : IDisposable
 
         public unsafe CpuState(ulong memory, ulong rom, ulong ramBank, ulong vram,
             ulong display, ulong palette, ulong sprite, ulong displayBuffer, ulong history, ulong i2cBuffer,
-            ulong smcKeyboardPtr, ulong spiHistoryPtr, ulong spiInboundBufferPtr, ulong spiOutbandBufferPtr)
+            ulong smcKeyboardPtr, ulong spiHistoryPtr, ulong spiInboundBufferPtr, ulong spiOutbandBufferPtr,
+            ulong breakpointPtr)
         {
             MemoryPtr = memory;
             RomPtr = rom;
@@ -407,6 +411,7 @@ public class Emulator : IDisposable
             SpiHistoryPtr = spiHistoryPtr;
             SpiInboundBufferPtr = spiInboundBufferPtr;
             SpiOutboundBufferPtr = spiOutbandBufferPtr;
+            BreadkpointPtr = breakpointPtr;
         }
     }
 
@@ -418,6 +423,7 @@ public class Emulator : IDisposable
         BrkHit,
         SmcPowerOff,
         Stepping,
+        Breakpoint,
         Unsupported = -1
     }
 
@@ -451,7 +457,7 @@ public class Emulator : IDisposable
     public FrameControl FrameControl { get => (FrameControl)_state.Frame_Control; set => _state.Frame_Control = (uint)value; }
     public bool Stepping { get => _state.Stepping != 0; set => _state.Stepping = (uint)(value ? 1 : 0); }
 
-    public ulong Spi_CsdRegister_0 { get => _state.SpiCsdRegister_0; set => _state.SpiCsdRegister_0= value; }
+    public ulong Spi_CsdRegister_0 { get => _state.SpiCsdRegister_0; set => _state.SpiCsdRegister_0 = value; }
     public ulong Spi_CsdRegister_1 { get => _state.SpiCsdRegister_1; set => _state.SpiCsdRegister_1 = value; }
 
     public VeraState Vera => new VeraState(this);
@@ -481,6 +487,8 @@ public class Emulator : IDisposable
     private readonly ulong _spiHistory_ptr;
     private readonly ulong _spiInboundBufferPtr;
     private readonly ulong _spiOutboundBufferPtr;
+    private readonly ulong _breakpoint_Ptr;
+    private readonly ulong _breakpoint_ptr_rounded;
 
     private const int RamSize = 0x10000;
     private const int RomSize = 0x4000 * 32;
@@ -496,6 +504,7 @@ public class Emulator : IDisposable
     private const int SpiHistoryPtrSize = 1024 * 2;
     private const int SpiInboundBufferPtrSize = 1024; // 512 + 4;
     private const int SpiOutboundBufferPtrSize = 1024; // 512 + 4;
+    private const int BreakpointSize = 0xa000 + 0x2000 * 256 + 0x4000 * 256; // base ram, rambanks, rombanks. 256 rom banks for carts.
 
     private static ulong RoundMemoryPtr(ulong inp) => (inp & _roundingMask) + (ulong)_rounding;
 
@@ -531,13 +540,17 @@ public class Emulator : IDisposable
         _i2cBuffer_ptr = (ulong)NativeMemory.Alloc(I2cBufferSize);
         _smcKeyboard_ptr = (ulong)NativeMemory.Alloc(SmcKeyboardBufferSize);
 
+        _breakpoint_Ptr = (ulong)NativeMemory.Alloc(BreakpointSize + _rounding);
+        _breakpoint_ptr_rounded = RoundMemoryPtr(_breakpoint_Ptr);
+
         _spiHistory_ptr = (ulong)NativeMemory.Alloc(SpiHistoryPtrSize);
         _spiInboundBufferPtr = (ulong)NativeMemory.Alloc(SpiInboundBufferPtrSize);
         _spiOutboundBufferPtr = (ulong)NativeMemory.Alloc(SpiOutboundBufferPtrSize);
 
+
         _state = new CpuState(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,
             _sprite_ptr, _display_buffer_ptr_rounded, _history_ptr, _i2cBuffer_ptr, _smcKeyboard_ptr, _spiHistory_ptr,
-            _spiInboundBufferPtr, _spiOutboundBufferPtr);
+            _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded);
 
         var memory_span = new Span<byte>((void*)_memory_ptr, RamSize);
         for (var i = 0; i < RamSize; i++)
@@ -587,6 +600,10 @@ public class Emulator : IDisposable
         for (var i = 0; i < SpiOutboundBufferPtrSize; i++)
             spiOutboundBuffer_span[i] = 0;
 
+        var breakpoint_span = new Span<byte>((void*)_breakpoint_Ptr, BreakpointSize);
+        for (var i = 0; i < BreakpointSize; i++)
+            breakpoint_span[i] = 0;
+
         // set defaults
         var sprite_act_span = new Span<Sprite>((void*)_sprite_ptr, 128);
         for (var i = 0; i < 128; i++)
@@ -606,6 +623,7 @@ public class Emulator : IDisposable
     public unsafe Span<Sprite> Sprites => new Span<Sprite>((void*)_sprite_ptr, 128);
     public unsafe Span<EmulatorHistory> History => new Span<EmulatorHistory>((void*)_history_ptr, HistorySize / 16);
     public unsafe Span<byte> KeyboardBuffer => new Span<byte>((void*)_smcKeyboard_ptr, SmcKeyboardBufferSize);
+    public unsafe Span<byte> Breakpoints => new Span<byte>((void*)_breakpoint_ptr_rounded, BreakpointSize);
 
     public SmcBuffer SmcBuffer { get; }
 
@@ -654,5 +672,6 @@ public class Emulator : IDisposable
         NativeMemory.Free((void*)_spiHistory_ptr);
         NativeMemory.Free((void*)_spiInboundBufferPtr);
         NativeMemory.Free((void*)_spiOutboundBufferPtr);
+        NativeMemory.Free((void*)_breakpoint_Ptr);
     }
 }

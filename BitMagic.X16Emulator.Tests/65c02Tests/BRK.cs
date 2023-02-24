@@ -72,6 +72,6 @@ public class Brk
                 .org $810
                 brk
                 ",
-                emulator, brkExpected: true);
+                emulator, expectedResult: Emulator.EmulatorResult.BrkHit);
     }
 }

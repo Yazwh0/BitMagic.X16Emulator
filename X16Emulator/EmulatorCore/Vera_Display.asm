@@ -309,11 +309,18 @@ renderstep_next_line proc
 	shl r11, 16				; adjust to the fixed point number
 	mov dword ptr [rdx].state.scale_x, r11d
 
+	; check for vstart
+	movzx rax, word ptr [rdx].state.dc_vstart
+	cmp rax, r12
+	jge no_y_inc_vstart
+
 	; Add line to scaled y
 	mov r12d, dword ptr [rdx].state.scale_y
 	mov eax, [rdx].state.dc_vscale
 	add r12, rax
 	mov [rdx].state.scale_y, r12d		
+
+no_y_inc_vstart:
 
 	mov word ptr [rdx].state.layer0_next_render, 1	; next pixel forces a draw
 	mov word ptr [rdx].state.layer1_next_render, 1

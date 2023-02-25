@@ -22,7 +22,6 @@ public unsafe class SdCard : IDisposable
     private readonly FatFileSystem _fileSystem;
     private ulong _offset;
     private const int Padding = 32;
-    private bool _updateable = false; // until we fix the stored image loading
     private FileSystemWatcher? _watcher;
 
     private string? _homeFolder;
@@ -36,11 +35,13 @@ public unsafe class SdCard : IDisposable
         Console.WriteLine($"Creating new {size}MB SD Card.");
         InitNewCard(size * 1024 * 1024 + 512); // add VHD header
 
+        if (_data is null)
+            throw new Exception("Data is null.");
+
         var disk = Disk.InitializeFixed(_data, DiscUtils.Streams.Ownership.None, (long)_size - 512);
         BiosPartitionTable.Initialize(disk, WellKnownPartitionType.WindowsFat);
 
         _fileSystem = FatFileSystem.FormatPartition(disk, 0, "BITMAGIC!", true);
-        _updateable = true;
     }
 
     public SdCard(string sdcardFilename)
@@ -53,6 +54,9 @@ public unsafe class SdCard : IDisposable
         {
             Console.WriteLine(" adding VHD header.");
             InitNewCard((ulong)data.Length + 512); // add VHD header
+
+            if (_data is null)
+                throw new Exception("Data is null.");
 
             var disk = Disk.InitializeFixed(_data, DiscUtils.Streams.Ownership.None, (long)_size - 512);
             BiosPartitionTable.Initialize(disk, WellKnownPartitionType.WindowsFat);
@@ -67,6 +71,9 @@ public unsafe class SdCard : IDisposable
         {
             Console.WriteLine(".");
             InitNewCard(data);
+
+            if (_data is null)
+                throw new Exception("Data is null.");
 
             var disk = new Disk(_data, DiscUtils.Streams.Ownership.None);
             _fileSystem = new FatFileSystem(disk.Partitions[0].Open(), true);
@@ -212,9 +219,6 @@ public unsafe class SdCard : IDisposable
     // Copies a directory and starts a watcher
     public void SetHomeDirectory(string directory, bool hostFsToSdCardSync)
     {
-        if (!_updateable)
-            throw new CantSyncLoadedImageException("Home directory is currently only available with a new SD Card");
-
         Console.WriteLine($"Setting home directory to '{directory}'.");
         _homeFolder = directory;
 

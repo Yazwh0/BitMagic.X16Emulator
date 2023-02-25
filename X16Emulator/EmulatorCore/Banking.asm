@@ -20,7 +20,7 @@
 ; 0x000000 -  0x10000-1 ; 64k, this the area checked for hitting a breakpoint
 ; 0x010000 - 0x210000-1 ; 2Meg, banked ram
 ; 0x210000 - 0x610000-1 ; 4Meg, banked rom
-;
+; Breakpoints are only copied from the banks, never to. That is a concern of the bugger.
 
 switch_rambank proc
 	mov rax, [rdx].state.memory_ptr
@@ -37,21 +37,18 @@ copy_rambank_to_memory proc
 	add rax, rbx						; source
 	mov [rdx].state.current_bank_address, rax			; store memory address of the new rambank
 
-	mov rbx, [rdx].state.memory_ptr
+	;mov rbx, [rdx].state.memory_ptr
 	add rbx, 0a000h						; destination
 	call copy_8k						
 
 	; breakpoints
-;	mov rbx, [rdx].state.breakpoint_ptr	
-;	movzx rax, byte ptr [rsi]			; ram, 0x0000 is bank number
-;	shl rax, 13							; bank * 8k
-;	add rax, rbx						; source
-;	lea rax, [rax + rbx + 010000h]		; add and adjust to start of ram breakpoint block
+	mov rbx, [rdx].state.breakpoint_ptr	
+	movzx rax, byte ptr [rsi]			; ram, 0x0000 is bank number
+	shl rax, 13							; bank * 8k
+	lea rax, [rax + rbx + 010000h]		; add and adjust to start of ram breakpoint block
 
-;	add rbx, 0a000h						; destination, still rbx so breakpoint ptr
-;	call copy_8k						; this proc is call'd, so jmp as copy_8k as a ret.
-
-	ret
+	add rbx, 0a000h						; destination, still rbx so breakpoint ptr
+	jmp copy_8k							; this proc is call'd, so jmp as copy_8k as a ret.
 copy_rambank_to_memory endp
 
 preserve_current_rambank proc
@@ -69,10 +66,18 @@ copy_rombank_to_memory proc
 	add rax, rbx						; source
 
 	mov rbx, rsi
-	add rbx, 0c000h					; destination
+	add rbx, 0c000h						; destination
 	call copy_8k
-	add rbx, 02000h					; next dest and source
+	add rbx, 02000h						; next dest and source
 	add rax, 02000h
+	call copy_8k
+
+	mov rbx, [rdx].state.breakpoint_ptr	
+	movzx rax, byte ptr [rsi+1]
+	shl rax, 14							; bank * 8k
+	lea rax, [rax + rbx + 210000h]		; source
+
+	add rbx, 0c000h
 	jmp copy_8k
 copy_rombank_to_memory endp
 

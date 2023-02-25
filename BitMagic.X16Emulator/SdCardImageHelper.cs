@@ -10,17 +10,17 @@ public static class SdCardImageHelper
 {
     // Reading means we pull each extension off and process if necessary. So we can add extra utilities here.
     // todo: handle .bin -> vhd.
-    public static Stream ReadFile(string filename, Stream data) =>
+    public static (Stream Data, bool requiresVhd) ReadFile(string filename, Stream data) =>
         (Path.GetExtension(filename).ToUpper()) switch
         {
-            ".BIN" => data,
-            ".VHD" => data,
+            ".BIN" => (data, true),
+            ".VHD" => (data, false),
             ".ZIP" => ReadZipFile(Path.GetFileNameWithoutExtension(filename), data),
             ".GZ" => ReadGzFile(Path.GetFileNameWithoutExtension(filename), data),
-            _ => data
+            _ => (data, true)
         };
 
-    private static Stream ReadZipFile(string filename, Stream data)
+    private static (Stream Data, bool requiresVhd) ReadZipFile(string filename, Stream data)
     {
         var zipStream = new ZipInputStream(data);
 
@@ -41,7 +41,7 @@ public static class SdCardImageHelper
         throw new SdCardFileNotFoundInZipException(filename);
     }
 
-    private static Stream ReadGzFile(string filename, Stream data)
+    private static (Stream Data, bool requiresVhd) ReadGzFile(string filename, Stream data)
     {
         data.Position = 0;
         var gzStream = new GZipInputStream(data);

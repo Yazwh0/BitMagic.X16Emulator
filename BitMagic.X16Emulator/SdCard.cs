@@ -10,6 +10,7 @@ using DiscUtils.Vhd;
 using DiscUtils;
 using DiscUtils.Core;
 using DiscUtils.Partitions;
+using System.Drawing;
 
 namespace BitMagic.X16Emulator;
 
@@ -44,14 +45,32 @@ public unsafe class SdCard : IDisposable
 
     public SdCard(string sdcardFilename)
     {
-        Console.WriteLine($"Loading SD Card from '{sdcardFilename}'.");
+        Console.Write($"Loading SD Card from '{sdcardFilename}'");
         using var fileStream = new FileStream(sdcardFilename, FileMode.Open, FileAccess.Read);
-        var stream = SdCardImageHelper.ReadFile(sdcardFilename, fileStream);
+        var (data, requiresVhd) = SdCardImageHelper.ReadFile(sdcardFilename, fileStream);
 
-        InitNewCard(stream);
+        if (requiresVhd)
+        {
+            Console.WriteLine(" adding VHD header.");
+            InitNewCard((ulong)data.Length + 512); // add VHD header
 
-        var disk = new Disk(_data, DiscUtils.Streams.Ownership.None);
-        _fileSystem = new FatFileSystem(disk.Partitions[0].Open(), true);
+            var disk = Disk.InitializeFixed(_data, DiscUtils.Streams.Ownership.None, (long)_size - 512);
+            BiosPartitionTable.Initialize(disk, WellKnownPartitionType.WindowsFat);
+
+            _data.Position = 0;
+            data.CopyTo(_data);
+
+            disk = new Disk(_data, DiscUtils.Streams.Ownership.None);
+            _fileSystem = new FatFileSystem(disk.Partitions[0].Open(), true);
+        }
+        else
+        {
+            Console.WriteLine(".");
+            InitNewCard(data);
+
+            var disk = new Disk(_data, DiscUtils.Streams.Ownership.None);
+            _fileSystem = new FatFileSystem(disk.Partitions[0].Open(), true);
+        }
     }
 
     internal void SetCsdRegister(Emulator emulator)

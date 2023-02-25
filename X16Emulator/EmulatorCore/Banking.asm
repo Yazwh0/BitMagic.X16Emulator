@@ -15,31 +15,50 @@
 
 .code
 
+;
+; Breakpoint ptr is a allocation for all possible banks. Organised as:
+; 0x000000 -  0x10000-1 ; 64k, this the area checked for hitting a breakpoint
+; 0x010000 - 0x210000-1 ; 2Meg, banked ram
+; 0x210000 - 0x610000-1 ; 4Meg, banked rom
+;
+
 switch_rambank proc
 	mov rax, [rdx].state.memory_ptr
 	add rax, 0a000h						; source
 	
-	mov rbx, current_rambank			; memory address of current rambank, this is our dest
+	mov rbx, [rdx].state.current_bank_address	; memory address of current rambank, this is our dest
 	call copy_8k						; call copy
 switch_rambank endp						; fall through to rambank copy
 
 copy_rambank_to_memory proc
 	mov rbx, [rdx].state.rambank_ptr	
-	movzx rax, byte ptr [rsi]
+	movzx rax, byte ptr [rsi]			; ram, 0x0000 is bank number
 	shl rax, 13							; bank * 8k
 	add rax, rbx						; source
-	mov current_rambank, rax			; store memory address of the new rambank
+	mov [rdx].state.current_bank_address, rax			; store memory address of the new rambank
 
 	mov rbx, [rdx].state.memory_ptr
 	add rbx, 0a000h						; destination
-	jmp copy_8k							; this proc is call'd, so jmp as copy_8k as a ret.
+	call copy_8k						
+
+	; breakpoints
+;	mov rbx, [rdx].state.breakpoint_ptr	
+;	movzx rax, byte ptr [rsi]			; ram, 0x0000 is bank number
+;	shl rax, 13							; bank * 8k
+;	add rax, rbx						; source
+;	lea rax, [rax + rbx + 010000h]		; add and adjust to start of ram breakpoint block
+
+;	add rbx, 0a000h						; destination, still rbx so breakpoint ptr
+;	call copy_8k						; this proc is call'd, so jmp as copy_8k as a ret.
+
+	ret
 copy_rambank_to_memory endp
 
 preserve_current_rambank proc
 	mov rax, [rdx].state.memory_ptr
 	add rax, 0a000h						; source
 	
-	mov rbx, current_rambank			; memory address of current rambank, this is our dest
+	mov rbx, [rdx].state.current_bank_address			; memory address of current rambank, this is our dest
 	jmp copy_8k							; call copy
 preserve_current_rambank endp
 
@@ -575,9 +594,5 @@ copy_8k proc
 
 	ret
 copy_8k endp
-
-.data
-
-	current_rambank qword 0
 
 .code

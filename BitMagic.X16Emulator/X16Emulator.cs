@@ -197,6 +197,8 @@ public class Emulator : IDisposable
         public ulong SdCardPtr = 0;
         public ulong BreadkpointPtr = 0;
 
+        public ulong CurrentBankAddress = 0;
+
         public ulong VramPtr = 0;
         public ulong PalettePtr = 0;
         public ulong SpritePtr = 0;

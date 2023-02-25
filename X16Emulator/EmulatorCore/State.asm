@@ -28,6 +28,8 @@ state struct
 	sdcard_ptr				qword ?
 	breakpoint_ptr			qword ?
 
+	current_bank_address	qword ?
+
 	; Vera
 	vram_ptr				qword ?
 	palette_ptr				qword ? 

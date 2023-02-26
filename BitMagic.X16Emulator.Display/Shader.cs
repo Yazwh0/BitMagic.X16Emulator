@@ -74,7 +74,7 @@ public class Shader : IDisposable
 
     public void Dispose()
     {
-        _gl.DeleteProgram(_handle);
+        //_gl.DeleteProgram(_handle);
     }
 
     private uint LoadShader(ShaderType type, string path)

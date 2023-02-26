@@ -221,12 +221,19 @@ nmi_already_set:
     jnz cpu_is_waiting				; if we're waiting, dont process next opcode
 
 next_opcode::
+    ; if we're stepping, we dont check for breakpoints
+    mov eax, [rdx].state.stepping
+    test eax, eax
+    jnz dont_test_breakpoint
+
     ; check for breakpoint
     mov rbx, qword ptr [rdx].state.breakpoint_ptr
     movzx rbx, byte ptr[rbx + r11]
 
     test rbx, rbx
     jnz breakpoint_exit
+
+dont_test_breakpoint:
 
     movzx rbx, byte ptr [rsi+r11]	; Get opcode
 

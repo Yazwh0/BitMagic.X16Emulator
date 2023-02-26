@@ -80,6 +80,6 @@ public class Texture : IDisposable
 
     public void Dispose()
     {
-        _gl?.DeleteTexture(_handle);
+        //_gl?.DeleteTexture(_handle);
     }
 }

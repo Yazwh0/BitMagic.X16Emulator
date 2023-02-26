@@ -173,5 +173,17 @@ public class EmulatorWindow
             }
         }
         _emulator!.Control = Control.Stop;
+
+        _gl = null;
+        _window = null;
+        _shader = null;
+        _images = null;
+        _layers = null;
+        _emulator = null;
+    }
+
+    public static void Stop()
+    {
+        _window?.Close();
     }
 }

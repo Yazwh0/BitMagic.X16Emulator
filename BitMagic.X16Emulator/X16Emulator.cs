@@ -146,6 +146,14 @@ public class Emulator : IDisposable
         public ushort Layer1_Map_HShift { get => _emulator._state.Layer1_Map_HShift; }
         public ushort Layer1_Map_VShift { get => _emulator._state.Layer1_Map_VShift; }
 
+        public uint Sprite_Wait {  get => _emulator._state.Sprite_Wait; }
+        public uint Position { get => _emulator._state.Sprite_Position; }
+        public uint Sprite_Width { get => _emulator._state.Sprite_Width; }
+        public uint Sprite_Render_Mode { get => _emulator._state.Sprite_Render_Mode; }
+        public uint Sprite_X { get => _emulator._state.Sprite_X; }
+        public uint Sprite_Y { get => _emulator._state.Sprite_Y; }
+        public uint Sprite_Depth { get => _emulator._state.Sprite_Depth; }
+        public uint Sprite_CollisionMask { get => _emulator._state.Sprite_CollisionMask; }
     }
 
     public class ViaState

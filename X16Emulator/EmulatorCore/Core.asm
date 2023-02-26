@@ -470,6 +470,9 @@ not_supported:
     ret
 
 step_exit:
+    call vera_render_display
+    mov [rdx].state.render_ready, 1						; signal that we need to redraw the UI
+
     write_state_obj
     mov rax, 05h    ; stepping
 
@@ -478,6 +481,9 @@ step_exit:
     ret
 
 breakpoint_exit:
+    call vera_render_display
+    mov [rdx].state.render_ready, 1						; signal that we need to redraw the UI
+
     write_state_obj
     mov rax, 06h    ; breakpoint
 
@@ -485,7 +491,6 @@ breakpoint_exit:
     ;leave - masm adds this.
     ret
 asm_func ENDP
-
 
 ;
 ; Side effects macros

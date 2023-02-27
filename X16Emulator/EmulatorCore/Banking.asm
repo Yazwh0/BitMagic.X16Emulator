@@ -37,6 +37,7 @@ copy_rambank_to_memory proc
 	add rax, rbx						; source
 	mov [rdx].state.current_bank_address, rax			; store memory address of the new rambank
 
+	mov rbx, [rdx].state.memory_ptr
 	add rbx, 0a000h						; destination
 	call copy_8k						
 
@@ -70,6 +71,7 @@ copy_rombank_to_memory proc
 	add rax, 02000h
 	call copy_8k
 
+	; breakpoints
 	mov rbx, [rdx].state.breakpoint_ptr	
 	movzx rax, byte ptr [rsi+1]
 	shl rax, 14							; bank * 8k

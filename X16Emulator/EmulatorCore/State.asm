@@ -27,6 +27,7 @@ state struct
 	spi_outbound_buffer_ptr	qword ?
 	sdcard_ptr				qword ?
 	breakpoint_ptr			qword ?
+	stackinfo_ptr			qword ?
 
 	current_bank_address	qword ?
 

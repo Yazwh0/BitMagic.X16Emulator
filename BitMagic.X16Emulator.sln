@@ -47,6 +47,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_SolutionItems", "_Solution
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitMagic.X16Emulator.Display", "BitMagic.X16Emulator.Display\BitMagic.X16Emulator.Display.csproj", "{E6A36F44-4E06-4E31-929B-647B6AEA01D1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Decompiler", "Decompiler", "{7799662E-CE7B-4DF6-A3FF-F1C9E718ED50}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitMagic.Decompiler", "..\BitMagic.X16Compiler\BitMagic.Decompiler\BitMagic.Decompiler.csproj", "{446CECCE-A7CC-4723-B17C-6654A68FB8A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -299,6 +303,22 @@ Global
 		{E6A36F44-4E06-4E31-929B-647B6AEA01D1}.Release|x64.Build.0 = Release|Any CPU
 		{E6A36F44-4E06-4E31-929B-647B6AEA01D1}.Release|x86.ActiveCfg = Release|Any CPU
 		{E6A36F44-4E06-4E31-929B-647B6AEA01D1}.Release|x86.Build.0 = Release|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Debug|arm64.ActiveCfg = Debug|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Debug|arm64.Build.0 = Debug|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Debug|x64.Build.0 = Debug|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Debug|x86.Build.0 = Debug|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Release|arm64.ActiveCfg = Release|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Release|arm64.Build.0 = Release|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Release|x64.ActiveCfg = Release|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Release|x64.Build.0 = Release|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Release|x86.ActiveCfg = Release|Any CPU
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -315,6 +335,7 @@ Global
 		{1DB94637-93B6-4106-B66D-72C8CF5279C3} = {18DADA92-7567-43D1-9D96-16581A48B842}
 		{C13AE167-4817-4F6D-B7CA-7D7EA8953F06} = {653B0CB5-76E0-4B52-B12F-1FE20BE225EE}
 		{1E81A1A5-3AE8-4120-BE71-4E9D5EF3A00B} = {D234F58A-9C0E-417F-B0F4-5FDDF5E54038}
+		{446CECCE-A7CC-4723-B17C-6654A68FB8A1} = {7799662E-CE7B-4DF6-A3FF-F1C9E718ED50}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {73DB408E-CAB2-4534-987B-30312005208C}

@@ -34,9 +34,11 @@ public class EmulatorWindow
     private static double _fps = 0;
     private static Stopwatch _stopwatch = new Stopwatch();
     private static Emulator? _emulator;
+    private static bool _closing = false;
 
     public static void Run(Emulator emulator)
     {
+        _closing = false;
         _emulator = emulator;
         _window = Window.Create(WindowOptions.Default);
 
@@ -55,7 +57,7 @@ public class EmulatorWindow
         _window.Load += OnLoad;
         _window.Render += OnRender;
         _window.Closing += OnClose;
-        
+
         _stopwatch.Start();
 
         _window.Run();
@@ -119,6 +121,7 @@ public class EmulatorWindow
 
     private static unsafe void OnRender(double deltaTime)
     {
+        if (_closing) return;
         if (_gl == null) throw new ArgumentNullException(nameof(_gl));
         if (_shader == null) throw new ArgumentNullException(nameof(_shader));
         if (_layers == null) throw new ArgumentNullException(nameof(_layers));
@@ -163,6 +166,7 @@ public class EmulatorWindow
 
     private static void OnClose()
     {
+        _closing = true;
         _gl?.Dispose();
         _shader?.Dispose();
         if (_layers != null)
@@ -184,6 +188,7 @@ public class EmulatorWindow
 
     public static void Stop()
     {
+        _closing = true;
         _window?.Close();
     }
 }

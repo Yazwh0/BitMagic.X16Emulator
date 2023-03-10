@@ -135,6 +135,7 @@ public class EmulatorWindow
 
         foreach (var i in _layers)
         {
+            if (_closing) return;
             i.OnRender(_gl, _shader, _emulator!.RenderReady);
         }
 

@@ -7,6 +7,7 @@ using CommandLine;
 using System.Diagnostics;
 using System.Text;
 using System.Transactions;
+using static BitMagic.Decompiler.Addressing;
 using Thread = System.Threading.Thread;
 
 namespace X16E;
@@ -349,7 +350,7 @@ static class Program
                     for (var i = 0; i < steps; i++)
                     {
                         var opCodeDef = OpCodes.GetOpcode(history[idx].OpCode);
-                        var opCode = $"{opCodeDef.OpCode.ToLower()} {AddressModes.GetModeText(opCodeDef.AddressMode, history[idx].Params)}".PadRight(15);
+                        var opCode = $"{opCodeDef.OpCode.ToLower()} {Addressing.GetModeText(opCodeDef.AddressMode, history[idx].Params, history[idx].PC)}".PadRight(15);
 
                         toOutput.Add($"Ram:${history[idx].RamBank:X2} Rom:${history[idx].RomBank:X2} ${history[idx].PC:X4} A:${history[idx].A:X2} X:${history[idx].X:X2} Y:${history[idx].Y:X2} SP:${history[idx].SP:X2} {Flags(history[idx].Flags)} - ${history[idx].OpCode:X2}: {opCode}");
                         if (idx <= 0)

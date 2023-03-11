@@ -183,6 +183,8 @@ asm_func proc state_ptr:QWORD
     call copy_rambank_to_memory
     call copy_rombank_to_memory
 
+    mov dword ptr [rdx].state.stackBreakpointHit, 0
+
     jmp skip_stepping
 main_loop::
     mov eax, [rdx].state.stepping
@@ -233,8 +235,13 @@ next_opcode::
     test rbx, rbx
     jnz breakpoint_exit
 
-dont_test_breakpoint:
+    ; check for stack breakpoint
+    mov ebx, dword ptr [rdx].state.stackBreakpointHit
+    test ebx, ebx
+    jnz breakpoint_exit
 
+dont_test_breakpoint:
+    mov dword ptr [rdx].state.stackBreakpointHit, 0 ; feel there should be a better way to do this
     movzx rbx, byte ptr [rsi+r11]	; Get opcode
 
     ;cmp r11, 0E38Dh
@@ -2324,9 +2331,7 @@ x20_jsr proc
     ; store stack info for debugging
     mov rcx, r11
     sub rcx, 1
-    movzx rax, byte ptr [rsi] ; ram
-    shl rax, 8
-    mov al, byte ptr [rsi+1] ; rom
+    mov ax, word ptr [rsi] ; ram + rom
     shl rax, 16
     or rcx, rax
 
@@ -2372,6 +2377,13 @@ x60_rts proc
 
     add r14, 6							; Add cycles
 
+    ; check for stack breakpoint
+    mov rdi, qword ptr [rdx].state.stackbreakpoint_ptr
+    and rbx, 0ffh
+    movzx rax, byte ptr [rdi + rbx]
+    mov byte ptr [rdi + rbx], 0
+    mov dword ptr [rdx].state.stackBreakpointHit, eax
+
     jmp opcode_done
 x60_rts endp
 
@@ -2387,9 +2399,7 @@ x48_pha proc
     ; store stack info for debugging
     mov rcx, r11
     sub rcx, 1
-    movzx rax, byte ptr [rsi] ; ram
-    shl rax, 8
-    mov al, byte ptr [rsi+1] ; rom
+    mov ax, word ptr [rsi] ; ram
     shl rax, 16
     or rcx, rax
     mov rdi, qword ptr [rdx].state.stackinfo_ptr
@@ -2423,9 +2433,7 @@ xDA_phx proc
     ; store stack info for debugging
     mov rcx, r11
     sub rcx, 1
-    movzx rax, byte ptr [rsi] ; ram
-    shl rax, 8
-    mov al, byte ptr [rsi+1] ; rom
+    mov ax, word ptr [rsi] ; ram
     shl rax, 16
     or rcx, rax
     mov rdi, qword ptr [rdx].state.stackinfo_ptr
@@ -2459,9 +2467,7 @@ x5A_phy proc
     ; store stack info for debugging
     mov rcx, r11
     sub rcx, 1
-    movzx rax, byte ptr [rsi] ; ram
-    shl rax, 8
-    mov al, byte ptr [rsi+1] ; rom
+    mov ax, word ptr [rsi] ; ram
     shl rax, 16
     or rcx, rax
     mov rdi, qword ptr [rdx].state.stackinfo_ptr
@@ -2629,7 +2635,11 @@ handle_interrupt proc
     dec bl								; Move stack pointer on (done twice for wrapping)
 
     mov [rsi+rbx], al					; Put PC Low byte on stack
-    mov dword ptr [rdi + rbx * 4 - 400h], 0ffffffffh
+
+    mov ax, word ptr [rsi]
+    shl eax, 16
+    or eax, 0ffffh
+    mov dword ptr [rdi + rbx * 4 - 400h], eax   ; has the ram and rom banks.
     dec bl								; Move stack pointer on
 
     push bx
@@ -2678,7 +2688,12 @@ handle_nmi proc
     mov dword ptr [rdi + rbx * 4 - 400h], 0fffffffeh
     dec bl								; Move stack pointer on (done twice for wrapping)
     mov [rsi+rbx], al					; Put PC Low byte on stack
-    mov dword ptr [rdi + rbx * 4 - 400h], 0fffffffeh
+
+    mov ax, word ptr [rsi]
+    shl eax, 16
+    or eax, 0ffffh
+    mov dword ptr [rdi + rbx * 4 - 400h], eax   ; has the ram and rom banks.
+
     dec bl								; Move stack pointer on
     
     push bx
@@ -2733,9 +2748,7 @@ x08_php proc
     ; store stack info for debugging
     mov rcx, r11
     sub rcx, 1
-    movzx rax, byte ptr [rsi] ; ram
-    shl rax, 8
-    mov al, byte ptr [rsi+1] ; rom
+    mov ax, word ptr [rsi] ; ram
     shl rax, 16
     or rcx, rax
     mov rdi, qword ptr [rdx].state.stackinfo_ptr
@@ -3055,9 +3068,7 @@ x00_brk proc
     ; store stack info for debugging
     mov rcx, r11
     sub rcx, 1
-    movzx rax, byte ptr [rsi] ; ram
-    shl rax, 8
-    mov al, byte ptr [rsi+1] ; rom
+    mov ax, word ptr [rsi] ; ram
     shl rax, 16
     or rcx, rax
     mov rdi, qword ptr [rdx].state.stackinfo_ptr

@@ -28,6 +28,7 @@ state struct
 	sdcard_ptr				qword ?
 	breakpoint_ptr			qword ?
 	stackinfo_ptr			qword ?
+	stackbreakpoint_ptr		qword ?
 
 	current_bank_address	qword ?
 
@@ -101,6 +102,7 @@ state struct
 	spi_writeblock			dword ?
 	spi_sdcardsize			dword ?
 	;spi_replyready			dword ?
+	stackBreakpointHit		dword ?
 
 	register_pc				word ?
 	stackpointer			word ?

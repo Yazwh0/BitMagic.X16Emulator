@@ -568,7 +568,7 @@ sprite_definition_proc 0, 0, 0, 0, 1, 1
 sprite_definition_proc 0, 0, 0, 1, 0, 2
 sprite_definition_proc 0, 0, 0, 1, 1, 3
 sprite_definition_proc 0, 0, 1, 0, 0, 4
-sprite_definition_proc 0, 0, 1, 0, 1, 5%
+sprite_definition_proc 0, 0, 1, 0, 1, 5
 sprite_definition_proc 0, 0, 1, 1, 0, 6
 sprite_definition_proc 0, 0, 1, 1, 1, 7
 sprite_definition_proc 0, 0, 2, 0, 0, 8

@@ -476,6 +476,8 @@ public class Emulator : IDisposable
     public ulong Spi_CsdRegister_0 { get => _state.SpiCsdRegister_0; set => _state.SpiCsdRegister_0 = value; }
     public ulong Spi_CsdRegister_1 { get => _state.SpiCsdRegister_1; set => _state.SpiCsdRegister_1 = value; }
 
+    public bool StackBreakpointHit { get => _state.StackBreakpointHit != 0; set => _state.StackBreakpointHit = (uint)(value ? 1 : 0); }
+
     public VeraState Vera => new VeraState(this);
     public ViaState Via => new ViaState(this);
 

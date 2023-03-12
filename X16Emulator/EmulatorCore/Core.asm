@@ -184,6 +184,7 @@ asm_func proc state_ptr:QWORD
     call copy_rombank_to_memory
 
     mov dword ptr [rdx].state.stackBreakpointHit, 0
+    mov ignoreBreakpoint, 1
 
     jmp skip_stepping
 main_loop::
@@ -226,6 +227,7 @@ next_opcode::
     ; if we're stepping, we dont check for breakpoints
     mov eax, [rdx].state.stepping
     test eax, eax
+    or eax, ignoreBreakpoint
     jnz dont_test_breakpoint
 
     ; check for breakpoint
@@ -241,7 +243,7 @@ next_opcode::
     jnz breakpoint_exit
 
 dont_test_breakpoint:
-    mov dword ptr [rdx].state.stackBreakpointHit, 0 ; feel there should be a better way to do this
+    mov ignoreBreakpoint, 0
     movzx rbx, byte ptr [rsi+r11]	; Get opcode
 
     ;cmp r11, 0E38Dh
@@ -3162,6 +3164,7 @@ noinstruction ENDP
 last_cpuclock qword 0
 cpu_posy qword 0
 debug_pos qword 0
+ignoreBreakpoint dword 0
 
 .code
 ;

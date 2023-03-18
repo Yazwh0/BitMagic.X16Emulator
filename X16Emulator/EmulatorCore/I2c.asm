@@ -57,6 +57,7 @@ i2c_handledata proc
 	jne no_reset
 
 	xor r12, r12
+	call i2c_stop
 
 ;	bt rax, 1
 ;	jnc clock_low
@@ -193,6 +194,14 @@ I2C_WRITEBYTE equ (write_byte - mode_jump) / 8
 
 i2c_handledata endp
 
+i2c_stop proc
+
+	; todo: change once rtc is in
+	call smc_stop
+
+	ret
+i2c_stop endp
+
 intial_state proc
 	cmp rax, 11b
 	sete r12b			; if its 11b then move to start_1, otherwise stay at 0
@@ -281,7 +290,7 @@ read_last_bit proc
 	inc dword ptr [rdx].state.i2c_mode
 
 	; only have SMC right now. todo: change to handle the RTC as well.
-	jmp smc_process_message
+	jmp smc_receive_data
 
 read_bit_noclock:
 	ret
@@ -305,6 +314,8 @@ clock_is_high:
 	xor rax, rbx
 	cmovnz r13, r12		; if the bit is set, then data has changed which is an error so reset
 	mov dword ptr [rdx].state.i2c_mode, r13d
+
+	jnz i2c_stop		; this will call ret.
 
 	ret
 clock_low endp
@@ -330,6 +341,8 @@ clock_is_high:
 	xor rax, rbx
 	cmovnz r13, r12		; if the bit is set, then data has changed which is an error so reset
 	mov dword ptr [rdx].state.i2c_mode, r13d
+
+	jnz i2c_stop		; this will call ret.
 
 	ret
 clock_low_setdefault endp
@@ -361,6 +374,8 @@ clock_is_high:
 	cmovnz r13, r12		; if the bit is set, then data has changed which is an error so reset
 	mov dword ptr [rdx].state.i2c_mode, r13d
 
+	jnz i2c_stop		; this will call ret.
+
 	ret
 clock_low_afteraddress endp
 
@@ -382,6 +397,8 @@ clock_is_high:
 	xor rax, rbx
 	cmovnz r13, r12		; if the bit is set, then data has changed which is an error so reset
 	mov dword ptr [rdx].state.i2c_mode, r13d
+
+	jnz i2c_stop		; this will call ret.
 
 	ret
 clock_low_afterread_ack endp
@@ -421,6 +438,8 @@ clock_is_high:
 	cmovnz r13, r12		; if the bit is set, then data has changed which is an error so reset
 	mov dword ptr [rdx].state.i2c_mode, r13d
 
+	jnz i2c_stop		; this will call ret.
+
 	ret
 clock_low_afterwrite_ack endp
 
@@ -440,6 +459,8 @@ clock_is_high:
 	xor rax, rbx
 	cmovnz r13, r12		; if the bit is set, then data has changed which is an error so reset
 	mov dword ptr [rdx].state.i2c_mode, r13d
+
+	jnz i2c_stop		; this will call ret.
 
 	ret
 clock_high endp

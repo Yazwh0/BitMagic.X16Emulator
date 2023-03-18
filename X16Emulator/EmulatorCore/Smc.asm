@@ -17,8 +17,26 @@
 ; read the state of the i2c bus and set state as required
 ; expects 
 ; rbx :- message (alternativley in i2c_transmit)
-smc_process_message proc
+smc_receive_data proc
+	mov eax, dword ptr [rdx].state.smc_datacount
+	cmp eax, 2
+	jg overflow
+
 	mov dword ptr [rdx].state.smc_offset, ebx
+	lea rdi, [rdx].state.smc_data
+	mov byte ptr [rdi + rax], bl
+	inc eax
+	mov dword ptr [rdx].state.smc_datacount, eax
+
+overflow:
+	ret
+smc_receive_data endp
+
+; called when a stp siginal is received, so can process the received data
+smc_stop proc
+	lea rdi, [rdx].state.smc_data
+	movzx rbx, byte ptr [rdi]						; get offset
+	mov dword ptr [rdx].state.smc_offset, ebx		; store for debug
 
 	cmp ebx, 7
 	jg unknown_command
@@ -31,14 +49,16 @@ smc_commands:
 	qword smc_power			; 1
 	qword smc_reset			; 2
 	qword smc_nmibutton		; 3
-	qword smc_powerled		; 4
+	qword smc_donothing		; 4
 	qword smc_activityled	; 5
 	qword smc_donothing		; 6
 	qword smc_keyboard		; 7
 
 unknown_command:
+	mov dword ptr [rdx].state.smc_datacount, 0
+	mov dword ptr [rdx].state.smc_data, 0
 	ret
-smc_process_message endp
+smc_stop endp
 
 ; return rbx as scancode
 smc_set_next_write proc
@@ -79,30 +99,69 @@ smc_complete_write proc
 smc_complete_write endp
 
 smc_power proc
+	movzx rax, byte ptr [rdi+1]
+	cmp rax, 1
+	jg no_change
+	je reset
 	mov dword ptr [rdx].state.control, 2	; todo: use smc_powerdown return code
+	mov dword ptr [rdx].state.exit_code, EXIT_SMC_POWEROFF
+	mov dword ptr [rdx].state.smc_datacount, 0
+	mov dword ptr [rdx].state.smc_data, 0
+	ret
+
+reset:
+	mov dword ptr [rdx].state.control, 2	; todo: use smc_powerdown return code
+	mov dword ptr [rdx].state.exit_code, EXIT_SMC_RESET
+
+no_change:
+
+	mov dword ptr [rdx].state.smc_datacount, 0
+	mov dword ptr [rdx].state.smc_data, 0
 	ret
 smc_power endp
 
 smc_reset proc
+	movzx rax, byte ptr [rdi+1]
+	test rax, rax
+	jnz no_change
+	mov dword ptr [rdx].state.control, 2	; todo: use smc_powerdown return code
+	mov dword ptr [rdx].state.exit_code, EXIT_SMC_RESET
+no_change:
+
+	mov dword ptr [rdx].state.smc_datacount, 0
+	mov dword ptr [rdx].state.smc_data, 0
 	ret
 smc_reset endp
 
 smc_nmibutton proc
+	movzx rax, byte ptr [rdi+1]
+	test rax, rax
+	jnz no_change
+	mov byte ptr [rdx].state.nmi, 1
+no_change:
+
+	mov dword ptr [rdx].state.smc_datacount, 0
+	mov dword ptr [rdx].state.smc_data, 0
 	ret
 smc_nmibutton endp
 
-smc_powerled proc
-	ret
-smc_powerled endp
-
 smc_activityled proc
+	movzx rax, byte ptr [rdi+1]
+	mov dword ptr [rdx].state.smc_led, eax
+
+	mov dword ptr [rdx].state.smc_datacount, 0
+	mov dword ptr [rdx].state.smc_data, 0
 	ret
 smc_activityled endp
 
 smc_keyboard proc
+	mov dword ptr [rdx].state.smc_datacount, 0
+	mov dword ptr [rdx].state.smc_data, 0
 	ret
 smc_keyboard endp
 
 smc_donothing proc
+	mov dword ptr [rdx].state.smc_datacount, 0
+	mov dword ptr [rdx].state.smc_data, 0
 	ret
 smc_donothing endp

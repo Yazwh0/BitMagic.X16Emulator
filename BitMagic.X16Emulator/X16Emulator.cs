@@ -185,7 +185,41 @@ public class Emulator : IDisposable
         public bool Timer2_Running { get => _emulator._state.Via_Timer2_Running != 0; set => _emulator._state.Via_Timer2_Running = (value ? (byte)1 : (byte)0); }
         public byte Register_A_OutValue { get => _emulator._state.Via_Register_A_OutValue; set => _emulator._state.Via_Register_A_OutValue = value; }
         public byte Register_A_InValue { get => _emulator._state.Via_Register_A_InValue; set => _emulator._state.Via_Register_A_InValue = value; }
+    }
 
+    public class I2cState
+    {
+        private readonly Emulator _emulator;
+        public I2cState(Emulator emulator)
+        {
+            _emulator = emulator;
+        }
+
+        public uint Position { get => _emulator._state.I2cPosition; set => _emulator._state.I2cPosition = value; }
+        public uint Previous { get => _emulator._state.I2cPrevious; set => _emulator._state.I2cPrevious = value; }
+        public uint ReadWrite { get => _emulator._state.I2cReadWrite; set => _emulator._state.I2cReadWrite = value; }
+        public uint Transmit { get => _emulator._state.I2cTransmit; set => _emulator._state.I2cTransmit = value; }
+        public uint Mode { get => _emulator._state.I2cMode; set => _emulator._state.I2cMode = value; }
+        public uint Address { get => _emulator._state.I2cAddress; set => _emulator._state.I2cAddress = value; }
+        public uint DataToTransmit { get => _emulator._state.I2cDataToTransmit; set => _emulator._state.I2cDataToTransmit = value; }
+    }
+
+    public class SmcState
+    {
+        private readonly Emulator _emulator;
+
+        public SmcState(Emulator emulator)
+        {
+            _emulator = emulator;
+        }
+
+        public uint Offset { get => _emulator._state.SmcOffset; set => _emulator._state.SmcOffset = value; }
+        public uint Data { get => _emulator._state.SmcData; set => _emulator._state.SmcData = value; }
+        public uint DataCount { get => _emulator._state.SmcDataCount; set => _emulator._state.SmcDataCount = value; }
+        public uint SmcKeyboard_ReadPosition { get => _emulator._state.Keyboard_ReadPosition; set => _emulator._state.Keyboard_ReadPosition = value; }
+        public uint SmcKeyboard_WritePosition { get => _emulator._state.Keyboard_WritePosition; set => _emulator._state.Keyboard_WritePosition = value; }
+        public uint SmcKeyboard_ReadNoData { get => _emulator._state.Keyboard_ReadNoData; set => _emulator._state.Keyboard_ReadNoData = value; }
+        public uint Led { get => _emulator._state.SmcLed; set => _emulator._state.SmcLed = value; }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -240,6 +274,8 @@ public class Emulator : IDisposable
         public ulong SpiCsdRegister_0 = 0;
         public ulong SpiCsdRegister_1 = 0;
 
+        public uint ExitCode = 0;
+
         public uint BreakpointOffset = 0;
 
         public uint Dc_HScale = 0x00010000;
@@ -264,6 +300,9 @@ public class Emulator : IDisposable
         public uint Keyboard_ReadPosition = 0;
         public uint Keyboard_WritePosition = 0;
         public uint Keyboard_ReadNoData = 1;
+        public uint SmcData = 0;
+        public uint SmcDataCount = 0;
+        public uint SmcLed = 0;
 
         public uint SpiPosition = 0;
         public uint SpiChipSelect = 0;
@@ -440,6 +479,7 @@ public class Emulator : IDisposable
         SmcPowerOff,
         Stepping,
         Breakpoint,
+        SmcReset,
         Unsupported = -1
     }
 
@@ -480,7 +520,8 @@ public class Emulator : IDisposable
 
     public VeraState Vera => new VeraState(this);
     public ViaState Via => new ViaState(this);
-
+    public I2cState I2c => new I2cState(this);
+    public SmcState Smc => new SmcState(this);
     public uint Keyboard_ReadPosition => _state.Keyboard_ReadPosition;
     public uint Keyboard_WritePosition { get => _state.Keyboard_WritePosition; set => _state.Keyboard_WritePosition = value; }
 

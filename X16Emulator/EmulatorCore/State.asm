@@ -64,6 +64,8 @@ state struct
 	spi_csd_register0		qword ?
 	spi_csd_register1		qword ?
 
+	exit_code				dword ?
+
 	breakpoint_offset		dword ?
 
 	dc_hscale				dword ?
@@ -88,6 +90,9 @@ state struct
 	smc_keyboard_readposition   dword ?
 	smc_keyboard_writeposition	dword ?
 	smc_keyboard_readnodata	dword ?
+	smc_data				dword ?
+	smc_datacount			dword ?
+	smc_led					dword ?
 
 	spi_position			dword ?
 	spi_chipselect			dword ?

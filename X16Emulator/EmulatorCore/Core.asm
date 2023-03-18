@@ -26,6 +26,16 @@ include I2c.asm
 include Smc.asm
 include Spi.asm
 
+EXIT_NOTSUPPORTED equ -1
+EXIT_NORMAL equ 0
+EXIT_UNKNOWNOPCODE equ 1
+EXIT_DEBUGOPCODE equ 2
+EXIT_BRKHIT equ 3
+EXIT_SMC_POWEROFF equ 4
+EXIT_STEPPING equ 5
+EXIT_BREAKPOINT equ 6
+EXIT_SMC_RESET equ 7
+
 readonly_memory equ 0c000h - 1		; stop all writes above this location
 
 ; rax  : scratch
@@ -185,6 +195,7 @@ asm_func proc state_ptr:QWORD
 
     mov dword ptr [rdx].state.stackBreakpointHit, 0
     mov ignoreBreakpoint, 1
+    mov dword ptr [rdx].state.exit_code, 0
 
     jmp skip_stepping
 main_loop::
@@ -465,17 +476,19 @@ vsync_test:
     jmp main_loop
 
 exit_loop:
+    call vera_render_display
+    mov [rdx].state.render_ready, 1						; signal that we need to redraw the UI
     
     ; return all ok
     write_state_obj
-    mov rax, 00h
+    mov eax, [rdx].state.exit_code
 
     restore_registers
     ;leave - masm adds this.
     ret
 
 not_supported:
-    mov rax, -1
+    mov rax, EXIT_NOTSUPPORTED
     ret
 
 step_exit:
@@ -483,7 +496,7 @@ step_exit:
     mov [rdx].state.render_ready, 1						; signal that we need to redraw the UI
 
     write_state_obj
-    mov rax, 05h    ; stepping
+    mov rax, EXIT_STEPPING    ; stepping
 
     restore_registers
     ;leave - masm adds this.
@@ -494,7 +507,7 @@ breakpoint_exit:
     mov [rdx].state.render_ready, 1						; signal that we need to redraw the UI
 
     write_state_obj
-    mov rax, 06h    ; breakpoint
+    mov rax, EXIT_BREAKPOINT    ; breakpoint
 
     restore_registers
     ;leave - masm adds this.

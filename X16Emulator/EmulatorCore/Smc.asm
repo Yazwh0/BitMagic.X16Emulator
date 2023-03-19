@@ -36,7 +36,7 @@ smc_receive_data endp
 smc_stop proc
 	lea rdi, [rdx].state.smc_data
 	movzx rbx, byte ptr [rdi]						; get offset
-	mov dword ptr [rdx].state.smc_offset, ebx		; store for debug
+	mov dword ptr [rdx].state.smc_offset, ebx		; store for write operations (eg keyb\mouse)
 
 	cmp ebx, 7
 	jg unknown_command
@@ -73,14 +73,15 @@ smc_set_next_write proc
 	inc rax
 	and rax, 16-1
 	; dont save position, this is done post read.
-	;mov dword ptr [rdx].state.smc_keyboard_readposition, eax
+	mov dword ptr [rdx].state.smc_keyboard_readposition, eax
 
 	xor r12, r12
 	cmp eax, r13d	; check if we're the same now, if so there is no more darta
 	sete r12b
 
 	mov dword ptr [rdx].state.smc_keyboard_readnodata, r12d
-	mov dword ptr [rdx].state.i2c_datatotransmit, 1
+	xor r12, 1
+	mov dword ptr [rdx].state.i2c_datatotransmit, r12d
 
 	ret
 no_data:
@@ -90,7 +91,9 @@ no_data:
 	ret
 smc_set_next_write endp
 
+; todo: remove
 smc_complete_write proc
+	ret
 	mov eax, dword ptr [rdx].state.smc_keyboard_readposition
 	inc rax
 	and rax, 16-1

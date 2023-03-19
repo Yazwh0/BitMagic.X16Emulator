@@ -229,6 +229,7 @@ state struct
 
 	via_register_a_outvalue	byte ?
 	via_register_a_invalue	byte ?
+	via_register_a_direction byte ?
 	; we just use whats in memory now
 	;via_interrupt_timer1	byte ?
 	;via_interrupt_timer2	byte ?

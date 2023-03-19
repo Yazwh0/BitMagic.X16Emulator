@@ -185,6 +185,7 @@ public class Emulator : IDisposable
         public bool Timer2_Running { get => _emulator._state.Via_Timer2_Running != 0; set => _emulator._state.Via_Timer2_Running = (value ? (byte)1 : (byte)0); }
         public byte Register_A_OutValue { get => _emulator._state.Via_Register_A_OutValue; set => _emulator._state.Via_Register_A_OutValue = value; }
         public byte Register_A_InValue { get => _emulator._state.Via_Register_A_InValue; set => _emulator._state.Via_Register_A_InValue = value; }
+        public byte Register_A_Direction { get => _emulator._state.Via_Register_A_Direction; set => _emulator._state.Via_Register_A_Direction = value; }        
     }
 
     public class I2cState
@@ -437,6 +438,7 @@ public class Emulator : IDisposable
 
         public byte Via_Register_A_OutValue = 0;
         public byte Via_Register_A_InValue = 0xff; // default is all high
+        public byte Via_Register_A_Direction = 0;
         public byte Via_Timer1_Continuous = 0;
         public byte Via_Timer1_Pb7 = 0;
         public byte Via_Timer1_Running = 0;

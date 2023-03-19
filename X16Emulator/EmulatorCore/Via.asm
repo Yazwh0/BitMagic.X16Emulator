@@ -44,9 +44,22 @@ via_init proc
 	cmovne rax, rbx
 	mov byte ptr [rsi + V_IFR], al
 
+	;mov al, byte ptr [rdx].state.via_register_a_outvalue
+	;mov byte ptr [rsi + V_PRA], al
+	;mov byte ptr [rsi + V_ORA], al
+
+	mov r13b, byte ptr [rdx].state.via_register_a_direction
+
 	mov al, byte ptr [rdx].state.via_register_a_outvalue
-	mov byte ptr [rsi + V_PRA], al
-	mov byte ptr [rsi + V_ORA], al
+	and al, r13b											; mask off output bits
+
+	xor r13b, 0ffh											; invert
+
+	mov r12b, byte ptr [rdx].state.via_register_a_invalue
+	and r12b, r13b											; mask off input bits
+	or r12b, al												; combine
+	mov byte ptr [rsi+V_PRA], r12b
+	mov byte ptr [rsi+V_ORA], r12b
 
 	ret
 via_init endp
@@ -302,6 +315,8 @@ via_prb endp
 ; Data Direction Register 0: input, 1: output.
 via_dra proc
 	mov r13b, byte ptr [rsi+rbx]
+
+	mov byte ptr [rdx].state.via_register_a_direction, r13b
 
 	mov al, byte ptr [rdx].state.via_register_a_outvalue
 	and al, r13b											; mask off output bits

@@ -57,7 +57,11 @@ i2c_handledata proc
 	jne no_reset
 
 	xor r12, r12
+	push rax
+	push rbx
 	call i2c_stop
+	pop rbx
+	pop rax
 
 ;	bt rax, 1
 ;	jnc clock_low
@@ -158,36 +162,42 @@ write_byte:								; writes wait for clock low
 	qword clock_high					; 42
 
 	qword write_bit						; 43
-	qword clock_high					; 45
+	qword clock_high					; 44
 
-	qword write_bit						; 46
+	qword write_bit						; 45
 	qword clock_high
 
-	qword write_bit						; 48
+	qword write_bit						; 47
 	qword clock_high
 
-	qword write_bit						; 50
+	qword write_bit						; 49
 	qword clock_high
 
-	qword write_bit						; 52
+	qword write_bit						; 51
 	qword clock_high
 
-	qword write_bit						; 54
+	qword write_bit						; 53
 	qword clock_high
 
-	qword write_last_bit				; 56
+	qword write_bit						; 55
 	qword clock_high
-	qword clock_low_setdefault
 
-	qword clock_high					; 59 -ack from cpu
-	qword clock_low
+	qword clock_low_setdefault			; 57
+
+	;qword write_last_bit				
+	qword read_datawrite_ack			; 58
+	qword clock_low_afterwrite_ack		; 59, set mode back to 41. A stop from the CPU will reset.
+
+	; should read ack off the line, if there is one goto 41, otherwise reset.
+	;qword clock_high					; 59 -ack from cpu
+	;qword clock_low
 
 	
 	;qword send_datawrite_ack			; 58 - this also waits for clock low
 	;qword clock_high					; 59
 	;qword clock_low_afterwrite_ack		; 60
 
-	qword reset_i2c						; 61
+	qword reset_i2c						; 60
 
 I2C_READBYTE equ (read_byte - mode_jump) / 8
 I2C_WRITEBYTE equ (write_byte - mode_jump) / 8
@@ -296,7 +306,7 @@ read_bit_noclock:
 	ret
 read_last_bit endp
 
-; wait for clock to go low, data cant change
+; wait for clock to go low, data cant change%
 clock_low proc
 	bt rax, 1
 	jc clock_is_high
@@ -408,24 +418,7 @@ clock_low_afterwrite_ack proc
 	bt rax, 1
 	jc clock_is_high
 
-	mov eax, dword ptr [rdx].state.i2c_datatotransmit
-	test eax, eax
-	jz dont_complete
-	call smc_complete_write
-dont_complete:
-
-	; 0 means there is more data
-	mov eax, dword ptr [rdx].state.smc_keyboard_readnodata
-	movzx rbx, byte ptr [rdx].state.via_register_a_invalue
-	and rbx, 0feh
-	or rbx, rax
-	mov byte ptr [rdx].state.via_register_a_invalue, bl	; set data to ack if there is more
-	mov r13, I2C_WRITEBYTE
-	xor rbx, rbx	; 0 is waiting
-	test rax, rax
-	cmovnz r13, rbx
-
-	mov dword ptr [rdx].state.i2c_mode, r13d
+	mov dword ptr [rdx].state.i2c_mode, I2C_WRITEBYTE
 	ret
 clock_is_high:
 	; if the clock is high, data line can't change
@@ -563,11 +556,12 @@ noclock:
 	ret
 send_address_ack endp
 
+; Ack after data has been send to the I2C device
+; As its inbound, we have to ack it.
 send_dataread_ack proc
 	bt rax, 1			; check clock
 	jc noclock			; if clock is 0, then we can write data
 
-	; todo: check to detect if there is more data
 	movzx rax, byte ptr [rdx].state.via_register_a_invalue
 	and rax, 11111110b	; set data low to ack
 	mov byte ptr [rdx].state.via_register_a_invalue, al
@@ -606,9 +600,20 @@ noclock:
 	ret
 send_dataread_ack endp
 
-send_datawrite_ack proc
+; read ack from the line, as we're sending to the I2C master, we need to read the ack
+read_datawrite_ack proc
 	bt rax, 1			; check clock
-	jc noclock			; if clock is 0, then we can write data
+	jnc noclock			; only read when clock is high
+
+	mov r12d, dword ptr [rdx].state.i2c_mode
+	inc r12
+	xor r13, r13
+
+	bt rax, 0
+	cmovc r12, r13		; if set ,then nack, so set mode back to 0
+	mov dword ptr [rdx].state.i2c_mode, r12d
+	
+	ret
 
 	; todo: check to detect if there is more data
 	movzx rax, byte ptr [rdx].state.via_register_a_invalue
@@ -644,12 +649,9 @@ send_datawrite_ack proc
 	mov dword ptr [rdx].state.i2c_previous, r13d		; store for next time
 
 
-	inc dword ptr [rdx].state.i2c_mode
-	ret
-
 noclock:
 	ret
-send_datawrite_ack endp
+read_datawrite_ack endp
 
 write_first_bit proc
 	bt rax, 1						; check clock
@@ -698,6 +700,19 @@ write_first_bit proc
 	inc dword ptr [rdx].state.i2c_mode
 
 write_bit_clockhigh:
+	; if the clock is high, data line can't change
+	mov r13d, dword ptr [rdx].state.i2c_mode
+	;xor r12, r12
+	mov r12, 1
+	and rax, 1b
+	
+	and rbx, 1b
+	xor rax, rbx
+	cmovnz r13, r12		; if the bit is set, then data has changed which is an error so reset
+	mov dword ptr [rdx].state.i2c_mode, r13d
+
+	jnz i2c_stop		; this will call ret.
+
 	ret
 write_first_bit endp
 
@@ -747,6 +762,19 @@ write_bit proc
 	inc dword ptr [rdx].state.i2c_mode
 
 write_bit_clockhigh:
+	; if the clock is high, data line can't change
+	mov r13d, dword ptr [rdx].state.i2c_mode
+	;xor r12, r12
+	mov r12, 1
+	and rax, 1b
+	
+	and rbx, 1b
+	xor rax, rbx
+	cmovnz r13, r12		; if the bit is set, then data has changed which is an error so reset
+	mov dword ptr [rdx].state.i2c_mode, r13d
+
+	jnz i2c_stop		; this will call ret.
+
 	ret
 write_bit endp
 
@@ -803,6 +831,19 @@ write_last_bit proc
 	dont_complete:
 
 write_bit_clockhigh:
+	; if the clock is high, data line can't change
+	mov r13d, dword ptr [rdx].state.i2c_mode
+	;xor r12, r12
+	mov r12, 1
+	and rax, 1b
+	
+	and rbx, 1b
+	xor rax, rbx
+	cmovnz r13, r12		; if the bit is set, then data has changed which is an error so reset
+	mov dword ptr [rdx].state.i2c_mode, r13d
+
+	jnz i2c_stop		; this will call ret.
+
 	ret
 write_last_bit endp
 

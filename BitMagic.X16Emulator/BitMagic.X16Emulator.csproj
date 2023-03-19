@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Vhd\DiscUtils.Vhd.csproj" />
     <!--<ProjectReference Include="..\X16Emulator\EmulatorCore\EmulatorCore.vcxproj" />-->
     <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Fat\DiscUtils.Fat.csproj" />
+    <ProjectReference Include="..\X16Emulator\EmulatorCore\EmulatorCore.vcxproj" />
   </ItemGroup>
 
   <ItemGroup>

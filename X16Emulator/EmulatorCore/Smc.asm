@@ -51,7 +51,7 @@ smc_commands:
 	qword smc_nmibutton		; 3
 	qword smc_donothing		; 4
 	qword smc_activityled	; 5
-	qword smc_donothing		; 6
+	qword smc_donothing		; 6\
 	qword smc_keyboard		; 7
 
 unknown_command:
@@ -60,23 +60,57 @@ unknown_command:
 	ret
 smc_stop endp
 
-; return rbx as scancode
+; return rbx as data to transmit
 smc_set_next_write proc
+	mov eax, dword ptr [rdx].state.smc_offset
+	cmp eax, 7
+	je keyboard
+	cmp eax, 021h
+	je mouse
+
+	mov dword ptr [rdx].state.i2c_datatotransmit, 1
+	xor ebx, ebx ; return default data.
+	ret
+
+mouse:
+	mov eax, dword ptr [rdx].state.smc_mouse_readposition
+	mov r13d, dword ptr [rdx].state.smc_mouse_writeposition
+
+	cmp eax, r13d
+	je no_mouse_data
+
+	mov rbx, qword ptr [rdx].state.smc_mouse_ptr
+	movzx rbx, byte ptr [rbx + rax]			; set ebx to the return value
+	inc rax
+	and rax, 8-1
+
+	mov dword ptr [rdx].state.smc_mouse_readposition, eax
+
+	mov dword ptr [rdx].state.i2c_datatotransmit, 1 ; not sure what this is for todo: check and remove if not used!!
+
+	ret
+no_mouse_data:
+	xor rbx, rbx
+	mov dword ptr [rdx].state.i2c_datatotransmit, 0
+	ret
+
+
+keyboard:
 	mov eax, dword ptr [rdx].state.smc_keyboard_readposition
 	mov r13d, dword ptr [rdx].state.smc_keyboard_writeposition
 
 	cmp eax, r13d
-	je no_data
+	je no_keyboard_data
 
 	mov rbx, qword ptr [rdx].state.smc_keyboard_ptr
-	movzx rbx, byte ptr [rbx + rax]
+	movzx rbx, byte ptr [rbx + rax]			; set ebx to the return value
 	inc rax
 	and rax, 16-1
-	; dont save position, this is done post read.
+
 	mov dword ptr [rdx].state.smc_keyboard_readposition, eax
 
 	xor r12, r12
-	cmp eax, r13d	; check if we're the same now, if so there is no more darta
+	cmp eax, r13d	; check if we're the same now, if so there is no more data
 	sete r12b
 
 	mov dword ptr [rdx].state.smc_keyboard_readnodata, r12d
@@ -84,7 +118,7 @@ smc_set_next_write proc
 	mov dword ptr [rdx].state.i2c_datatotransmit, r12d
 
 	ret
-no_data:
+no_keyboard_data:
 	xor rbx, rbx
 	mov dword ptr [rdx].state.smc_keyboard_readnodata, 1
 	mov dword ptr [rdx].state.i2c_datatotransmit, 0

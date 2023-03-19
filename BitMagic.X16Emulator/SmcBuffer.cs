@@ -10,6 +10,15 @@ namespace BitMagic.X16Emulator
 {
     public class SmcBuffer
     {
+        [Flags]
+        public enum MouseButtons
+        {
+            None,
+            Left = 1,
+            Right = 2,
+            Middle = 4,
+        }
+
         private readonly Emulator _emulator;
 
         public SmcBuffer(Emulator emulator)
@@ -25,38 +34,81 @@ namespace BitMagic.X16Emulator
         {
             if (scancode == 0xff && keyDown)
             {   // sequence from the x16 emulator
-                PushByte(0xe1);
-                PushByte(0x14);
-                PushByte(0x77);
-                PushByte(0xe1);
-                PushByte(0xf0);
-                PushByte(0x14);
-                PushByte(0xf0);
-                PushByte(0x77);
+                PushKeyboard(0xe1);
+                PushKeyboard(0x14);
+                PushKeyboard(0x77);
+                PushKeyboard(0xe1);
+                PushKeyboard(0xf0);
+                PushKeyboard(0x14);
+                PushKeyboard(0xf0);
+                PushKeyboard(0x77);
                 return;
             }
 
             if ((scancode & EXTENDED_FLAG) != 0)
-                PushByte(0xe0);
+                PushKeyboard(0xe0);
             if (!keyDown)
-                PushByte(0xf0);
+                PushKeyboard(0xf0);
 
-            PushByte((byte)(scancode & 0xff));
+            PushKeyboard((byte)(scancode & 0xff));
         }
 
-        public void PushByte(byte value)
+        public void PushKeyboard(byte value)
         {
             var next = (_emulator.Keyboard_WritePosition + 1) & (Emulator.SmcKeyboardBufferSize - 1);
-            if (next != _emulator.Keyboard_ReadPosition) {
+            if (next != _emulator.Keyboard_ReadPosition)
+            {
                 _emulator.KeyboardBuffer[(int)_emulator.Keyboard_WritePosition] = value;
                 _emulator.Keyboard_WritePosition = next;
-                //Console.WriteLine($"Keyboard added ${value:X2}");
             }
             else
             {
-                Console.ForegroundColor= ConsoleColor.Red;
-                Console.WriteLine($"Warning: keyboard buffer full! Cannot add ${value:X2}");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Warning: Keyboard buffer full! Cannot add ${value:X2}");
                 Console.ResetColor();
+            }
+        }
+
+        public void PushMouse(int xDelta, int yDelta, MouseButtons buttons)
+        {
+            while (true)
+            {
+                // discard movements if they would overfill the biffer
+                var length = (Emulator.SmcMouseBufferSize + _emulator.Mouse_WritePosition - _emulator.Mouse_ReadPosition) & (Emulator.SmcMouseBufferSize - 1);
+                if (length >= 6)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Warning: Mouse buffer full!");
+                    Console.ResetColor();
+                    return;
+                }
+
+                yDelta *= -1;
+                var toSendX = xDelta > 255 ? 255 : xDelta < -256 ? -256 : xDelta;
+                var toSendY = yDelta > 255 ? 255 : yDelta < -256 ? -256 : yDelta;
+
+                xDelta -= toSendX;
+                yDelta -= toSendY;
+
+                byte btns = (byte)((byte)buttons + (byte)0b1000 + (byte)((toSendX & 0x100) != 0 ? 010000 : 0) + (byte)((toSendY & 0x100) != 0 ? 0100000 : 0));
+
+                Console.WriteLine($"{Convert.ToString(btns, 2)} {(byte)toSendX:X2} {(byte)toSendY:X2}");
+                PushMouseByte(btns);
+                PushMouseByte((byte)toSendX);
+                PushMouseByte((byte)toSendY);
+
+                if (xDelta == 0 && yDelta == 0)
+                    return;
+            }
+        }
+
+        public void PushMouseByte(byte value)
+        {
+            var next = (_emulator.Mouse_WritePosition + 1) & (Emulator.SmcMouseBufferSize - 1);
+            if (next != _emulator.Mouse_ReadPosition)
+            {
+                _emulator.MouseBuffer[(int)_emulator.Mouse_WritePosition] = value;
+                _emulator.Mouse_WritePosition = next;
             }
         }
 
@@ -183,7 +235,7 @@ namespace BitMagic.X16Emulator
                 var thisPosition = state.I2cPosition;
                 if (thisPosition != lastPosition)
                 {
-                    while(thisPosition != lastPosition)
+                    while (thisPosition != lastPosition)
                     {
                         var val = buffer[(int)lastPosition] & 0x03;
                         sb.Append($"{(val & 0x01) + 1}\t{(val & 0x02) >> 1}\t");

@@ -185,7 +185,7 @@ public class Emulator : IDisposable
         public bool Timer2_Running { get => _emulator._state.Via_Timer2_Running != 0; set => _emulator._state.Via_Timer2_Running = (value ? (byte)1 : (byte)0); }
         public byte Register_A_OutValue { get => _emulator._state.Via_Register_A_OutValue; set => _emulator._state.Via_Register_A_OutValue = value; }
         public byte Register_A_InValue { get => _emulator._state.Via_Register_A_InValue; set => _emulator._state.Via_Register_A_InValue = value; }
-        public byte Register_A_Direction { get => _emulator._state.Via_Register_A_Direction; set => _emulator._state.Via_Register_A_Direction = value; }        
+        public byte Register_A_Direction { get => _emulator._state.Via_Register_A_Direction; set => _emulator._state.Via_Register_A_Direction = value; }
     }
 
     public class I2cState
@@ -234,6 +234,7 @@ public class Emulator : IDisposable
         public ulong HistoryPtr = 0;
         public ulong I2cBufferPtr = 0;
         public ulong SmcKeyboardPtr = 0;
+        public ulong SmcMousePtr = 0;
         public ulong SpiHistoryPtr = 0;
         public ulong SpiInboundBufferPtr = 0;
         public ulong SpiOutboundBufferPtr = 0;
@@ -304,6 +305,8 @@ public class Emulator : IDisposable
         public uint SmcData = 0;
         public uint SmcDataCount = 0;
         public uint SmcLed = 0;
+        public uint Mouse_ReadPosition = 0;
+        public uint Mouse_WritePosition = 0;
 
         public uint SpiPosition = 0;
         public uint SpiChipSelect = 0;
@@ -438,7 +441,7 @@ public class Emulator : IDisposable
 
         public byte Via_Register_A_OutValue = 0;
         public byte Via_Register_A_InValue = 0xff; // default is all high
-        public byte Via_Register_A_Direction = 0;
+        public byte Via_Register_A_Direction = 0xff;
         public byte Via_Timer1_Continuous = 0;
         public byte Via_Timer1_Pb7 = 0;
         public byte Via_Timer1_Running = 0;
@@ -449,7 +452,7 @@ public class Emulator : IDisposable
 
         public unsafe CpuState(ulong memory, ulong rom, ulong ramBank, ulong vram,
             ulong display, ulong palette, ulong sprite, ulong displayBuffer, ulong history, ulong i2cBuffer,
-            ulong smcKeyboardPtr, ulong spiHistoryPtr, ulong spiInboundBufferPtr, ulong spiOutbandBufferPtr,
+            ulong smcKeyboardPtr, ulong smcMousePtr, ulong spiHistoryPtr, ulong spiInboundBufferPtr, ulong spiOutbandBufferPtr,
             ulong breakpointPtr, ulong stackInfoPtr, ulong stackBreakpointPtr)
         {
             MemoryPtr = memory;
@@ -463,6 +466,7 @@ public class Emulator : IDisposable
             HistoryPtr = history;
             I2cBufferPtr = i2cBuffer;
             SmcKeyboardPtr = smcKeyboardPtr;
+            SmcMousePtr = smcMousePtr;
             SpiHistoryPtr = spiHistoryPtr;
             SpiInboundBufferPtr = spiInboundBufferPtr;
             SpiOutboundBufferPtr = spiOutbandBufferPtr;
@@ -526,6 +530,8 @@ public class Emulator : IDisposable
     public SmcState Smc => new SmcState(this);
     public uint Keyboard_ReadPosition => _state.Keyboard_ReadPosition;
     public uint Keyboard_WritePosition { get => _state.Keyboard_WritePosition; set => _state.Keyboard_WritePosition = value; }
+    public uint Mouse_ReadPosition => _state.Mouse_ReadPosition;
+    public uint Mouse_WritePosition { get => _state.Mouse_WritePosition; set => _state.Mouse_WritePosition = value; }
 
     private const int _rounding = 32; // 32 byte (256bit) allignment required for AVX 256 instructions
     private const ulong _roundingMask = ~(ulong)_rounding + 1;
@@ -545,6 +551,7 @@ public class Emulator : IDisposable
     private readonly ulong _sprite_ptr;
     private readonly ulong _i2cBuffer_ptr;
     private readonly ulong _smcKeyboard_ptr;
+    private readonly ulong _smcMouse_ptr;
     private readonly ulong _spiHistory_ptr;
     private readonly ulong _spiInboundBufferPtr;
     private readonly ulong _spiOutboundBufferPtr;
@@ -564,6 +571,7 @@ public class Emulator : IDisposable
     private const int SpriteSize = 64 * 128;
     private const int I2cBufferSize = 1024;
     public const int SmcKeyboardBufferSize = 16;
+    public const int SmcMouseBufferSize = 8;
     private const int SpiHistoryPtrSize = 1024 * 2;
     private const int SpiInboundBufferPtrSize = 1024; // 512 + 4;
     private const int SpiOutboundBufferPtrSize = 1024; // 512 + 4;
@@ -604,6 +612,7 @@ public class Emulator : IDisposable
         _history_ptr = (ulong)NativeMemory.Alloc(HistorySize);
         _i2cBuffer_ptr = (ulong)NativeMemory.Alloc(I2cBufferSize);
         _smcKeyboard_ptr = (ulong)NativeMemory.Alloc(SmcKeyboardBufferSize);
+        _smcMouse_ptr = (ulong)NativeMemory.Alloc(SmcMouseBufferSize);
 
         _breakpoint_Ptr = (ulong)NativeMemory.Alloc(BreakpointSize + _rounding);
         _breakpoint_ptr_rounded = RoundMemoryPtr(_breakpoint_Ptr);
@@ -615,7 +624,7 @@ public class Emulator : IDisposable
         _stackBreakpoint_Ptr = (ulong)NativeMemory.Alloc(StackBreakpointSize);
 
         _state = new CpuState(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,
-            _sprite_ptr, _display_buffer_ptr_rounded, _history_ptr, _i2cBuffer_ptr, _smcKeyboard_ptr, _spiHistory_ptr,
+            _sprite_ptr, _display_buffer_ptr_rounded, _history_ptr, _i2cBuffer_ptr, _smcKeyboard_ptr, _smcMouse_ptr, _spiHistory_ptr,
             _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded, _stackInfo_Ptr, _stackBreakpoint_Ptr);
 
         var memory_span = new Span<byte>((void*)_memory_ptr, RamSize);
@@ -653,6 +662,10 @@ public class Emulator : IDisposable
         var smcKeyboard_span = new Span<byte>((void*)_smcKeyboard_ptr, SmcKeyboardBufferSize);
         for (var i = 0; i < SmcKeyboardBufferSize; i++)
             smcKeyboard_span[i] = 0;
+
+        var smsMouse_span = new Span<byte>((void*)_smcMouse_ptr, SmcMouseBufferSize);
+        for (var i = 0; i < SmcMouseBufferSize; i++)
+            smsMouse_span[i] = 0;
 
         var spiHistory_span = new Span<byte>((void*)_spiHistory_ptr, SpiHistoryPtrSize);
         for (var i = 0; i < SpiHistoryPtrSize; i++)
@@ -697,6 +710,7 @@ public class Emulator : IDisposable
     public unsafe Span<Sprite> Sprites => new Span<Sprite>((void*)_sprite_ptr, 128);
     public unsafe Span<EmulatorHistory> History => new Span<EmulatorHistory>((void*)_history_ptr, HistorySize / 16);
     public unsafe Span<byte> KeyboardBuffer => new Span<byte>((void*)_smcKeyboard_ptr, SmcKeyboardBufferSize);
+    public unsafe Span<byte> MouseBuffer => new Span<byte>((void*)_smcMouse_ptr, SmcMouseBufferSize);
     public unsafe Span<byte> Breakpoints => new Span<byte>((void*)_breakpoint_ptr_rounded, BreakpointSize);
     public unsafe Span<uint> StackInfo => new Span<uint>((void*)_stackInfo_Ptr, StackInfoSize / 4);
     public unsafe Span<byte> StackBreakpoints => new Span<byte>((void*)_stackBreakpoint_Ptr, StackBreakpointSize);
@@ -744,6 +758,7 @@ public class Emulator : IDisposable
         NativeMemory.Free((void*)_display_buffer_ptr);
         NativeMemory.Free((void*)_history_ptr);
         NativeMemory.Free((void*)_i2cBuffer_ptr);
+        NativeMemory.Free((void*)_smcMouse_ptr);        
         NativeMemory.Free((void*)_smcKeyboard_ptr);
         NativeMemory.Free((void*)_spiHistory_ptr);
         NativeMemory.Free((void*)_spiInboundBufferPtr);

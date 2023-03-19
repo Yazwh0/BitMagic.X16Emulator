@@ -22,6 +22,7 @@ state struct
 	history_ptr				qword ?
 	i2c_buffer_ptr			qword ?
 	smc_keyboard_ptr		qword ?
+	smc_mouse_ptr			qword ?
 	spi_history_ptr			qword ?
 	spi_inbound_buffer_ptr	qword ?
 	spi_outbound_buffer_ptr	qword ?
@@ -93,6 +94,8 @@ state struct
 	smc_data				dword ?
 	smc_datacount			dword ?
 	smc_led					dword ?
+	smc_mouse_readposition  dword ?
+	smc_mouse_writeposition	dword ?
 
 	spi_position			dword ?
 	spi_chipselect			dword ?

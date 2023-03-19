@@ -16,6 +16,7 @@ using Silk.NET.Core;
 using Silk.NET.Input;
 using SixLabors.ImageSharp.PixelFormats;
 using Silk.NET.Core.Attributes;
+using System.Numerics;
 
 namespace BitMagic.X16Emulator.Display;
 
@@ -35,6 +36,8 @@ public class EmulatorWindow
     private static Stopwatch _stopwatch = new Stopwatch();
     private static Emulator? _emulator;
     private static bool _closing = false;
+    private static bool _hasMouse = false;
+    private static Vector2 _lastMousePosition;
 
     public static void Run(Emulator emulator)
     {
@@ -75,12 +78,20 @@ public class EmulatorWindow
         input.Keyboards[0].KeyUp += EmulatorWindow_KeyUp;
         input.Keyboards[0].KeyDown += EmulatorWindow_KeyDown;
 
+        input.Mice[0].Cursor.CursorMode = CursorMode.Normal;
+        input.Mice[0].Click += EmulatorWindow_Click;
+        input.Mice[0].MouseUp += EmulatorWindow_MouseUp;
+        input.Mice[0].MouseDown += EmulatorWindow_MouseDown;
+        input.Mice[0].MouseMove += EmulatorWindow_MouseMove;
+
+        _window.FocusChanged += _window_FocusChanged;
+
         _window.SetDefaultIcon();
         _gl = GL.GetApi(_window);
 
         _layers = new GlObject[_images.Length];
 
-        for(var i = 0; i < _images.Length; i++)
+        for (var i = 0; i < _images.Length; i++)
         {
             _layers[i] = new GlObject();
             _layers[i].OnLoad(_gl, _images[i], i / 10);
@@ -119,6 +130,67 @@ public class EmulatorWindow
         }
     }
 
+    // If we lose focus, then stop capturing the mouse
+    private static void _window_FocusChanged(bool obj)
+    {
+        if (obj || !_hasMouse)
+            return;
+
+        var input = _window.CreateInput();
+        input.Mice[0].Cursor.CursorMode = CursorMode.Normal;
+        _hasMouse = false;
+    }
+
+    // If we click then we capture the mouse and pass movement to the emulator.
+    private static void EmulatorWindow_Click(IMouse arg1, Silk.NET.Input.MouseButton arg2, System.Numerics.Vector2 arg3)
+    {
+        if (_hasMouse)
+            return;
+
+        var input = _window.CreateInput();
+        input.Mice[0].Cursor.CursorMode = CursorMode.Raw;
+        _hasMouse = true;
+    }
+
+    private static void EmulatorWindow_MouseMove(IMouse arg1, System.Numerics.Vector2 position)
+    {
+        if (!_hasMouse)
+            return;
+
+        if (_lastMousePosition == default)
+            _lastMousePosition = position;
+        else
+        {
+            var xDelta = (int)(position.X - _lastMousePosition.X);
+            var yDelta = (int)(position.Y - _lastMousePosition.Y);
+
+            _lastMousePosition = position;
+            _emulator.SmcBuffer.PushMouse(xDelta, yDelta, GetButtons(arg1));
+        }
+    }
+
+    private static void EmulatorWindow_MouseDown(IMouse arg1, Silk.NET.Input.MouseButton arg2)
+    {
+        if (!_hasMouse)
+            return;
+
+        _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
+    }
+
+    private static void EmulatorWindow_MouseUp(IMouse arg1, Silk.NET.Input.MouseButton arg2)
+    {
+        if (!_hasMouse)
+            return;
+
+        _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
+    }
+
+    private static SmcBuffer.MouseButtons GetButtons(IMouse mouse) => 
+        (SmcBuffer.MouseButtons)((mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Left) ? (int)SmcBuffer.MouseButtons.Left : 0) +
+            (mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Right) ? (int)SmcBuffer.MouseButtons.Right : 0) +
+            (mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Middle) ? (int)SmcBuffer.MouseButtons.Middle : 0));
+
+
     private static unsafe void OnRender(double deltaTime)
     {
         if (_closing) return;
@@ -128,7 +200,7 @@ public class EmulatorWindow
 
         //_gl.Enable(EnableCap.DepthTest);
         //_gl.Enable(GLEnum.Blend);
-       // _gl.BlendFunc(BlendingFactor.SrcColor, BlendingFactor.SrcColor);
+        // _gl.BlendFunc(BlendingFactor.SrcColor, BlendingFactor.SrcColor);
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 
         //_layers[0].OnRender(_gl, _shader, _requireUpdate);
@@ -159,7 +231,7 @@ public class EmulatorWindow
             _lastCount = thisCount;
             _lastTicks = thisTicks;
 
-            _window!.Title = $"BitMagic! X16E [{_speed:0.00%} \\ {_fps:0.0} fps \\ {_speed * 8.0:0}Mhz]";
+            _window!.Title = $"BitMagic! X16E [{_speed:0.00%} \\ {_fps:0.0} fps \\ {_speed * 8.0:0}Mhz] {(_hasMouse ? "MOUSE CAPTURED" : "")}";
         }
 
         _emulator.Control = Control.Run;
@@ -172,7 +244,7 @@ public class EmulatorWindow
         _shader?.Dispose();
         if (_layers != null)
         {
-            foreach(var i in _layers)
+            foreach (var i in _layers)
             {
                 i.Dispose();
             }

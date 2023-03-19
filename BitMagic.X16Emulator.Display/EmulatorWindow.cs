@@ -231,7 +231,7 @@ public class EmulatorWindow
             _lastCount = thisCount;
             _lastTicks = thisTicks;
 
-            _window!.Title = $"BitMagic! X16E [{_speed:0.00%} \\ {_fps:0.0} fps \\ {_speed * 8.0:0}Mhz] {(_hasMouse ? "MOUSE CAPTURED" : "")}";
+            _window!.Title = $"BitMagic! X16E [{_speed:0.00%} \\ {_fps:0.0} fps \\ {_speed * 8.0:0}Mhz] {(_hasMouse ? "* MOUSE CAPTURED *" : "")}";
         }
 
         _emulator.Control = Control.Run;

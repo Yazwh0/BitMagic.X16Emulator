@@ -51,7 +51,7 @@ smc_commands:
 	qword smc_nmibutton		; 3
 	qword smc_donothing		; 4
 	qword smc_activityled	; 5
-	qword smc_donothing		; 6\
+	qword smc_donothing		; 6
 	qword smc_keyboard		; 7
 
 unknown_command:
@@ -69,7 +69,7 @@ smc_set_next_write proc
 	je mouse
 
 	mov dword ptr [rdx].state.i2c_datatotransmit, 1
-	xor ebx, ebx ; return default data.
+	mov ebx, 0ffh ; In this case the SMC wouldn't respond, so the CPU would just clock in 1s as thats the default.
 	ret
 
 mouse:

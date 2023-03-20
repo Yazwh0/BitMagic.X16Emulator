@@ -102,5 +102,8 @@
     <Text Include="Spi.asm">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="Rtc.asm">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

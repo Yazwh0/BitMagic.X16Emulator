@@ -461,6 +461,9 @@ draw_border:
 	movzx rax, [rdx].state.dc_border
 	mov ebx, dword ptr [r8 + rax * 4]
 	mov [rdi + r9 * 4 + BACKGROUND], ebx
+	xor ebx, ebx
+	mov [rdi + r9 * 4 + LAYER0], ebx
+	mov [rdi + r9 * 4 + LAYER1], ebx
 
 	jmp draw_end
 

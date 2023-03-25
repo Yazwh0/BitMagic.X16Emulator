@@ -1772,6 +1772,8 @@ adc_body_end macro checkvera, clock, pc, preservecarry
 endm
 
 decimal_add macro imm
+    local no_decimal_overflow, no_total_overflow
+
     mov r12, r8         
     if imm eq 0
         movzx rcx, byte ptr [rsi+rbx]
@@ -1824,9 +1826,9 @@ no_total_overflow:
 
     ; Z set if CL is zero
     ; N if bit 7 is set
-    ; C if rcx > 0x100
     ; V as normal?
-
+    ; C if rcx > 0x100
+    
     ; so test ecx for >= 0x100, and set the carry (r15), the macro will pick the rest up after
     and r15w, 0feffh				; mask carry	
     xor eax, eax
@@ -1839,6 +1841,7 @@ no_total_overflow:
 endm
 
 adc_body macro checkvera, clock, pc
+    local decimal
     movzx rax, byte ptr [rdx].state.flags_decimal
     test rax, rax
     jnz decimal
@@ -1914,8 +1917,13 @@ x71_adc_indy endp
 ; SBC
 ;
 
-sbc_body_end macro checkvera, clock, pc
-    write_flags_r15
+sbc_body_end macro checkvera, clock, pc, preservecarry
+    if preservecarry eq 0
+        write_flags_r15
+    endif
+    if preservecarry eq 1
+        write_flags_r15_preservecarry
+    endif
 
     seto dil
     mov byte ptr [rdx].state.flags_overflow, dil
@@ -1926,25 +1934,114 @@ sbc_body_end macro checkvera, clock, pc
     jmp opcode_done	
 endm
 
+decimal_sub macro imm
+    local no_decimal_overflow, no_total_overflow
+
+    mov rcx, r8         
+    if imm eq 0
+        movzx r12, byte ptr [rsi+rbx]
+    endif
+    if imm eq 1
+        movzx r12, byte ptr [rsi+r11] 
+    endif
+
+    ; flag set for C, ecx = A, r12 = Data, will total into ecx
+
+    ; Add (A & 0x0f) + (Data & 0x0f) + C
+    and ecx, 00fh
+    and r12d, 00fh
+
+    ; set the flags, so set the Carry flag
+    read_flags_rax
+   ; int 3
+    cmc
+    sbb rcx, r12    ; Data - A + (C-1), this is the only point C is used
+
+    cmp ecx, 00h
+    jge no_decimal_overflow
+
+    sub ecx, 006h
+    and ecx, 00fh
+    sub ecx, 010h
+
+no_decimal_overflow:
+
+    mov r12, r8         
+    if imm eq 0
+        movzx rax, byte ptr [rsi+rbx]
+    endif
+    if imm eq 1
+        movzx rax, byte ptr [rsi+r11] 
+    endif
+
+    and eax, 0f0h
+    and r12d, 0f0h
+    
+    sub r12d, eax
+
+    add ecx, r12d ; this is a or...?
+;    sub ecx, r12d
+
+    cmp ecx, 0h
+    jge no_total_overflow
+
+    sub ecx, 060h
+
+no_total_overflow:
+
+    mov r8b, cl
+
+    ; Z set if CL is zero
+    ; N if bit 7 is set
+    ; V as normal?
+    ; C if rcx > 0x100
+    
+    ; so test ecx for >= 0x100, and set the carry (r15), the macro will pick the rest up after
+    and r15w, 0feffh				; mask carry	
+    xor eax, eax
+    cmp ecx, 0000h          
+    setl al                    ; set if above
+    shl rax, 8
+    or r15, rax                 ; or in
+
+    add r8b, 0                  ; sets flags
+endm
+
 sbc_body macro checkvera, clock, pc
-    local above_zero, all_done
+    local decimal
+    movzx rax, byte ptr [rdx].state.flags_decimal
+    test rax, rax
+    jnz decimal
     read_flags_rax
 
     cmc
     sbb r8b, [rsi+rbx]
     cmc
 
-    sbc_body_end checkvera, clock, pc
+    sbc_body_end checkvera, clock, pc, 0
+
+    decimal:
+
+    decimal_sub 0
+    sbc_body_end checkvera, clock, pc, 1
 endm
 
 xE9_sbc_imm proc
+    movzx rax, byte ptr [rdx].state.flags_decimal
+    test rax, rax
+    jnz decimal
     read_flags_rax
 
     cmc
     sbb r8b, [rsi+r11]
     cmc
 
-    sbc_body_end 0, 2, 1
+    sbc_body_end 0, 2, 1, 0
+
+    decimal:
+
+    decimal_sub 1
+    sbc_body_end 0, 2, 1, 1
 xE9_sbc_imm endp
 
 xED_sbc_abs proc

@@ -242,6 +242,7 @@ public class Emulator : IDisposable
         public ulong BreadkpointPtr = 0;
         public ulong StackInfoPtr = 0;
         public ulong StackBreakpointPtr = 0;
+        public ulong RtcNvram_ptr = 0;
 
         public ulong CurrentBankAddress = 0;
 
@@ -308,6 +309,10 @@ public class Emulator : IDisposable
         public uint Mouse_ReadPosition = 0;
         public uint Mouse_WritePosition = 0;
 
+        public uint RtcOffset = 0;
+        public uint RtcData = 0;
+        public uint RtcDataCount = 0;
+
         public uint SpiPosition = 0;
         public uint SpiChipSelect = 0;
         public uint SpiReceiveCount = 0;
@@ -321,6 +326,7 @@ public class Emulator : IDisposable
         public uint SpiWriteBlock = 0;
         public uint SpiSdCardSize = 0;
         //public uint SpiDeplyReady = 0;
+
 
         public uint StackBreakpointHit = 0;
 
@@ -453,7 +459,7 @@ public class Emulator : IDisposable
         public unsafe CpuState(ulong memory, ulong rom, ulong ramBank, ulong vram,
             ulong display, ulong palette, ulong sprite, ulong displayBuffer, ulong history, ulong i2cBuffer,
             ulong smcKeyboardPtr, ulong smcMousePtr, ulong spiHistoryPtr, ulong spiInboundBufferPtr, ulong spiOutbandBufferPtr,
-            ulong breakpointPtr, ulong stackInfoPtr, ulong stackBreakpointPtr)
+            ulong breakpointPtr, ulong stackInfoPtr, ulong stackBreakpointPtr, ulong rtcNvramPtr)
         {
             MemoryPtr = memory;
             RomPtr = rom;
@@ -473,6 +479,7 @@ public class Emulator : IDisposable
             BreadkpointPtr = breakpointPtr;
             StackInfoPtr = stackInfoPtr;
             StackBreakpointPtr = stackBreakpointPtr;
+            RtcNvram_ptr = rtcNvramPtr;
         }
     }
 
@@ -559,6 +566,7 @@ public class Emulator : IDisposable
     private readonly ulong _breakpoint_ptr_rounded;
     private readonly ulong _stackInfo_Ptr;
     private readonly ulong _stackBreakpoint_Ptr;
+    private readonly ulong _rtcNvram_Ptr;
 
     private const int RamSize = 0x10000;
     private const int RomSize = 0x4000 * 32;
@@ -578,6 +586,7 @@ public class Emulator : IDisposable
     private const int BreakpointSize = 0xa000 + 0x2000 * 256 + 0x4000 * 256; // base ram, rambanks, rombanks. 256 rom banks for carts.
     private const int StackInfoSize = 256 * 4;
     private const int StackBreakpointSize = 256;
+    private const int RtcNvramSize = 64;
 
     private static ulong RoundMemoryPtr(ulong inp) => (inp & _roundingMask) + (ulong)_rounding;
 
@@ -622,10 +631,11 @@ public class Emulator : IDisposable
         _spiOutboundBufferPtr = (ulong)NativeMemory.Alloc(SpiOutboundBufferPtrSize);
         _stackInfo_Ptr = (ulong)NativeMemory.Alloc(StackInfoSize);
         _stackBreakpoint_Ptr = (ulong)NativeMemory.Alloc(StackBreakpointSize);
+        _rtcNvram_Ptr = (ulong)NativeMemory.Alloc(RtcNvramSize);
 
         _state = new CpuState(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,
             _sprite_ptr, _display_buffer_ptr_rounded, _history_ptr, _i2cBuffer_ptr, _smcKeyboard_ptr, _smcMouse_ptr, _spiHistory_ptr,
-            _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded, _stackInfo_Ptr, _stackBreakpoint_Ptr);
+            _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded, _stackInfo_Ptr, _stackBreakpoint_Ptr, _rtcNvram_Ptr);
 
         var memory_span = new Span<byte>((void*)_memory_ptr, RamSize);
         for (var i = 0; i < RamSize; i++)
@@ -691,6 +701,10 @@ public class Emulator : IDisposable
         for (var i = 0; i < StackInfoSize / 4; i++)
             stackinfo_span[i] = 0;
 
+        var rtcNvram_span = new Span<byte>((void*)_rtcNvram_Ptr, RtcNvramSize);
+        for (var i = 0; i < RtcNvramSize; i++)
+            rtcNvram_span[i] = 0;
+
         // set defaults
         var sprite_act_span = new Span<Sprite>((void*)_sprite_ptr, 128);
         for (var i = 0; i < 128; i++)
@@ -714,6 +728,7 @@ public class Emulator : IDisposable
     public unsafe Span<byte> Breakpoints => new Span<byte>((void*)_breakpoint_ptr_rounded, BreakpointSize);
     public unsafe Span<uint> StackInfo => new Span<uint>((void*)_stackInfo_Ptr, StackInfoSize / 4);
     public unsafe Span<byte> StackBreakpoints => new Span<byte>((void*)_stackBreakpoint_Ptr, StackBreakpointSize);
+    public unsafe Span<byte> RtcNvram => new Span<byte>((void*)_rtcNvram_Ptr, RtcNvramSize);
 
     public SmcBuffer SmcBuffer { get; }
 
@@ -766,5 +781,6 @@ public class Emulator : IDisposable
         NativeMemory.Free((void*)_breakpoint_Ptr);
         NativeMemory.Free((void*)_stackInfo_Ptr);
         NativeMemory.Free((void*)_stackBreakpoint_Ptr);
+        NativeMemory.Free((void*)_rtcNvram_Ptr);        
     }
 }

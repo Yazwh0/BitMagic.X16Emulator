@@ -25,6 +25,7 @@ include Banking.asm
 include I2c.asm
 include Smc.asm
 include Spi.asm
+include Rtc.asm
 
 EXIT_NOTSUPPORTED equ -1
 EXIT_NORMAL equ 0

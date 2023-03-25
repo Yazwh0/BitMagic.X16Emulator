@@ -34,6 +34,8 @@ smc_receive_data endp
 
 ; called when a stp siginal is received, so can process the received data
 smc_stop proc
+	; todo, this should check read / write.
+
 	lea rdi, [rdx].state.smc_data
 	movzx rbx, byte ptr [rdi]						; get offset
 	mov dword ptr [rdx].state.smc_offset, ebx		; store for write operations (eg keyb\mouse)

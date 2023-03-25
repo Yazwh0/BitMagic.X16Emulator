@@ -14,7 +14,7 @@
 ;    along with this program.  If not, see https://www.gnu.org/licenses/.
 
 I2C_SMC equ 42h
-I2C_RTC equ 64h
+I2C_RTC equ 6Fh
 
 ;	modes:
 ;	val mode becomes
@@ -207,7 +207,14 @@ i2c_handledata endp
 i2c_stop proc
 
 	; todo: change once rtc is in
+	mov eax, dword ptr [rdx].state.i2c_address
+	cmp eax, I2C_RTC
+	je rtc
 	call smc_stop
+
+	ret
+rtc:
+	call rtc_stop
 
 	ret
 i2c_stop endp
@@ -300,7 +307,14 @@ read_last_bit proc
 	inc dword ptr [rdx].state.i2c_mode
 
 	; only have SMC right now. todo: change to handle the RTC as well.
+	mov eax, dword ptr [rdx].state.i2c_address
+	cmp eax, I2C_RTC
+	je rtc
+
 	jmp smc_receive_data
+
+rtc:
+	jmp rtc_receive_data
 
 read_bit_noclock:
 	ret
@@ -478,9 +492,12 @@ send_address_ack proc
 	jc noclock			; if clock is 0, then we can write data
 
 	mov ebx, dword ptr [rdx].state.i2c_transmit
+	cmp ebx, I2C_RTC
+	je known_address
 	cmp ebx, I2C_SMC
 	jne unknown_address
 
+known_address:
 	movzx rax, byte ptr [rdx].state.via_register_a_invalue
 	and rax, 11111110b	; set data low
 	mov byte ptr [rdx].state.via_register_a_invalue, al
@@ -657,7 +674,12 @@ write_first_bit proc
 	bt rax, 1						; check clock
 	jc write_bit_clockhigh			; can only write when the clock is 0
 
-	call smc_set_next_write			; set ebx to data
+	lea r13, smc_set_next_write
+	lea rdi, rtc_set_next_write
+	mov eax, [rdx].state.i2c_address
+	cmp eax, I2C_SMC
+	cmove rdi, r13					; if SMC, then load that address
+	call rdi						; returns the data in ebx
 	
 	shl ebx, 1
 	mov dword ptr [rdx].state.i2c_transmit, ebx

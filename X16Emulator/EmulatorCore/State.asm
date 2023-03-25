@@ -30,6 +30,7 @@ state struct
 	breakpoint_ptr			qword ?
 	stackinfo_ptr			qword ?
 	stackbreakpoint_ptr		qword ?
+	rtc_nvram_ptr			qword ?
 
 	current_bank_address	qword ?
 
@@ -96,6 +97,10 @@ state struct
 	smc_led					dword ?
 	smc_mouse_readposition  dword ?
 	smc_mouse_writeposition	dword ?
+
+	rtc_offset				dword ?
+	rtc_data				dword ?
+	rtc_datacount			dword ?
 
 	spi_position			dword ?
 	spi_chipselect			dword ?

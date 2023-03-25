@@ -115,7 +115,9 @@ state struct
 	spi_writeblock			dword ?
 	spi_sdcardsize			dword ?
 	;spi_replyready			dword ?
-	stackBreakpointHit		dword ?
+	stack_breakpoint_hit	dword ?
+
+	video_output			dword ?
 
 	register_pc				word ?
 	stackpointer			word ?

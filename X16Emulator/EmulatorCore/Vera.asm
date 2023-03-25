@@ -298,6 +298,11 @@ addr_done:
 	mov bl, byte ptr [rdx].state.layer0_enable
 	shl rbx, 4
 	or rax, rbx
+
+	mov ebx, dword ptr [rdx].state.video_output
+	and ebx, 0fh
+	or rax, rbx
+
 	mov byte ptr [rsi+DC_VIDEO], al
 
 	mov eax, dword ptr [rdx].state.dc_hscale
@@ -835,6 +840,11 @@ addr_done:
 	mov r12b, byte ptr [rdx].state.layer0_enable
 	shl r12b, 4
 	or rax, r12
+
+	mov r12d, dword ptr [rdx].state.video_output
+	and r12, 0fh
+	or rax, r12
+
 	mov byte ptr [rsi+DC_VIDEO], al
 
 	mov eax, dword ptr [rdx].state.dc_hscale
@@ -924,14 +934,12 @@ vera_update_irqline_l proc
 	ret
 vera_update_irqline_l endp
 
+; DC_VIDEO
 vera_update_9f29 proc
 	movzx r13, byte ptr [rsi+rbx]
 	movzx rax, byte ptr [rdx].state.dcsel
 	cmp byte ptr [rdx].state.dcsel, 0
 	jnz dcsel_set
-
-	and r13, 01110111b
-	mov byte ptr [rsi+rbx], r13b
 
 	xor rax, rax
 	bt r13, 4
@@ -947,6 +955,9 @@ vera_update_9f29 proc
 	bt r13, 6
 	setc al
 	mov byte ptr [rdx].state.sprite_enable, al 
+
+	and r13, 0fh
+	mov dword ptr [rdx].state.video_output, r13d
 
 	ret
 dcsel_set:

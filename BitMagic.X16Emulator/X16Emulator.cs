@@ -86,6 +86,7 @@ public class Emulator : IDisposable
         public int Data1_Step { get => (int)_emulator._state.Data1_Step; set => _emulator._state.Data1_Step = (ulong)value; }
         public bool AddrSel { get => _emulator._state.AddrSel != 0; set => _emulator._state.AddrSel = (value ? (byte)1 : (byte)0); }
         public bool DcSel { get => _emulator._state.DcSel != 0; set => _emulator._state.DcSel = (value ? (byte)1 : (byte)0); }
+        public UInt32 VideoOutput { get => _emulator._state.VideoOutput; set => _emulator._state.VideoOutput = value; }
         public UInt32 Dc_HScale { get => _emulator._state.Dc_HScale; set => _emulator._state.Dc_HScale = value; }
         public UInt32 Dc_VScale { get => _emulator._state.Dc_VScale; set => _emulator._state.Dc_VScale = value; }
         public byte Dc_Border { get => _emulator._state.Dc_Border; set => _emulator._state.Dc_Border = value; }
@@ -329,6 +330,7 @@ public class Emulator : IDisposable
 
 
         public uint StackBreakpointHit = 0;
+        public uint VideoOutput = 1; // VGA
 
         public ushort Pc = 0;
         public ushort StackPointer = 0x1fd; // apparently

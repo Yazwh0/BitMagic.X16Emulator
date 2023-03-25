@@ -194,7 +194,7 @@ asm_func proc state_ptr:QWORD
     call copy_rambank_to_memory
     call copy_rombank_to_memory
 
-    mov dword ptr [rdx].state.stackBreakpointHit, 0
+    mov dword ptr [rdx].state.stack_breakpoint_hit, 0
     mov ignoreBreakpoint, 1
     mov dword ptr [rdx].state.exit_code, 0
 
@@ -250,7 +250,7 @@ next_opcode::
     jnz breakpoint_exit
 
     ; check for stack breakpoint
-    mov ebx, dword ptr [rdx].state.stackBreakpointHit
+    mov ebx, dword ptr [rdx].state.stack_breakpoint_hit
     test ebx, ebx
     jnz breakpoint_exit
 
@@ -2398,7 +2398,7 @@ x60_rts proc
     and rbx, 0ffh
     movzx rax, byte ptr [rdi + rbx]
     mov byte ptr [rdi + rbx], 0
-    mov dword ptr [rdx].state.stackBreakpointHit, eax
+    mov dword ptr [rdx].state.stack_breakpoint_hit, eax
 
     jmp opcode_done
 x60_rts endp

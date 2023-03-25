@@ -1754,8 +1754,13 @@ x11_ora_indy endp
 ;
 ; ADC
 ;
-adc_body_end macro checkvera, clock, pc
-    write_flags_r15
+adc_body_end macro checkvera, clock, pc, preservecarry
+    if preservecarry eq 0
+        write_flags_r15
+    endif
+    if preservecarry eq 1
+        write_flags_r15_preservecarry
+    endif
 
     seto dil
     mov byte ptr [rdx].state.flags_overflow, dil
@@ -1766,20 +1771,103 @@ adc_body_end macro checkvera, clock, pc
     jmp opcode_done	
 endm
 
+decimal_add macro imm
+    mov r12, r8         
+    if imm eq 0
+        movzx rcx, byte ptr [rsi+rbx]
+    endif
+    if imm eq 1
+        movzx rcx, byte ptr [rsi+r11] 
+    endif
+
+    ; flag set for C, ecx = Data, r12 = A, will total into ecx
+
+    ; Add (A & 0x0f) + (Data & 0x0f) + C
+    and ecx, 00fh
+    and r12d, 00fh
+
+    ; set the flags, so set the Carry flag
+    read_flags_rax
+    adc rcx, r12    ; C + Data + A
+
+    cmp ecx, 00ah
+    jl no_decimal_overflow
+
+    add ecx, 006h
+    and ecx, 00fh
+    add ecx, 010h
+
+no_decimal_overflow:
+
+    mov r12, r8         
+    if imm eq 0
+        movzx rax, byte ptr [rsi+rbx]
+    endif
+    if imm eq 1
+        movzx rax, byte ptr [rsi+r11] 
+    endif   
+
+    and eax, 0f0h
+    and r12, 0f0h
+    
+    add ecx, eax
+    add ecx, r12d
+
+    cmp ecx, 0a0h
+    jl no_total_overflow
+
+    add ecx, 060h
+
+no_total_overflow:
+
+    mov r8b, cl
+
+    ; Z set if CL is zero
+    ; N if bit 7 is set
+    ; C if rcx > 0x100
+    ; V as normal?
+
+    ; so test ecx for >= 0x100, and set the carry (r15), the macro will pick the rest up after
+    and r15w, 0feffh				; mask carry	
+    xor eax, eax
+    cmp ecx, 0100h          
+    setge al                    ; set if above
+    shl rax, 8
+    or r15, rax                 ; or in
+
+    add r8b, 0                  ; sets flags
+endm
+
 adc_body macro checkvera, clock, pc
+    movzx rax, byte ptr [rdx].state.flags_decimal
+    test rax, rax
+    jnz decimal
     read_flags_rax
 
     adc r8b, [rsi+rbx]
 
-    adc_body_end checkvera, clock, pc
+    adc_body_end checkvera, clock, pc, 0
+
+    decimal:
+
+    decimal_add 0
+    adc_body_end checkvera, clock, pc, 1
 endm
 
 x69_adc_imm proc
+    movzx rax, byte ptr [rdx].state.flags_decimal
+    test rax, rax
+    jnz decimal
     read_flags_rax
 
     adc r8b, [rsi+r11]
 
-    adc_body_end 0, 2, 1
+    adc_body_end 0, 2, 1, 0
+
+    decimal:
+
+    decimal_add 1
+    adc_body_end 0, 2, 1, 1
 x69_adc_imm endp
 
 x6D_adc_abs proc

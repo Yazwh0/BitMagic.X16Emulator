@@ -315,19 +315,19 @@ addr_done:
 
 set_dc1:
 
-	mov al, byte ptr [rdx].state.dc_hstart
+	mov ax, word ptr [rdx].state.dc_hstart
 	shr ax, 2
 	mov byte ptr [rsi+DC_HSTART], al
 
-	mov al, byte ptr [rdx].state.dc_hstop
+	mov ax, word ptr [rdx].state.dc_hstop
 	shr ax, 2
 	mov byte ptr [rsi+DC_HSTOP], al
 
-	mov al, byte ptr [rdx].state.dc_vstart
+	mov ax, word ptr [rdx].state.dc_vstart
 	shr ax, 1
 	mov byte ptr [rsi+DC_VSTART], al
 
-	mov al, byte ptr [rdx].state.dc_vstop
+	mov ax, word ptr [rdx].state.dc_vstop
 	shr ax, 1
 	mov byte ptr [rsi+DC_VSTOP], al
 
@@ -837,10 +837,12 @@ addr_done:
 	or rax, r12
 	mov byte ptr [rsi+DC_VIDEO], al
 
-	mov al, byte ptr [rdx].state.dc_hscale
+	mov eax, dword ptr [rdx].state.dc_hscale
+	shr rax, 9
 	mov byte ptr [rsi+DC_HSCALE], al
 
-	mov al, byte ptr [rdx].state.dc_vscale
+	mov eax, dword ptr [rdx].state.dc_vscale
+	shr rax, 9
 	mov byte ptr [rsi+DC_VSCALE], al
 
 	mov al, byte ptr [rdx].state.dc_border
@@ -850,19 +852,19 @@ addr_done:
 set_dcsel:
 	mov byte ptr [rdx].state.dcsel, 1
 
-	mov al, byte ptr [rdx].state.dc_hstart
+	mov ax, word ptr [rdx].state.dc_hstart
 	shr ax, 2
 	mov byte ptr [rsi+DC_HSTART], al
 
-	mov al, byte ptr [rdx].state.dc_hstop
+	mov ax, word ptr [rdx].state.dc_hstop
 	shr ax, 2
 	mov byte ptr [rsi+DC_HSTOP], al
 
-	mov al, byte ptr [rdx].state.dc_vstart
+	mov ax, word ptr [rdx].state.dc_vstart
 	shr ax, 1
 	mov byte ptr [rsi+DC_VSTART], al
 
-	mov al, byte ptr [rdx].state.dc_vstop
+	mov ax, word ptr [rdx].state.dc_vstop
 	shr ax, 1
 	mov byte ptr [rsi+DC_VSTOP], al
 
@@ -924,6 +926,7 @@ vera_update_irqline_l endp
 
 vera_update_9f29 proc
 	movzx r13, byte ptr [rsi+rbx]
+	movzx rax, byte ptr [rdx].state.dcsel
 	cmp byte ptr [rdx].state.dcsel, 0
 	jnz dcsel_set
 

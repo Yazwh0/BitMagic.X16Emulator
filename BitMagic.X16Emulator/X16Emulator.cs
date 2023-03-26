@@ -332,6 +332,8 @@ public class Emulator : IDisposable
         public uint StackBreakpointHit = 0;
         public uint VideoOutput = 1; // VGA
 
+        public uint InitialStartup = 1;
+
         public ushort Pc = 0;
         public ushort StackPointer = 0x1fd; // apparently
 

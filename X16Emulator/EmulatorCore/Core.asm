@@ -198,6 +198,8 @@ asm_func proc state_ptr:QWORD
     mov ignoreBreakpoint, 1
     mov dword ptr [rdx].state.exit_code, 0
 
+    mov dword ptr [rdx].state.initial_startup, 0
+
     jmp skip_stepping
 main_loop::
     mov eax, [rdx].state.stepping

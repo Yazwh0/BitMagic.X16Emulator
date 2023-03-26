@@ -119,6 +119,8 @@ state struct
 
 	video_output			dword ?
 
+	initial_startup			dword ?
+
 	register_pc				word ?
 	stackpointer			word ?
 

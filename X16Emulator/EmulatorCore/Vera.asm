@@ -487,7 +487,14 @@ dc_done:
 	; Layer 1 jump
 	set_layer1_jump
 
+	mov eax, [rdx].state.initial_startup
+	test eax, eax
+	jz not_initial
+
 	jmp vera_initialise_palette
+
+not_initial:
+	ret
 vera_init endp
 
 ;

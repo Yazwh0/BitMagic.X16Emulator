@@ -811,7 +811,7 @@ endm
 ; r8 : tile location to be stored and passed back in rbx
 
 get_tile_definition macro map_height, map_width, tile_height, tile_width, colour_depth
-	local m_height_px, m_width_px, t_height_px, t_width_px, t_colour_size, t_size_shift, t_tile_mask, t_multiplier, t_colour_mask, t_tile_shift, t_tile_x_mask, t_height_invert_mask, position_found, has_data
+	local m_height_px, m_width_px, t_height_px, t_width_px, t_colour_size, t_size_shift, t_tile_mask, t_multiplier, t_colour_mask, t_tile_shift, t_tile_x_mask, t_height_invert_mask, position_found, has_data, test_bypass
 
 	if map_height eq 0				
 		m_height_px equ 32
@@ -898,26 +898,23 @@ get_tile_definition macro map_height, map_width, tile_height, tile_width, colour
 	jne has_data
 
 	add dword ptr [rdx].state.vram_wait, 1	; for tile map read
-	; constrain map to height
-	; this needs to consider map_height and map_width
 
 	mov rax, r12					; y
 	shr rax, tile_height + 3		; / tile height
-	and rax, m_height_px - 1
+	and rax, m_height_px - 1		; constrain to map
 	shl rax, map_width + 5			; * map width
 
 	;xor rbx, rbx
 	mov rbx, r11					; x
 	shr rbx, tile_width + 3			; / tile width
-	and rbx, m_width_px - 1
+	and rbx, m_width_px - 1			; constrain to map
 	add rax, rbx	
 
-	and rax, (m_height_px * m_width_px) - 1
+	;and rax, (m_height_px * m_width_px) - 1
 
-	shl rax, 1						; * 2
+	lea rax, [r13 + rax * 2]		; VRAM Address + position * 2
 
-	add rax, r13					; vram address
-	movzx rax, word ptr [rsi + rax]	; now has tile number (ah) and data (al)
+	movzx eax, word ptr [rsi + rax]	; now has tile number (ah) and data (al)
 
 	xor rbx, rbx
 
@@ -978,7 +975,7 @@ position_found:
 
 	; find offset of current x so the render can start from the right position
 	mov r10, r11							
-	mov r14, t_tile_x_mask
+	mov r14, t_tile_x_mask						; r14 is a returned value
 	and r10, r14								; return pixels (offset from boundary)
 
 	if colour_depth ne 0 and colour_depth ne 1
@@ -1012,7 +1009,7 @@ position_found:
 	endif
 
 	if tile_width eq 1 and colour_depth eq 3
-		and r11, 011100b						; mask x position
+		and r11, 01100b						; mask x position
 		add rbx, r11
 	endif
 

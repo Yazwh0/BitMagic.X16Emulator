@@ -2464,7 +2464,7 @@ public class Tiles_8Bpp
                     sta L1_MAPBASE
                     
                     lda #03
-                    sta L1_TILEBASE ; 8x16, tiles are at $00000
+                    sta L1_TILEBASE ; 16x16, tiles are at $00000
 
                     ; Tile definition
                     lda #$10

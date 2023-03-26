@@ -903,11 +903,13 @@ get_tile_definition macro map_height, map_width, tile_height, tile_width, colour
 
 	mov rax, r12					; y
 	shr rax, tile_height + 3		; / tile height
+	and rax, m_height_px - 1
 	shl rax, map_width + 5			; * map width
 
 	;xor rbx, rbx
 	mov rbx, r11					; x
 	shr rbx, tile_width + 3			; / tile width
+	and rbx, m_width_px - 1
 	add rax, rbx	
 
 	and rax, (m_height_px * m_width_px) - 1

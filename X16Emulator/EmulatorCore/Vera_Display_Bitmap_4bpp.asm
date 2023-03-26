@@ -17,7 +17,7 @@ writepixel_4bpp_bitmap macro pixeloutput, outputoffset
 	xor r12, r12
 	mov r13, rbx
 	and r13, 0fh		; mask off colour
-	cmovnz r12, r11		; clear offsett if not zero
+	cmovnz r12, r11		; clear offset if not zero
 	add r13, r12		; add offset
 
 	mov byte ptr [rsi + r15 + pixeloutput + outputoffset], r13b

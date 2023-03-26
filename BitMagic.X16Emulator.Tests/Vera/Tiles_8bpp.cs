@@ -3692,4 +3692,115 @@ public class Tiles_8Bpp
         //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator\BitMagic.X16Emulator.Tests\Vera\Images\tile_8bpp_l1_16x8_shifted.png");
         emulator.CompareImage(@"Vera\Images\tile_8bpp_l1_16x8_shifted.png");
     }
+
+    [TestMethod]
+    public async Task Grid_16x16_Layer0()
+    {
+        var emulator = new Emulator();
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .byte $0C, $08, $0A, $00, $9E, $20, $32, $30, $36, $34, $00, $00, $00, $00, $00
+                .org $810
+                    sei
+                    lda #02
+                    sta DC_BORDER
+
+                    lda #$a0        ; map is at $14000
+                    sta L0_MAPBASE
+    
+                    lda #03
+                    sta L0_TILEBASE ; 16x16, tiles are at $00000
+
+                    jsr create_tile
+                    jsr create_map
+
+                    lda #$13
+                    sta L0_CONFIG ; 128x64 tiles, 8bpp
+
+                    lda #$11
+                    sta DC_VIDEO ; enable layer 0
+
+                    lda #01
+                    sta IEN
+                    wai
+                    sta ISR     ; clear interrupt and wait for second frame
+                    wai
+
+                    stp 
+
+                .proc create_map
+                    lda #$11
+                    sta ADDRx_H
+                    lda #$40
+                    sta ADDRx_M
+                    lda #$00
+                    sta ADDRx_L
+
+                    ldy #0
+                    ldx #8
+                    lda #$10
+
+                .outerloop:
+                .innerloop:
+
+                    stz DATA0
+                    stz DATA0
+
+                    sta DATA0
+                    stz DATA0
+
+                    dey
+                    bne innerloop
+
+                    dex
+                    bne outerloop
+                .endproc
+
+                .proc create_tile
+                    ; Tile definiti     on for tile 0x10
+                    lda #$10
+                    sta ADDRx_H
+                    lda #$10
+                    sta ADDRx_M
+                    lda #$00
+                    sta ADDRx_L
+
+                    ; topline
+                    lda #$01    
+                    ldy #$10
+                .loop1:
+                    sta DATA0
+                    dey
+                    bne loop1
+
+                    ; sides
+                    ldx #14
+                .toploop:
+                    sta DATA0
+                    ldy #$10-2
+                .loop2:
+                    stz DATA0
+                    dey
+                    bne loop2
+                    sta DATA0
+
+                    dex
+                    bne toploop
+
+                    ; bottom line
+                    ldy #$10
+                .loop3:
+                    sta DATA0
+                    dey
+                    bne loop3
+                    rts
+                .endproc
+                ",
+                emulator);
+
+        //emulator.SaveDisplay(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator\BitMagic.X16Emulator.Tests\Vera\Images\tile_8bpp_l0_16x16_grid.png");
+        emulator.CompareImage(@"Vera\Images\tile_8bpp_l0_16x16_grid.png");
+    }
+
 }

@@ -37,7 +37,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x0a000810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x000a0810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -55,7 +55,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x000f0810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x0f000810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -74,7 +74,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x7f190810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x197f0810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -109,7 +109,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x0a000810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x000a0810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -127,7 +127,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x000f0810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x0f000810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -146,7 +146,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x7f190810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x197f0810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -181,7 +181,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x0a000810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x000a0810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -199,7 +199,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x000f0810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x0f000810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -218,7 +218,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x7f190810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x197f0810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -253,7 +253,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x0a000810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x000a0810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -271,7 +271,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x000f0810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x0f000810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -290,7 +290,7 @@ public class StackInfo
                 stp",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fc);
-        Assert.AreEqual((uint)0x7f190810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x197f0810, emulator.StackInfo[253]);
     }
 
     [TestMethod]
@@ -332,8 +332,8 @@ public class StackInfo
                 ",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fb);
-        Assert.AreEqual((uint)0x0a000810, emulator.StackInfo[253]);
-        Assert.AreEqual((uint)0x0a000810, emulator.StackInfo[252]);
+        Assert.AreEqual((uint)0x000a0810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x000a0810, emulator.StackInfo[252]);
     }
 
     [TestMethod]
@@ -354,8 +354,8 @@ public class StackInfo
                 ",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fb);
-        Assert.AreEqual((uint)0x000f0810, emulator.StackInfo[253]);
-        Assert.AreEqual((uint)0x000f0810, emulator.StackInfo[252]);
+        Assert.AreEqual((uint)0x0f000810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x0f000810, emulator.StackInfo[252]);
     }
 
     [TestMethod]
@@ -377,8 +377,8 @@ public class StackInfo
                 ",
                 emulator);
         emulator.AssertState(stackPointer: 0x1fb);
-        Assert.AreEqual((uint)0x7f190810, emulator.StackInfo[253]);
-        Assert.AreEqual((uint)0x7f190810, emulator.StackInfo[252]);
+        Assert.AreEqual((uint)0x197f0810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x197f0810, emulator.StackInfo[252]);
     }
 
     [TestMethod]
@@ -432,9 +432,9 @@ public class StackInfo
                 ",
                 emulator, dontChangeEmulatorOptions: true);
         emulator.AssertState(stackPointer: 0x1fa);
-        Assert.AreEqual((uint)0x0a000810, emulator.StackInfo[253]);
-        Assert.AreEqual((uint)0x0a000810, emulator.StackInfo[252]);
-        Assert.AreEqual((uint)0x0a000810, emulator.StackInfo[251]);
+        Assert.AreEqual((uint)0x000a0810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x000a0810, emulator.StackInfo[252]);
+        Assert.AreEqual((uint)0x000a0810, emulator.StackInfo[251]);
     }
 
     [TestMethod]
@@ -461,9 +461,9 @@ public class StackInfo
                 ",
                 emulator, dontChangeEmulatorOptions: true);
         emulator.AssertState(stackPointer: 0x1fa);
-        Assert.AreEqual((uint)0x000f0810, emulator.StackInfo[253]);
-        Assert.AreEqual((uint)0x000f0810, emulator.StackInfo[252]);
-        Assert.AreEqual((uint)0x000f0810, emulator.StackInfo[251]);
+        Assert.AreEqual((uint)0x0f000810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x0f000810, emulator.StackInfo[252]);
+        Assert.AreEqual((uint)0x0f000810, emulator.StackInfo[251]);
     }
 
     [TestMethod]
@@ -491,8 +491,8 @@ public class StackInfo
                 ",
                 emulator, dontChangeEmulatorOptions: true);
         emulator.AssertState(stackPointer: 0x1fa);
-        Assert.AreEqual((uint)0x7f190810, emulator.StackInfo[253]);
-        Assert.AreEqual((uint)0x7f190810, emulator.StackInfo[252]);
-        Assert.AreEqual((uint)0x7f190810, emulator.StackInfo[251]);
+        Assert.AreEqual((uint)0x197f0810, emulator.StackInfo[253]);
+        Assert.AreEqual((uint)0x197f0810, emulator.StackInfo[252]);
+        Assert.AreEqual((uint)0x197f0810, emulator.StackInfo[251]);
     }
 }

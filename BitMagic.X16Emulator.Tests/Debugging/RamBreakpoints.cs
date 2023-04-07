@@ -1,9 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace BitMagic.X16Emulator.Tests;
+namespace BitMagic.X16Emulator.Tests.Debugging;
 
 [TestClass]
-public class Breakpoints
+public class RamBreakpoints
 {
     [TestMethod]
     public async Task NormalRam()

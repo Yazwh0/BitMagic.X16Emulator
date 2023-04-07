@@ -78,6 +78,9 @@ copy_rombank_to_memory proc
 	lea rax, [rax + rbx + 210000h]		; source
 
 	add rbx, 0c000h
+	call copy_8k
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
 	jmp copy_8k
 copy_rombank_to_memory endp
 

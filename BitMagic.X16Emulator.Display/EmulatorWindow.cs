@@ -79,7 +79,7 @@ public class EmulatorWindow
         input.Keyboards[0].KeyDown += EmulatorWindow_KeyDown;
 
         input.Mice[0].Cursor.CursorMode = CursorMode.Normal;
-        input.Mice[0].Click += EmulatorWindow_Click;
+        input.Mice[0].DoubleClick += EmulatorWindow_Click;
         input.Mice[0].MouseUp += EmulatorWindow_MouseUp;
         input.Mice[0].MouseDown += EmulatorWindow_MouseDown;
         input.Mice[0].MouseMove += EmulatorWindow_MouseMove;

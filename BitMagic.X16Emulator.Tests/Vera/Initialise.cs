@@ -169,6 +169,7 @@ public class Vera_Initialise
         emulator.Vera.Dc_HStop = 0x05;
         emulator.Vera.Dc_VStart = 0x06;
         emulator.Vera.Dc_VStop = 0x07;
+        emulator.Vera.VideoOutput = 0;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -195,6 +196,7 @@ public class Vera_Initialise
         emulator.Vera.Dc_HStop = 0x55;
         emulator.Vera.Dc_VStart = 0x66;
         emulator.Vera.Dc_VStop = 0x77;
+        emulator.Vera.VideoOutput = 0;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -215,6 +217,7 @@ public class Vera_Initialise
 
         emulator.Vera.DcSel = false;
         emulator.Vera.SpriteEnable = true;
+        emulator.Vera.VideoOutput = 0;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -231,6 +234,7 @@ public class Vera_Initialise
 
         emulator.Vera.DcSel = false;
         emulator.Vera.Layer1Enable = true;
+        emulator.Vera.VideoOutput = 0;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -248,6 +252,7 @@ public class Vera_Initialise
 
         emulator.Vera.DcSel = false;
         emulator.Vera.Layer0Enable = true;
+        emulator.Vera.VideoOutput = 0;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -267,6 +272,7 @@ public class Vera_Initialise
         emulator.Vera.Layer0Enable = true;
         emulator.Vera.Layer1Enable = true;
         emulator.Vera.SpriteEnable = true;
+        emulator.Vera.VideoOutput = 0;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

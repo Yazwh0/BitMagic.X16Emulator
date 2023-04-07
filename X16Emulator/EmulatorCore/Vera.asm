@@ -948,6 +948,9 @@ vera_update_9f29 proc
 	cmp byte ptr [rdx].state.dcsel, 0
 	jnz dcsel_set
 
+	and r13, 01111111b
+	mov byte ptr [rsi+rbx], r13b
+
 	xor rax, rax
 	bt r13, 4
 	setc al

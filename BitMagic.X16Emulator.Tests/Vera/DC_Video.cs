@@ -86,7 +86,7 @@ public class DC_Video
         Assert.AreEqual(true, emulator.Vera.Layer1Enable);
         Assert.AreEqual(true, emulator.Vera.SpriteEnable);
 
-        Assert.AreEqual(0b01110111, emulator.Memory[0x9F29]);
+        Assert.AreEqual(0b01111111, emulator.Memory[0x9F29]);
     }
 
     [TestMethod]

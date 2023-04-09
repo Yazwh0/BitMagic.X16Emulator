@@ -281,6 +281,20 @@ public unsafe class SdCard : IDisposable
         }
     }
 
+    public void AddCompiledFile(string filename, byte[] data)
+    {
+        lock (Lock)
+        {
+            var actName = FixFilename(filename);
+            Console.WriteLine($"[PC] >> [16] Creating : {actName}");
+
+            using var file = _fileSystem.OpenFile(actName, FileMode.CreateNew, FileAccess.Write);
+            file.Write(data);
+
+            file.Close();
+        }
+    }
+
     private void AddFile(string filename)
     {
         lock (Lock)

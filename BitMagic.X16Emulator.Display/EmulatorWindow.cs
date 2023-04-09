@@ -120,7 +120,7 @@ public class EmulatorWindow
 
             var joystickDelegate = (IGamepad g, Button _) =>
             {
-                ulong buttons = 0x0000; // top 4 bytes are always 0 (which is a 1 to the x16 apparently)
+                ulong buttons = 0xf000; // top 4 bytes are always 1 (which is a 0 to the x16 apparently)
                 buttons |= !g.Buttons[button_b].Pressed ? 0b1 : (ulong)0;
                 buttons |= !g.Buttons[button_y].Pressed ? 0b10 : (ulong)0;
                 buttons |= !g.Buttons[button_select].Pressed ? 0b100 : (ulong)0;

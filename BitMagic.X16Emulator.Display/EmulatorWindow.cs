@@ -17,6 +17,7 @@ using Silk.NET.Input;
 using SixLabors.ImageSharp.PixelFormats;
 using Silk.NET.Core.Attributes;
 using System.Numerics;
+//using Silk.NET.SDL;
 
 namespace BitMagic.X16Emulator.Display;
 
@@ -26,7 +27,6 @@ public class EmulatorWindow
     private static IWindow? _window;
     private static Shader? _shader;
     private static X16EImage[]? _images;
-
 
     private static GlObject[]? _layers;
     private static UInt32 _lastCount;
@@ -38,6 +38,7 @@ public class EmulatorWindow
     private static bool _closing = false;
     private static bool _hasMouse = false;
     private static Vector2 _lastMousePosition;
+    private static IGamepad[] _joysticks;
 
     public static void Run(Emulator emulator)
     {
@@ -84,6 +85,66 @@ public class EmulatorWindow
         input.Mice[0].MouseDown += EmulatorWindow_MouseDown;
         input.Mice[0].MouseMove += EmulatorWindow_MouseMove;
 
+        _joysticks = input.Gamepads.Take(4).ToArray();
+        _emulator!.JoystickData = 0;
+        _emulator.JoystickNewMask = 0;
+
+        for (var i = 0; i < 4; i++)
+        {
+            var bitshift = (3 - i) * 16;
+            var mask = (ulong)0xffff << bitshift;
+
+            if (i >= _joysticks.Length || _joysticks[i] == null)
+            {
+                _emulator.JoystickData |= (ulong)0x0000 << bitshift;
+                _emulator.JoystickNewMask |= (ulong)0x8000 << bitshift; // disconnected joypads always have 1, connected 0
+                continue;
+            }
+
+            var initData = (ulong)0x0000 << bitshift;
+            _emulator.JoystickNewMask |= (ulong)0x0000 << bitshift; // disconnected joypads always have 1, connected 0
+            _emulator.JoystickData |= initData;
+
+            var button_b = _joysticks[i].B().Index;
+            var button_y = _joysticks[i].Y().Index;
+            var button_select = _joysticks[i].Back().Index;
+            var button_start = _joysticks[i].Start().Index;
+            var button_up = _joysticks[i].DPadUp().Index;
+            var button_down = _joysticks[i].DPadDown().Index;
+            var button_left = _joysticks[i].DPadLeft().Index;
+            var button_right = _joysticks[i].DPadRight().Index;
+            var button_a = _joysticks[i].A().Index;
+            var button_x = _joysticks[i].X().Index;
+            var button_l = _joysticks[i].LeftBumper().Index;
+            var button_r = _joysticks[i].RightBumper().Index;
+
+            var joystickDelegate = (IGamepad g, Button _) =>
+            {
+                ulong buttons = 0x0000; // top 4 bytes are always 0 (which is a 1 to the x16 apparently)
+                buttons |= !g.Buttons[button_b].Pressed ? 0b1 : (ulong)0;
+                buttons |= !g.Buttons[button_y].Pressed ? 0b10 : (ulong)0;
+                buttons |= !g.Buttons[button_select].Pressed ? 0b100 : (ulong)0;
+                buttons |= !g.Buttons[button_start].Pressed ? 0b1000 : (ulong)0;
+                buttons |= !g.Buttons[button_up].Pressed ? 0b10000 : (ulong)0;
+                buttons |= !g.Buttons[button_down].Pressed ? 0b100000 : (ulong)0;
+                buttons |= !g.Buttons[button_left].Pressed ? 0b1000000 : (ulong)0;
+                buttons |= !g.Buttons[button_right].Pressed ? 0b10000000 : (ulong)0;
+                buttons |= !g.Buttons[button_a].Pressed ? 0b000100000000 : (ulong)0;
+                buttons |= !g.Buttons[button_x].Pressed ? 0b001000000000 : (ulong)0;
+                buttons |= !g.Buttons[button_l].Pressed ? 0b010000000000 : (ulong)0;
+                buttons |= !g.Buttons[button_r].Pressed ? 0b100000000000 : (ulong)0;
+                buttons <<= bitshift;
+
+                var data = _emulator.JoystickData & ~mask;
+                data |= buttons;
+                _emulator.JoystickData = data;
+            };
+
+            joystickDelegate(_joysticks[i], new Button());  // get init state
+            _joysticks[i].ButtonDown += joystickDelegate;
+            _joysticks[i].ButtonUp += joystickDelegate;
+        }
+
         _window.FocusChanged += _window_FocusChanged;
 
         _window.SetDefaultIcon();
@@ -94,7 +155,7 @@ public class EmulatorWindow
         for (var i = 0; i < _images.Length; i++)
         {
             _layers[i] = new GlObject();
-            _layers[i].OnLoad(_gl, _images[i], i / 10);
+            _layers[i].OnLoad(_gl, _images[i], i / 10f);
         }
 
         _shader = new Shader(_gl, @"shader.vert", @"shader.frag");
@@ -126,9 +187,11 @@ public class EmulatorWindow
                 var rawIcon = new RawImage(icon.Width, icon.Height, new Memory<byte>(silkIcon));
 
                 _window.SetWindowIcon(ref rawIcon);
+            
             }
         }
     }
+
 
     // If we lose focus, then stop capturing the mouse
     private static void _window_FocusChanged(bool obj)
@@ -185,7 +248,7 @@ public class EmulatorWindow
         _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
     }
 
-    private static SmcBuffer.MouseButtons GetButtons(IMouse mouse) => 
+    private static SmcBuffer.MouseButtons GetButtons(IMouse mouse) =>
         (SmcBuffer.MouseButtons)((mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Left) ? (int)SmcBuffer.MouseButtons.Left : 0) +
             (mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Right) ? (int)SmcBuffer.MouseButtons.Right : 0) +
             (mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Middle) ? (int)SmcBuffer.MouseButtons.Middle : 0));

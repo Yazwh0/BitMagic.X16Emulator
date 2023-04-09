@@ -278,6 +278,10 @@ public class Emulator : IDisposable
         public ulong SpiCsdRegister_0 = 0;
         public ulong SpiCsdRegister_1 = 0;
 
+        public ulong JoypadLive = 0;
+        public ulong Joypad = 0;
+        public ulong JoypadNewMask = 0;
+
         public uint ExitCode = 0;
 
         public uint BreakpointOffset = 0;
@@ -328,6 +332,8 @@ public class Emulator : IDisposable
         public uint SpiSdCardSize = 0;
         //public uint SpiDeplyReady = 0;
 
+        public uint JoypadCount = 0;
+        public uint JoypadPrevious = 0;
 
         public uint StackBreakpointHit = 0;
         public uint VideoOutput = 1; // VGA
@@ -543,6 +549,9 @@ public class Emulator : IDisposable
     public uint Keyboard_WritePosition { get => _state.Keyboard_WritePosition; set => _state.Keyboard_WritePosition = value; }
     public uint Mouse_ReadPosition => _state.Mouse_ReadPosition;
     public uint Mouse_WritePosition { get => _state.Mouse_WritePosition; set => _state.Mouse_WritePosition = value; }
+
+    public ulong JoystickData { get => _state.JoypadLive; set => _state.JoypadLive = value; }
+    public ulong JoystickNewMask { get => _state.JoypadNewMask; set => _state.JoypadNewMask = value; }
 
     private const int _rounding = 32; // 32 byte (256bit) allignment required for AVX 256 instructions
     private const ulong _roundingMask = ~(ulong)_rounding + 1;

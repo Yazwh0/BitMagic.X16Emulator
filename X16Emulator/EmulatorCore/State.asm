@@ -66,6 +66,10 @@ state struct
 	spi_csd_register0		qword ?
 	spi_csd_register1		qword ?
 
+	joypad_live				qword ?
+	joypad					qword ?
+	joypad_newmask			qword ?
+
 	exit_code				dword ?
 
 	breakpoint_offset		dword ?
@@ -115,6 +119,10 @@ state struct
 	spi_writeblock			dword ?
 	spi_sdcardsize			dword ?
 	;spi_replyready			dword ?
+
+	joypad_count			dword ?
+	joypad_previous			dword ?
+
 	stack_breakpoint_hit	dword ?
 
 	video_output			dword ?

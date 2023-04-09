@@ -105,5 +105,8 @@
     <Text Include="Rtc.asm">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="Joypad.asm">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

@@ -330,6 +330,7 @@ via_dra proc
 	mov byte ptr [rsi+V_ORA], r12b
 
 	mov rax, r12
+	call joypad_handledata
 	jmp i2c_handledata	; this returns properly
 via_dra endp
 
@@ -360,6 +361,7 @@ via_pra proc
 	mov byte ptr [rsi+V_ORA], r13b	
 
 	mov rax, r13
+	call joypad_handledata
 	jmp i2c_handledata	; this returns properly
 
 via_pra endp

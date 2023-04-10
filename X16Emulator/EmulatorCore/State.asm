@@ -31,6 +31,7 @@ state struct
 	stackinfo_ptr			qword ?
 	stackbreakpoint_ptr		qword ?
 	rtc_nvram_ptr			qword ?
+	pcm_ptr					qword ?
 
 	current_bank_address	qword ?
 
@@ -128,6 +129,12 @@ state struct
 	video_output			dword ?
 
 	initial_startup			dword ?
+
+	pcm_bufferstart			dword ?
+	pcm_bufferend			dword ?
+	pcm_buffercount			dword ?
+	pcm_samplerate			dword ?
+	pcm_cpucount			dword ?
 
 	register_pc				word ?
 	stackpointer			word ?

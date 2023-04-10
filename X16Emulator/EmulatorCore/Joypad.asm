@@ -116,7 +116,7 @@ clock_in_data:
 	or r12d, ebx
 
 	mov byte ptr [rdx].state.via_register_a_invalue, r12b
-
+	
 	mov rbx, qword ptr bitmask
 
 	shr r13, 1									 ; shift

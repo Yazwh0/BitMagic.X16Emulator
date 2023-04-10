@@ -51,6 +51,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Decompiler", "Decompiler", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitMagic.Decompiler", "..\BitMagic.X16Compiler\BitMagic.Decompiler\BitMagic.Decompiler.csproj", "{446CECCE-A7CC-4723-B17C-6654A68FB8A1}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "X16ESetup", "X16ESetup\X16ESetup.vdproj", "{5C93E24F-2F92-40E8-8610-7849F9FB0308}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -319,6 +321,14 @@ Global
 		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Release|x64.Build.0 = Release|Any CPU
 		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Release|x86.ActiveCfg = Release|Any CPU
 		{446CECCE-A7CC-4723-B17C-6654A68FB8A1}.Release|x86.Build.0 = Release|Any CPU
+		{5C93E24F-2F92-40E8-8610-7849F9FB0308}.Debug|Any CPU.ActiveCfg = Debug
+		{5C93E24F-2F92-40E8-8610-7849F9FB0308}.Debug|arm64.ActiveCfg = Debug
+		{5C93E24F-2F92-40E8-8610-7849F9FB0308}.Debug|x64.ActiveCfg = Debug
+		{5C93E24F-2F92-40E8-8610-7849F9FB0308}.Debug|x86.ActiveCfg = Debug
+		{5C93E24F-2F92-40E8-8610-7849F9FB0308}.Release|Any CPU.ActiveCfg = Release
+		{5C93E24F-2F92-40E8-8610-7849F9FB0308}.Release|arm64.ActiveCfg = Release
+		{5C93E24F-2F92-40E8-8610-7849F9FB0308}.Release|x64.ActiveCfg = Release
+		{5C93E24F-2F92-40E8-8610-7849F9FB0308}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

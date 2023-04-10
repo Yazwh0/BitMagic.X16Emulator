@@ -96,7 +96,7 @@ public class EmulatorWindow
 
             if (i >= _joysticks.Length || _joysticks[i] == null)
             {
-                _emulator.JoystickData |= (ulong)0x0000 << bitshift;
+                _emulator.JoystickData |= (ulong)0xffff << bitshift;
                 _emulator.JoystickNewMask |= (ulong)0x8000 << bitshift; // disconnected joypads always have 1, connected 0
                 continue;
             }

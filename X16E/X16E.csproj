@@ -12,8 +12,8 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <Version>5</Version>
-    <FileVersion>5</FileVersion>
+    <Version>6</Version>
+    <FileVersion>6</FileVersion>
     <PackageLicenseExpression>GNU General Public License v3.0 or later</PackageLicenseExpression>
   </PropertyGroup>
   

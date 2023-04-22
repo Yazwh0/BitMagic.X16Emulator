@@ -140,7 +140,7 @@ public class Snapshot
     public static HashSet<int>? IgnoredAreas(MemoryAreas memoryArea) =>
         memoryArea switch
         {
-            MemoryAreas.Ram => new HashSet<int>() { 0x9f04, 0x9f05, 0x9f06, 0x9f07, 0x9f08, 0x9f09 },// ignore VIA timers
+            MemoryAreas.Ram => new HashSet<int>() { 0x9f04, 0x9f05, 0x9f06, 0x9f07, 0x9f08, 0x9f09, 0x9F29 },// ignore VIA timers + vera
             _ => null
         };
 

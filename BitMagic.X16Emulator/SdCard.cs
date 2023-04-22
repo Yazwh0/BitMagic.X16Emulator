@@ -315,7 +315,7 @@ public unsafe class SdCard : IDisposable
             catch (IOException e)
             {
                 Console.WriteLine(" Error.");
-                Console.WriteLine("Error opening file, trying again in 1s.");
+                Console.WriteLine($"Error opening file, ({e.Message}) trying again in 1s.");
                 Thread.Sleep(1000);
 
                 Console.Write($"[PC] >> [16] Adding: '{filename}'");

@@ -497,7 +497,7 @@ public class Emulator : IDisposable
             StackInfoPtr = stackInfoPtr;
             StackBreakpointPtr = stackBreakpointPtr;
             RtcNvram_ptr = rtcNvramPtr;
-            PcmPtr = PcmPtr;
+            PcmPtr = pcmPtr;
         }
     }
 
@@ -590,10 +590,10 @@ public class Emulator : IDisposable
     private readonly ulong _rtcNvram_Ptr;
     private readonly ulong _pcm_Ptr;
 
-    private const int RamSize = 0x10000;
-    private const int RomSize = 0x4000 * 32;
-    private const int BankedRamSize = 0x2000 * 256;
-    private const int VramSize = 0x20000;
+    public const int RamSize = 0x10000;
+    public const int RomSize = 0x4000 * 32;
+    public const int BankedRamSize = 0x2000 * 256;
+    public const int VramSize = 0x20000;
     private const int DisplaySize = 800 * 525 * 4 * 6; // *6 for each layer
     private const int PaletteSize = 256 * 4;
     private const int DisplayBufferSize = 2048 * 2 * 5; // Pallette index for two lines * 4 for each layers 0, 1, sprite value, sprite depth, sprite collision - one line being rendered, one being output, 2048 to provide enough space so scaling of $ff works
@@ -608,7 +608,7 @@ public class Emulator : IDisposable
     private const int BreakpointSize = 0xa000 + 0x2000 * 256 + 0x4000 * 256; // base ram, rambanks, rombanks. 256 rom banks for carts.
     private const int StackInfoSize = 256 * 4;
     private const int StackBreakpointSize = 256;
-    private const int RtcNvramSize = 64;
+    public const int RtcNvramSize = 64;
     private const int PcmSize = 1024 * 4;
 
     private static ulong RoundMemoryPtr(ulong inp) => (inp & _roundingMask) + (ulong)_rounding;
@@ -745,6 +745,8 @@ public class Emulator : IDisposable
 
         SmcBuffer = new SmcBuffer(this);
     }
+
+
 
     public unsafe Span<byte> Memory => new Span<byte>((void*)_memory_ptr_rounded, RamSize);
     public unsafe Span<byte> RamBank => new Span<byte>((void*)_ram_ptr_rounded, BankedRamSize);

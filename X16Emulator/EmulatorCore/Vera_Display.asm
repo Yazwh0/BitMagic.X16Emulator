@@ -1339,6 +1339,7 @@ tile_definition_proc 3, 3, 1, 1, 1, 253
 tile_definition_proc 3, 3, 1, 1, 2, 254
 tile_definition_proc 3, 3, 1, 1, 3, 255
 
+align 8
 get_tile_definition_jump:
 	qword tile_definition_0
 	qword tile_definition_1
@@ -1606,6 +1607,7 @@ bitmap_definition_proc 1, 2, 5
 bitmap_definition_proc 0, 3, 6
 bitmap_definition_proc 1, 3, 7
 
+align 8
 get_bitmap_definition_jump:
 	qword bitmap_definition_0
 	qword bitmap_definition_1
@@ -1741,6 +1743,7 @@ clear_sprite_buffer endp
 
 
 
+align 8
 vera_default_palette:
 ; display here as xRGB, but written to memory as little endian, so GBxR
 dw 0000h, 0fffh, 0800h, 0afeh, 0c4ch, 00c5h, 000ah, 0ee7h, 0d85h, 0640h, 0f77h, 0333h, 0777h, 0af6h, 008fh, 0bbbh
@@ -1761,6 +1764,7 @@ dw 0408h, 050ah, 060ch, 070fh, 0212h, 0434h, 0646h, 0868h, 0a8ah, 0c9ch, 0fbeh, 
 dw 0c6bh, 0f7dh, 0201h, 0413h, 0615h, 0826h, 0a28h, 0c3ah, 0f3ch, 0201h, 0403h, 0604h, 0806h, 0a08h, 0c09h, 0f0bh
 
 ; 320 multiplication lut for the bitmap offset
+align 8
 bitmap_width_320_lut:
 qword 0, 320, 640, 960, 1280, 1600, 1920, 2240, 2560, 2880, 3200, 3520, 3840, 4160, 4480, 4800
 qword 5120, 5440, 5760, 6080, 6400, 6720, 7040, 7360, 7680, 8000, 8320, 8640, 8960, 9280, 9600, 9920
@@ -1823,6 +1827,7 @@ qword 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 15
 qword 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600
 qword 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600, 153600
 
+align 8
 bitmap_width_640_lut:
 qword 0, 640, 1280, 1920, 2560, 3200, 3840, 4480, 5120, 5760, 6400, 7040, 7680, 8320, 8960, 9600
 qword 10240, 10880, 11520, 12160, 12800, 13440, 14080, 14720, 15360, 16000, 16640, 17280, 17920, 18560, 19200, 19840
@@ -1885,7 +1890,7 @@ qword 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 30
 qword 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200
 qword 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200, 307200
 
-
+align 8
 should_display_table:
 ; 0 - dont render
 ; 1 - pull from buffer

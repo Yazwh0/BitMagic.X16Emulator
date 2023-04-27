@@ -340,7 +340,7 @@ no_decimal:
     jz no_break
     or al, 00010000b
 no_break:
-
+    ; -------OK TO HERE
     mov byte ptr [rdi+10], al   ; falgs
 
     mov ax, word ptr [rdx].state.stackpointer
@@ -349,13 +349,19 @@ no_break:
     ;--------------------------- END DEBUG CAPTURE ------------------------
 
     add r11w, 1						; PC+1
-    lea rax, opcode_00				; start of jump table
-    jmp qword ptr [rax + rbx*8]		; jump to opcode
+    lea rax, [instructions_table]				; start of jump table
+    jmp qword ptr [rax + rbx*8]
+    ;int 3
+    ;jmp qword ptr [rax]
+    ;jmp qword ptr [rax]		; jump to opcode
 
 cpu_is_waiting:
     add r14, 1
 opcode_done::
     mov rdi, debug_pos
+
+    ;----------- DOESN@T REACH HERE
+    ;int 3
 
     call via_step	; todo: change to macro call
 
@@ -3374,6 +3380,8 @@ ignoreBreakpoint dword 0
 ;
 ; all opcodes, in order of value starting with 0x00
 ; should have 76 free when done!
+align 8
+instructions_table:
 opcode_00	qword	x00_brk 		; $00
 opcode_01	qword	x01_ora_indx 	; $01
 opcode_02	qword	noinstruction 	; $02

@@ -53,7 +53,7 @@ vera_setaddress_0 macro
 not_negative:
 
 	xor rbx, rbx
-	mov rsi, vera_step_table
+	lea rsi, vera_step_table
 
 search_loop:
 	cmp ax, word ptr [rsi+rbx]
@@ -91,7 +91,7 @@ vera_setaddress_1 macro
 not_negative:
 
 	xor rbx, rbx
-	mov rsi, vera_step_table
+	lea rsi, vera_step_table
 
 search_loop:
 	cmp ax, word ptr [rsi+rbx]
@@ -774,7 +774,7 @@ vera_update_addrh proc
 	mov r12, r13
 	and r12, 11110000b									; mask off the index
 	shr r12, 3											; index in the table, not 4 as its a word
-	mov rax, vera_step_table
+	lea rax, vera_step_table
 	mov r12w, word ptr [rax + r12]						; get value from table
 
 	bt r13w, 3											; check DECR
@@ -797,7 +797,7 @@ write_data1:
 	mov r12, r13
 	and r12, 11110000b									; mask off the index
 	shr r12, 3											; index in the table, not 4 as its a word
-	mov rax, vera_step_table
+	lea rax, vera_step_table
 	mov r12w, word ptr [rax + r12]						; get value from table
 
 	bt r13w, 3											; check DECR
@@ -1283,9 +1283,6 @@ construct_isr:
 
 	ret
 vera_update_isr endp
-
-
-.data
 
 vera_step_table:
 	dw 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 40, 80, 160, 320, 640

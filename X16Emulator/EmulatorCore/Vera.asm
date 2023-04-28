@@ -130,8 +130,8 @@ set_layer0_jump macro
 	shl rbx, 2
 	or rax, rbx
 	lea rbx, get_tile_definition_jump
-	mov rax, qword ptr [rbx + rax * 8]
-	mov qword ptr [rdx].state.layer0_jmp, rax
+	add rbx, [rbx + rax * 8]
+	mov qword ptr [rdx].state.layer0_jmp, rbx
 	jmp done
 
 bitmap:
@@ -143,8 +143,8 @@ bitmap:
 	or rax, rbx
 
 	lea rbx, get_bitmap_definition_jump
-	mov rax, qword ptr [rbx + rax * 8]
-	mov qword ptr [rdx].state.layer0_jmp, rax
+	add rbx, [rbx + rax * 8]
+	mov qword ptr [rdx].state.layer0_jmp, rbx
 
 done:
 endm
@@ -165,8 +165,8 @@ set_layer1_jump macro
 	shl rbx, 2
 	or rax, rbx
 	lea rbx, get_tile_definition_jump
-	mov rax, qword ptr [rbx + rax * 8]
-	mov qword ptr [rdx].state.layer1_jmp, rax
+	add rbx, qword ptr [rbx + rax * 8]
+	mov qword ptr [rdx].state.layer1_jmp, rbx
 	jmp done
 
 bitmap:
@@ -178,8 +178,8 @@ bitmap:
 	or rax, rbx
 
 	lea rbx, get_bitmap_definition_jump
-	mov rax, qword ptr [rbx + rax * 8]
-	mov qword ptr [rdx].state.layer1_jmp, rax
+	add rbx, qword ptr [rbx + rax * 8]
+	mov qword ptr [rdx].state.layer1_jmp, rbx
 
 done:
 endm
@@ -363,7 +363,7 @@ dc_done:
 	mov byte ptr [rsi+L0_CONFIG], al
 	and al, 00001111b
 	lea rbx, layer0_render_jump
-	mov rbx, qword ptr [rbx + rax * 8]
+	add rbx, qword ptr [rbx + rax * 8]
 	mov qword ptr [rdx].state.layer0_rtn, rbx
 
 	;mov word ptr [rdx].state.layer0_config, ax
@@ -425,7 +425,7 @@ dc_done:
 	mov byte ptr [rsi+L1_CONFIG], al
 	and al, 00001111b
 	lea rbx, layer1_render_jump
-	mov rbx, qword ptr [rbx + rax * 8]
+	add rbx, qword ptr [rbx + rax * 8]
 	mov qword ptr [rdx].state.layer1_rtn, rbx
 	;mov word ptr [rdx].state.layer1_config, ax
 
@@ -1051,7 +1051,7 @@ vera_update_l0config proc
 
 	and r13, 00001111b
 	lea rbx, layer0_render_jump
-	mov rbx, qword ptr [rbx + r13 * 8]
+	add rbx, qword ptr [rbx + r13 * 8]
 	mov qword ptr [rdx].state.layer0_rtn, rbx
 
 	;mov word ptr [rdx].state.layer0_config, r13w
@@ -1163,7 +1163,7 @@ vera_update_l1config proc
 
 	and r13, 00001111b
 	lea rbx, layer1_render_jump
-	mov rbx, qword ptr [rbx + r13 * 8]
+	add rbx, qword ptr [rbx + r13 * 8]
 	mov qword ptr [rdx].state.layer1_rtn, rbx
 
 	;mov word ptr [rdx].state.layer1_config, r13w

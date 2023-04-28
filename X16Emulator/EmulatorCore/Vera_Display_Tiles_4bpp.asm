@@ -47,17 +47,19 @@ layer0_4bpp_til_x_render proc
 	shl rax, 4		; * 16
 
 	lea r13, pixel_jump_8
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8:
-	qword pixel_0_8
-	qword pixel_1_8
-	qword pixel_2_8
-	qword pixel_3_8
-	qword pixel_4_8
-	qword pixel_5_8
-	qword pixel_6_8
-	qword pixel_7_8
+	qword pixel_0_8 - pixel_jump_8
+	qword pixel_1_8 - pixel_jump_8
+	qword pixel_2_8 - pixel_jump_8
+	qword pixel_3_8 - pixel_jump_8
+	qword pixel_4_8 - pixel_jump_8
+	qword pixel_5_8 - pixel_jump_8
+	qword pixel_6_8 - pixel_jump_8
+	qword pixel_7_8 - pixel_jump_8
 
 	writepixel_4bpp_normal 0000000f0h, 04, BUFFER_LAYER0, 0, 8
 	writepixel_4bpp_normal 00000000fh, 00, BUFFER_LAYER0, 1, 8
@@ -79,17 +81,19 @@ flipped:
 	shl rax, 4		; * 16
 
 	lea r13, pixel_jump_8_f
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8_f:
-	qword pixel_0_9
-	qword pixel_1_9
-	qword pixel_2_9
-	qword pixel_3_9
-	qword pixel_4_9
-	qword pixel_5_9
-	qword pixel_6_9
-	qword pixel_7_9
+	qword pixel_0_9 - pixel_jump_8_f
+	qword pixel_1_9 - pixel_jump_8_f
+	qword pixel_2_9 - pixel_jump_8_f
+	qword pixel_3_9 - pixel_jump_8_f
+	qword pixel_4_9 - pixel_jump_8_f
+	qword pixel_5_9 - pixel_jump_8_f
+	qword pixel_6_9 - pixel_jump_8_f
+	qword pixel_7_9 - pixel_jump_8_f
 
 	writepixel_4bpp_normal 00f000000h, 24, BUFFER_LAYER0, 0, 9
 	writepixel_4bpp_normal 0f0000000h, 28, BUFFER_LAYER0, 1, 9
@@ -125,17 +129,19 @@ layer1_4bpp_til_x_render proc
 	shl rax, 4		; * 16
 
 	lea r13, pixel_jump_8
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8:
-	qword pixel_0_8
-	qword pixel_1_8
-	qword pixel_2_8
-	qword pixel_3_8
-	qword pixel_4_8
-	qword pixel_5_8
-	qword pixel_6_8
-	qword pixel_7_8
+	qword pixel_0_8 - pixel_jump_8
+	qword pixel_1_8 - pixel_jump_8
+	qword pixel_2_8 - pixel_jump_8
+	qword pixel_3_8 - pixel_jump_8
+	qword pixel_4_8 - pixel_jump_8
+	qword pixel_5_8 - pixel_jump_8
+	qword pixel_6_8 - pixel_jump_8
+	qword pixel_7_8 - pixel_jump_8
 
 	writepixel_4bpp_normal 0000000f0h, 04, BUFFER_LAYER1, 0, 8
 	writepixel_4bpp_normal 00000000fh, 00, BUFFER_LAYER1, 1, 8
@@ -157,17 +163,19 @@ flipped:
 	shl rax, 4		; * 16
 
 	lea r13, pixel_jump_8_f
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8_f:
-	qword pixel_0_9
-	qword pixel_1_9
-	qword pixel_2_9
-	qword pixel_3_9
-	qword pixel_4_9
-	qword pixel_5_9
-	qword pixel_6_9
-	qword pixel_7_9
+	qword pixel_0_9 - pixel_jump_8_f
+	qword pixel_1_9 - pixel_jump_8_f
+	qword pixel_2_9 - pixel_jump_8_f
+	qword pixel_3_9 - pixel_jump_8_f
+	qword pixel_4_9 - pixel_jump_8_f
+	qword pixel_5_9 - pixel_jump_8_f
+	qword pixel_6_9 - pixel_jump_8_f
+	qword pixel_7_9 - pixel_jump_8_f
 
 	writepixel_4bpp_normal 00f000000h, 24, BUFFER_LAYER1, 0, 9
 	writepixel_4bpp_normal 0f0000000h, 28, BUFFER_LAYER1, 1, 9

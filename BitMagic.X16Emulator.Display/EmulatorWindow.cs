@@ -161,6 +161,8 @@ public class EmulatorWindow
         _shader = new Shader(_gl, @"shader.vert", @"shader.frag");
         _emulator!.Control = Control.Run;
 
+        #if OS_WINDOWS
+
         var assembly = Assembly.GetEntryAssembly();
         if (assembly != null)
         {
@@ -190,6 +192,8 @@ public class EmulatorWindow
             
             }
         }
+
+        #endif
     }
 
 

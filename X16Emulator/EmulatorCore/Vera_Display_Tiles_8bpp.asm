@@ -49,13 +49,15 @@ layer0_8bpp_til_x_render proc
 	shl rax, 4		; * 16
 
 	lea r13, pixel_jump_8
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8:
-	qword pixel_0_8
-	qword pixel_1_8
-	qword pixel_2_8
-	qword pixel_3_8
+	qword pixel_0_8 - pixel_jump_8
+	qword pixel_1_8 - pixel_jump_8
+	qword pixel_2_8 - pixel_jump_8
+	qword pixel_3_8 - pixel_jump_8
 
 	writepixel_8bpp_normal 0000000ffh, 00, BUFFER_LAYER0, 0, 8
 	writepixel_8bpp_normal 00000ff00h, 08, BUFFER_LAYER0, 1, 8
@@ -73,13 +75,15 @@ flipped:
 	shl rax, 4		; * 16
 
 	lea r13, pixel_jump_8_f
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8_f:
-	qword pixel_0_9
-	qword pixel_1_9
-	qword pixel_2_9
-	qword pixel_3_9
+	qword pixel_0_9 - pixel_jump_8_f
+	qword pixel_1_9 - pixel_jump_8_f
+	qword pixel_2_9 - pixel_jump_8_f
+	qword pixel_3_9 - pixel_jump_8_f
 
 	writepixel_8bpp_normal 0ff000000h, 24, BUFFER_LAYER0, 0, 9
 	writepixel_8bpp_normal 000ff0000h, 16 ,BUFFER_LAYER0, 1, 9
@@ -111,13 +115,15 @@ layer1_8bpp_til_x_render proc
 	shl rax, 4		; * 16
 
 	lea r13, pixel_jump_8
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8:
-	qword pixel_0_8
-	qword pixel_1_8
-	qword pixel_2_8
-	qword pixel_3_8
+	qword pixel_0_8 - pixel_jump_8
+	qword pixel_1_8 - pixel_jump_8
+	qword pixel_2_8 - pixel_jump_8
+	qword pixel_3_8 - pixel_jump_8
 
 	writepixel_8bpp_normal 0000000ffh, 00, BUFFER_LAYER1, 0, 8
 	writepixel_8bpp_normal 00000ff00h, 08, BUFFER_LAYER1, 1, 8
@@ -135,13 +141,15 @@ flipped:
 	shl rax, 4		; * 16
 
 	lea r13, pixel_jump_8_f
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8_f:
-	qword pixel_0_9
-	qword pixel_1_9
-	qword pixel_2_9
-	qword pixel_3_9
+	qword pixel_0_9 - pixel_jump_8_f
+	qword pixel_1_9 - pixel_jump_8_f
+	qword pixel_2_9 - pixel_jump_8_f
+	qword pixel_3_9 - pixel_jump_8_f
 
 	writepixel_8bpp_normal 0ff000000h, 24, BUFFER_LAYER1, 0, 9
 	writepixel_8bpp_normal 000ff0000h, 16 ,BUFFER_LAYER1, 1, 9

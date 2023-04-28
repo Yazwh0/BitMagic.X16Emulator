@@ -182,7 +182,8 @@ spi_handle_command proc
 	and rbx, 00111111b
 	mov dword ptr [rdx].state.spi_previouscommand, ebx
 	lea rdi, spi_command_table
-	jmp qword ptr [rdi + rbx * 8]
+	add rdi, [rdi + rbx * 8]
+	jmp rdi
 spi_handle_command endp
 
 spi_go_idle proc
@@ -473,72 +474,73 @@ spi_read_csd proc
 	ret
 spi_read_csd endp
 
+align 8
 spi_command_table:
-	qword spi_go_idle	; 0
-	qword spi_not_known ; 1
-	qword spi_not_known ; 2
-	qword spi_not_known ; 3
-	qword spi_not_known ; 4
-	qword spi_not_known ; 5
-	qword spi_not_known ; 6
-	qword spi_not_known ; 7
-	qword spi_cmd8		; 8
-	qword spi_read_csd	; 9
-	qword spi_not_known ; 10
-	qword spi_not_known ; 11
-	qword spi_not_known ; 12
-	qword spi_read_send_status ; 13
-	qword spi_not_known ; 14
-	qword spi_not_known ; 15
-	qword spi_not_known ; 16
-	qword spi_read_single_block ; 17
-	qword spi_not_known ; 18
-	qword spi_not_known ; 19
-	qword spi_not_known ; 20
-	qword spi_not_known ; 21
-	qword spi_not_known ; 22
-	qword spi_not_known ; 23
-	qword spi_write_single_block ; 24
-	qword spi_not_known ; 25
-	qword spi_not_known ; 26
-	qword spi_not_known ; 27
-	qword spi_not_known ; 28
-	qword spi_not_known ; 29
-	qword spi_not_known ; 30
-	qword spi_not_known ; 31
-	qword spi_not_known ; 32
-	qword spi_not_known ; 33
-	qword spi_not_known ; 34
-	qword spi_not_known ; 35
-	qword spi_not_known ; 36
-	qword spi_not_known ; 37
-	qword spi_not_known ; 38
-	qword spi_not_known ; 39
-	qword spi_not_known ; 40
-	qword spi_acmd41	 ; 41
-	qword spi_not_known ; 42
-	qword spi_not_known ; 43
-	qword spi_not_known ; 44
-	qword spi_not_known ; 45
-	qword spi_not_known ; 46
-	qword spi_not_known ; 47
-	qword spi_not_known ; 48
-	qword spi_not_known ; 49
-	qword spi_not_known ; 50
-	qword spi_not_known ; 51
-	qword spi_not_known ; 52
-	qword spi_not_known ; 53
-	qword spi_not_known ; 54
-	qword spi_cmd55		 ; 55
-	qword spi_not_known ; 56
-	qword spi_not_known ; 57
-	qword spi_read_ocr ; 58
-	qword spi_not_known ; 59
-	qword spi_not_known ; 60
-	qword spi_not_known ; 61
-	qword spi_not_known ; 62
-	qword spi_not_known ; 63
-	qword spi_not_known ; 64
+	qword spi_go_idle	- spi_command_table ;  0
+	qword spi_not_known - spi_command_table ;  1
+	qword spi_not_known - spi_command_table ;  2
+	qword spi_not_known - spi_command_table ;  3
+	qword spi_not_known - spi_command_table ;  4
+	qword spi_not_known - spi_command_table ;  5
+	qword spi_not_known - spi_command_table ;  6
+	qword spi_not_known - spi_command_table ;  7
+	qword spi_cmd8		- spi_command_table ;  8
+	qword spi_read_csd	- spi_command_table ;  9
+	qword spi_not_known - spi_command_table ;  10
+	qword spi_not_known - spi_command_table ;  11
+	qword spi_not_known - spi_command_table ;  12
+	qword spi_read_send_status - spi_command_table ;  13
+	qword spi_not_known - spi_command_table ;  14
+	qword spi_not_known - spi_command_table ;  15
+	qword spi_not_known - spi_command_table ;  16
+	qword spi_read_single_block - spi_command_table ;  17
+	qword spi_not_known - spi_command_table ;  18
+	qword spi_not_known - spi_command_table ;  19
+	qword spi_not_known - spi_command_table ;  20
+	qword spi_not_known - spi_command_table ;  21
+	qword spi_not_known - spi_command_table ;  22
+	qword spi_not_known - spi_command_table ;  23
+	qword spi_write_single_block - spi_command_table ;  24
+	qword spi_not_known - spi_command_table ;  25
+	qword spi_not_known - spi_command_table ;  26
+	qword spi_not_known - spi_command_table ;  27
+	qword spi_not_known - spi_command_table ;  28
+	qword spi_not_known - spi_command_table ;  29
+	qword spi_not_known - spi_command_table ;  30
+	qword spi_not_known - spi_command_table ;  31
+	qword spi_not_known - spi_command_table ;  32
+	qword spi_not_known - spi_command_table ;  33
+	qword spi_not_known - spi_command_table ;  34
+	qword spi_not_known - spi_command_table ;  35
+	qword spi_not_known - spi_command_table ;  36
+	qword spi_not_known - spi_command_table ;  37
+	qword spi_not_known - spi_command_table ;  38
+	qword spi_not_known - spi_command_table ;  39
+	qword spi_not_known - spi_command_table ;  40
+	qword spi_acmd41	 - spi_command_table ;  41
+	qword spi_not_known - spi_command_table ;  42
+	qword spi_not_known - spi_command_table ;  43
+	qword spi_not_known - spi_command_table ;  44
+	qword spi_not_known - spi_command_table ;  45
+	qword spi_not_known - spi_command_table ;  46
+	qword spi_not_known - spi_command_table ;  47
+	qword spi_not_known - spi_command_table ;  48
+	qword spi_not_known - spi_command_table ;  49
+	qword spi_not_known - spi_command_table ;  50
+	qword spi_not_known - spi_command_table ;  51
+	qword spi_not_known - spi_command_table ;  52
+	qword spi_not_known - spi_command_table ;  53
+	qword spi_not_known - spi_command_table ;  54
+	qword spi_cmd55		 - spi_command_table ;  55
+	qword spi_not_known - spi_command_table ;  56
+	qword spi_not_known - spi_command_table ;  57
+	qword spi_read_ocr - spi_command_table ;  58
+	qword spi_not_known - spi_command_table ;  59
+	qword spi_not_known - spi_command_table ;  60
+	qword spi_not_known - spi_command_table ;  61
+	qword spi_not_known - spi_command_table ;  62
+	qword spi_not_known - spi_command_table ;  63
+	qword spi_not_known - spi_command_table ;  64
 
 
 

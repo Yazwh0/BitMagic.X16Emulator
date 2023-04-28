@@ -50,17 +50,19 @@ layer0_2bpp_til_x_render proc
 	je pixel_16
 
 	lea r13, pixel_jump_8
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8:
-	qword pixel_0_8
-	qword pixel_1_8
-	qword pixel_2_8
-	qword pixel_3_8
-	qword pixel_4_8
-	qword pixel_5_8
-	qword pixel_6_8
-	qword pixel_7_8
+	qword pixel_0_8 - pixel_jump_8
+	qword pixel_1_8 - pixel_jump_8
+	qword pixel_2_8 - pixel_jump_8
+	qword pixel_3_8 - pixel_jump_8
+	qword pixel_4_8 - pixel_jump_8
+	qword pixel_5_8 - pixel_jump_8
+	qword pixel_6_8 - pixel_jump_8
+	qword pixel_7_8 - pixel_jump_8
 
 	writepixel_2bpp_normal 000c0h, 06, BUFFER_LAYER0, 0, 8
 	writepixel_2bpp_normal 00030h, 04, BUFFER_LAYER0, 1, 8
@@ -78,25 +80,27 @@ pixel_jump_8:
 
 pixel_16:
 	lea r13, pixel_jump_16
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_16:
-	qword pixel_0_16
-	qword pixel_1_16
-	qword pixel_2_16
-	qword pixel_3_16
-	qword pixel_4_16
-	qword pixel_5_16
-	qword pixel_6_16
-	qword pixel_7_16
-	qword pixel_8_16
-	qword pixel_9_16
-	qword pixel_10_16
-	qword pixel_11_16
-	qword pixel_12_16
-	qword pixel_13_16
-	qword pixel_14_16
-	qword pixel_15_16
+	qword pixel_0_16 - pixel_jump_16
+	qword pixel_1_16 - pixel_jump_16
+	qword pixel_2_16 - pixel_jump_16
+	qword pixel_3_16 - pixel_jump_16
+	qword pixel_4_16 - pixel_jump_16
+	qword pixel_5_16 - pixel_jump_16
+	qword pixel_6_16 - pixel_jump_16
+	qword pixel_7_16 - pixel_jump_16
+	qword pixel_8_16 - pixel_jump_16
+	qword pixel_9_16 - pixel_jump_16
+	qword pixel_10_16 - pixel_jump_16
+	qword pixel_11_16 - pixel_jump_16
+	qword pixel_12_16 - pixel_jump_16
+	qword pixel_13_16 - pixel_jump_16
+	qword pixel_14_16 - pixel_jump_16
+	qword pixel_15_16 - pixel_jump_16
 
 	writepixel_2bpp_normal 000c0h, 06, BUFFER_LAYER0, 0, 16
 	writepixel_2bpp_normal 00030h, 04, BUFFER_LAYER0, 1, 16
@@ -130,17 +134,19 @@ flipped:
 	je pixel_16_f
 
 	lea r13, pixel_jump_8_f
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8_f:
-	qword pixel_0_9
-	qword pixel_1_9
-	qword pixel_2_9
-	qword pixel_3_9
-	qword pixel_4_9
-	qword pixel_5_9
-	qword pixel_6_9
-	qword pixel_7_9
+	qword pixel_0_9 - pixel_jump_8_f
+	qword pixel_1_9 - pixel_jump_8_f
+	qword pixel_2_9 - pixel_jump_8_f
+	qword pixel_3_9 - pixel_jump_8_f
+	qword pixel_4_9 - pixel_jump_8_f
+	qword pixel_5_9 - pixel_jump_8_f
+	qword pixel_6_9 - pixel_jump_8_f
+	qword pixel_7_9 - pixel_jump_8_f
 
 	writepixel_2bpp_normal 00300h, 08, BUFFER_LAYER0, 0, 9
 	writepixel_2bpp_normal 00c00h, 10, BUFFER_LAYER0, 1, 9
@@ -158,25 +164,27 @@ pixel_jump_8_f:
 
 pixel_16_f:
 	lea r13, pixel_jump_16_f
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_16_f:
-	qword pixel_0_17
-	qword pixel_1_17
-	qword pixel_2_17
-	qword pixel_3_17
-	qword pixel_4_17
-	qword pixel_5_17
-	qword pixel_6_17
-	qword pixel_7_17
-	qword pixel_8_17
-	qword pixel_9_17
-	qword pixel_10_17
-	qword pixel_11_17
-	qword pixel_12_17
-	qword pixel_13_17
-	qword pixel_14_17
-	qword pixel_15_17
+	qword pixel_0_17 - pixel_jump_16_f
+	qword pixel_1_17 - pixel_jump_16_f
+	qword pixel_2_17 - pixel_jump_16_f
+	qword pixel_3_17 - pixel_jump_16_f
+	qword pixel_4_17 - pixel_jump_16_f
+	qword pixel_5_17 - pixel_jump_16_f
+	qword pixel_6_17 - pixel_jump_16_f
+	qword pixel_7_17 - pixel_jump_16_f
+	qword pixel_8_17 - pixel_jump_16_f
+	qword pixel_9_17 - pixel_jump_16_f
+	qword pixel_10_17 - pixel_jump_16_f
+	qword pixel_11_17 - pixel_jump_16_f
+	qword pixel_12_17 - pixel_jump_16_f
+	qword pixel_13_17 - pixel_jump_16_f
+	qword pixel_14_17 - pixel_jump_16_f
+	qword pixel_15_17 - pixel_jump_16_f
 	
 	writepixel_2bpp_normal 003000000h, 08+16, BUFFER_LAYER0, 0, 17
 	writepixel_2bpp_normal 00c000000h, 10+16, BUFFER_LAYER0, 1, 17
@@ -224,17 +232,19 @@ layer1_2bpp_til_x_render proc
 	je pixel_16
 
 	lea r13, pixel_jump_8
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8:
-	qword pixel_0_8
-	qword pixel_1_8
-	qword pixel_2_8
-	qword pixel_3_8
-	qword pixel_4_8
-	qword pixel_5_8
-	qword pixel_6_8
-	qword pixel_7_8
+	qword pixel_0_8 - pixel_jump_8
+	qword pixel_1_8 - pixel_jump_8
+	qword pixel_2_8 - pixel_jump_8
+	qword pixel_3_8 - pixel_jump_8
+	qword pixel_4_8 - pixel_jump_8
+	qword pixel_5_8 - pixel_jump_8
+	qword pixel_6_8 - pixel_jump_8
+	qword pixel_7_8 - pixel_jump_8
 
 	writepixel_2bpp_normal 000c0h, 06, BUFFER_LAYER1, 0, 8
 	writepixel_2bpp_normal 00030h, 04, BUFFER_LAYER1, 1, 8
@@ -252,25 +262,27 @@ pixel_jump_8:
 
 pixel_16:
 	lea r13, pixel_jump_16
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_16:
-	qword pixel_0_16
-	qword pixel_1_16
-	qword pixel_2_16
-	qword pixel_3_16
-	qword pixel_4_16
-	qword pixel_5_16
-	qword pixel_6_16
-	qword pixel_7_16
-	qword pixel_8_16
-	qword pixel_9_16
-	qword pixel_10_16
-	qword pixel_11_16
-	qword pixel_12_16
-	qword pixel_13_16
-	qword pixel_14_16
-	qword pixel_15_16
+	qword pixel_0_16 - pixel_jump_16
+	qword pixel_1_16 - pixel_jump_16
+	qword pixel_2_16 - pixel_jump_16
+	qword pixel_3_16 - pixel_jump_16
+	qword pixel_4_16 - pixel_jump_16
+	qword pixel_5_16 - pixel_jump_16
+	qword pixel_6_16 - pixel_jump_16
+	qword pixel_7_16 - pixel_jump_16
+	qword pixel_8_16 - pixel_jump_16
+	qword pixel_9_16 - pixel_jump_16
+	qword pixel_10_16 - pixel_jump_16
+	qword pixel_11_16 - pixel_jump_16
+	qword pixel_12_16 - pixel_jump_16
+	qword pixel_13_16 - pixel_jump_16
+	qword pixel_14_16 - pixel_jump_16
+	qword pixel_15_16 - pixel_jump_16
 
 	writepixel_2bpp_normal 000c0h, 06, BUFFER_LAYER1, 0, 16
 	writepixel_2bpp_normal 00030h, 04, BUFFER_LAYER1, 1, 16
@@ -304,17 +316,19 @@ flipped:
 	je pixel_16_f
 
 	lea r13, pixel_jump_8_f
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_8_f:
-	qword pixel_0_9
-	qword pixel_1_9
-	qword pixel_2_9
-	qword pixel_3_9
-	qword pixel_4_9
-	qword pixel_5_9
-	qword pixel_6_9
-	qword pixel_7_9
+	qword pixel_0_9 - pixel_jump_8_f
+	qword pixel_1_9 - pixel_jump_8_f
+	qword pixel_2_9 - pixel_jump_8_f
+	qword pixel_3_9 - pixel_jump_8_f
+	qword pixel_4_9 - pixel_jump_8_f
+	qword pixel_5_9 - pixel_jump_8_f
+	qword pixel_6_9 - pixel_jump_8_f
+	qword pixel_7_9 - pixel_jump_8_f
 
 	writepixel_2bpp_normal 00300h, 08, BUFFER_LAYER1, 0, 9
 	writepixel_2bpp_normal 00c00h, 10, BUFFER_LAYER1, 1, 9
@@ -332,25 +346,27 @@ pixel_jump_8_f:
 
 pixel_16_f:
 	lea r13, pixel_jump_16_f
-	jmp qword ptr [r13 + r10 * 8]
+	add r13, [r13 + r10 * 8]
+	jmp r13
 
+align 8
 pixel_jump_16_f:
-	qword pixel_0_17
-	qword pixel_1_17
-	qword pixel_2_17
-	qword pixel_3_17
-	qword pixel_4_17
-	qword pixel_5_17
-	qword pixel_6_17
-	qword pixel_7_17
-	qword pixel_8_17
-	qword pixel_9_17
-	qword pixel_10_17
-	qword pixel_11_17
-	qword pixel_12_17
-	qword pixel_13_17
-	qword pixel_14_17
-	qword pixel_15_17
+	qword pixel_0_17 - pixel_jump_16_f
+	qword pixel_1_17 - pixel_jump_16_f
+	qword pixel_2_17 - pixel_jump_16_f
+	qword pixel_3_17 - pixel_jump_16_f
+	qword pixel_4_17 - pixel_jump_16_f
+	qword pixel_5_17 - pixel_jump_16_f
+	qword pixel_6_17 - pixel_jump_16_f
+	qword pixel_7_17 - pixel_jump_16_f
+	qword pixel_8_17 - pixel_jump_16_f
+	qword pixel_9_17 - pixel_jump_16_f
+	qword pixel_10_17 - pixel_jump_16_f
+	qword pixel_11_17 - pixel_jump_16_f
+	qword pixel_12_17 - pixel_jump_16_f
+	qword pixel_13_17 - pixel_jump_16_f
+	qword pixel_14_17 - pixel_jump_16_f
+	qword pixel_15_17 - pixel_jump_16_f
 
 	writepixel_2bpp_normal 003000000h, 08+16, BUFFER_LAYER1, 0, 17
 	writepixel_2bpp_normal 00c000000h, 10+16, BUFFER_LAYER1, 1, 17

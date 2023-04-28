@@ -44,17 +44,19 @@ smc_stop proc
 	jg unknown_command
 
 	lea rax, smc_commands
-	jmp qword ptr [rax + rbx * 8]
+	add rax, [rax + rbx * 8]
+	jmp rax
 
+align 8
 smc_commands:
-	qword smc_donothing		; 0
-	qword smc_power			; 1
-	qword smc_reset			; 2
-	qword smc_nmibutton		; 3
-	qword smc_donothing		; 4
-	qword smc_activityled	; 5
-	qword smc_donothing		; 6
-	qword smc_keyboard		; 7
+	qword smc_donothing		- smc_commands; 0
+	qword smc_power			- smc_commands; 1
+	qword smc_reset			- smc_commands; 2
+	qword smc_nmibutton		- smc_commands; 3
+	qword smc_donothing		- smc_commands; 4
+	qword smc_activityled	- smc_commands; 5
+	qword smc_donothing		- smc_commands; 6
+	qword smc_keyboard		- smc_commands; 7
 
 unknown_command:
 	mov dword ptr [rdx].state.smc_datacount, 0

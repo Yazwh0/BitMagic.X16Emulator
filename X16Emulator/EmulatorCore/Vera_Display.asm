@@ -129,17 +129,19 @@ display_loop:
 	movzx rax, byte ptr [r10 + r9]
 
 	lea r10, render_procs
-	jmp qword ptr [r10 + rax * 8]
+	add r10, [r10 + rax * 8]
+	jmp r10
 
+align 8
 render_procs:
-	qword renderstep_nothing
-	qword renderstep_read_from_buffer
-	qword renderstep_normal
-	qword renderstep_all_to_buffer
-	qword renderstep_sprites_to_buffer
-	qword renderstep_next_line
-	qword renderstep_next_frame
-	qword renderstep_reset_buffer
+	qword renderstep_nothing - render_procs
+	qword renderstep_read_from_buffer - render_procs
+	qword renderstep_normal - render_procs
+	qword renderstep_all_to_buffer - render_procs
+	qword renderstep_sprites_to_buffer - render_procs
+	qword renderstep_next_line - render_procs
+	qword renderstep_next_frame - render_procs
+	qword renderstep_reset_buffer - render_procs
 
 renders_end::
 	;
@@ -542,13 +544,15 @@ layer1_done:
 	xor rax, rax
 
 	lea r13, depth_jump_table
-	jmp qword ptr [r13 + r14 * 8]
+	add r13, [r13 + r14 * 8]
+	jmp r13
 
+align 8
 depth_jump_table:
-	dq depth_0
-	dq depth_1
-	dq depth_2
-	dq depth_3
+	dq depth_0 - depth_jump_table
+	dq depth_1 - depth_jump_table
+	dq depth_2 - depth_jump_table
+	dq depth_3 - depth_jump_table
 
 depth_0:
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L1], eax
@@ -1035,40 +1039,40 @@ mode_layer1_notsupported proc
 mode_layer1_notsupported endp
 
 layer0_render_jump:
-	layer0_1bpp_til_x qword layer0_1bpp_til_x_render
-	layer0_2bpp_til_x qword layer0_2bpp_til_x_render
-	layer0_4bpp_til_x qword layer0_4bpp_til_x_render
-	layer0_8bpp_til_x qword layer0_8bpp_til_x_render
-	layer0_1bpp_bit_x qword layer0_1bpp_bmp_render
-	layer0_2bpp_bit_x qword layer0_2bpp_bmp_render
-	layer0_4bpp_bit_x qword layer0_4bpp_bmp_render
-	layer0_8bpp_bit_x qword layer0_8bpp_bmp_render
-	layer0_1bpp_til_t qword layer0_1bpp_til_t_render
-	layer0_2bpp_til_t qword layer0_2bpp_til_x_render
-	layer0_4bpp_til_t qword layer0_4bpp_til_x_render
-	layer0_8bpp_til_t qword layer0_8bpp_til_x_render
-	layer0_1bpp_bit_t qword layer0_1bpp_bmp_render
-	layer0_2bpp_bit_t qword layer0_2bpp_bmp_render
-	layer0_4bpp_bit_t qword layer0_4bpp_bmp_render
-	layer0_8bpp_bit_t qword layer0_8bpp_bmp_render
+	layer0_1bpp_til_x qword layer0_1bpp_til_x_render - layer0_render_jump
+	layer0_2bpp_til_x qword layer0_2bpp_til_x_render - layer0_render_jump
+	layer0_4bpp_til_x qword layer0_4bpp_til_x_render - layer0_render_jump
+	layer0_8bpp_til_x qword layer0_8bpp_til_x_render - layer0_render_jump
+	layer0_1bpp_bit_x qword layer0_1bpp_bmp_render - layer0_render_jump
+	layer0_2bpp_bit_x qword layer0_2bpp_bmp_render - layer0_render_jump
+	layer0_4bpp_bit_x qword layer0_4bpp_bmp_render - layer0_render_jump
+	layer0_8bpp_bit_x qword layer0_8bpp_bmp_render - layer0_render_jump
+	layer0_1bpp_til_t qword layer0_1bpp_til_t_render - layer0_render_jump
+	layer0_2bpp_til_t qword layer0_2bpp_til_x_render - layer0_render_jump
+	layer0_4bpp_til_t qword layer0_4bpp_til_x_render - layer0_render_jump
+	layer0_8bpp_til_t qword layer0_8bpp_til_x_render - layer0_render_jump
+	layer0_1bpp_bit_t qword layer0_1bpp_bmp_render - layer0_render_jump
+	layer0_2bpp_bit_t qword layer0_2bpp_bmp_render - layer0_render_jump
+	layer0_4bpp_bit_t qword layer0_4bpp_bmp_render - layer0_render_jump
+	layer0_8bpp_bit_t qword layer0_8bpp_bmp_render - layer0_render_jump
 
 layer1_render_jump:
-	layer1_1bpp_til_x qword layer1_1bpp_til_x_render
-	layer1_2bpp_til_x qword layer1_2bpp_til_x_render
-	layer1_4bpp_til_x qword layer1_4bpp_til_x_render
-	layer1_8bpp_til_x qword layer1_8bpp_til_x_render
-	layer1_1bpp_bit_x qword layer1_1bpp_bmp_render
-	layer1_2bpp_bit_x qword layer1_2bpp_bmp_render
-	layer1_4bpp_bit_x qword layer1_4bpp_bmp_render
-	layer1_8bpp_bit_x qword layer1_8bpp_bmp_render
-	layer1_1bpp_til_t qword layer1_1bpp_til_t_render
-	layer1_2bpp_til_t qword layer1_2bpp_til_x_render
-	layer1_4bpp_til_t qword layer1_4bpp_til_x_render
-	layer1_8bpp_til_t qword layer1_8bpp_til_x_render
-	layer1_1bpp_bit_t qword layer1_1bpp_bmp_render
-	layer1_2bpp_bit_t qword layer1_2bpp_bmp_render
-	layer1_4bpp_bit_t qword layer1_4bpp_bmp_render
-	layer1_8bpp_bit_t qword layer1_8bpp_bmp_render
+	layer1_1bpp_til_x qword layer1_1bpp_til_x_render - layer1_render_jump
+	layer1_2bpp_til_x qword layer1_2bpp_til_x_render - layer1_render_jump
+	layer1_4bpp_til_x qword layer1_4bpp_til_x_render - layer1_render_jump
+	layer1_8bpp_til_x qword layer1_8bpp_til_x_render - layer1_render_jump
+	layer1_1bpp_bit_x qword layer1_1bpp_bmp_render - layer1_render_jump
+	layer1_2bpp_bit_x qword layer1_2bpp_bmp_render - layer1_render_jump
+	layer1_4bpp_bit_x qword layer1_4bpp_bmp_render - layer1_render_jump
+	layer1_8bpp_bit_x qword layer1_8bpp_bmp_render - layer1_render_jump
+	layer1_1bpp_til_t qword layer1_1bpp_til_t_render - layer1_render_jump
+	layer1_2bpp_til_t qword layer1_2bpp_til_x_render - layer1_render_jump
+	layer1_4bpp_til_t qword layer1_4bpp_til_x_render - layer1_render_jump
+	layer1_8bpp_til_t qword layer1_8bpp_til_x_render - layer1_render_jump
+	layer1_1bpp_bit_t qword layer1_1bpp_bmp_render - layer1_render_jump
+	layer1_2bpp_bit_t qword layer1_2bpp_bmp_render - layer1_render_jump
+	layer1_4bpp_bit_t qword layer1_4bpp_bmp_render - layer1_render_jump
+	layer1_8bpp_bit_t qword layer1_8bpp_bmp_render - layer1_render_jump
 
 tile_definition_proc macro _map_height, _map_width, _tile_height, _tile_width, _colour_depth, _tile_definition_count
 tile_definition_&_tile_definition_count& proc
@@ -1341,262 +1345,262 @@ tile_definition_proc 3, 3, 1, 1, 3, 255
 
 align 8
 get_tile_definition_jump:
-	qword tile_definition_0
-	qword tile_definition_1
-	qword tile_definition_2
-	qword tile_definition_3
-	qword tile_definition_4
-	qword tile_definition_5
-	qword tile_definition_6
-	qword tile_definition_7
-	qword tile_definition_8
-	qword tile_definition_9
-	qword tile_definition_10
-	qword tile_definition_11
-	qword tile_definition_12
-	qword tile_definition_13
-	qword tile_definition_14
-	qword tile_definition_15
-	qword tile_definition_16
-	qword tile_definition_17
-	qword tile_definition_18
-	qword tile_definition_19
-	qword tile_definition_20
-	qword tile_definition_21
-	qword tile_definition_22
-	qword tile_definition_23
-	qword tile_definition_24
-	qword tile_definition_25
-	qword tile_definition_26
-	qword tile_definition_27
-	qword tile_definition_28
-	qword tile_definition_29
-	qword tile_definition_30
-	qword tile_definition_31
-	qword tile_definition_32
-	qword tile_definition_33
-	qword tile_definition_34
-	qword tile_definition_35
-	qword tile_definition_36
-	qword tile_definition_37
-	qword tile_definition_38
-	qword tile_definition_39
-	qword tile_definition_40
-	qword tile_definition_41
-	qword tile_definition_42
-	qword tile_definition_43
-	qword tile_definition_44
-	qword tile_definition_45
-	qword tile_definition_46
-	qword tile_definition_47
-	qword tile_definition_48
-	qword tile_definition_49
-	qword tile_definition_50
-	qword tile_definition_51
-	qword tile_definition_52
-	qword tile_definition_53
-	qword tile_definition_54
-	qword tile_definition_55
-	qword tile_definition_56
-	qword tile_definition_57
-	qword tile_definition_58
-	qword tile_definition_59
-	qword tile_definition_60
-	qword tile_definition_61
-	qword tile_definition_62
-	qword tile_definition_63
-	qword tile_definition_64
-	qword tile_definition_65
-	qword tile_definition_66
-	qword tile_definition_67
-	qword tile_definition_68
-	qword tile_definition_69
-	qword tile_definition_70
-	qword tile_definition_71
-	qword tile_definition_72
-	qword tile_definition_73
-	qword tile_definition_74
-	qword tile_definition_75
-	qword tile_definition_76
-	qword tile_definition_77
-	qword tile_definition_78
-	qword tile_definition_79
-	qword tile_definition_80
-	qword tile_definition_81
-	qword tile_definition_82
-	qword tile_definition_83
-	qword tile_definition_84
-	qword tile_definition_85
-	qword tile_definition_86
-	qword tile_definition_87
-	qword tile_definition_88
-	qword tile_definition_89
-	qword tile_definition_90
-	qword tile_definition_91
-	qword tile_definition_92
-	qword tile_definition_93
-	qword tile_definition_94
-	qword tile_definition_95
-	qword tile_definition_96
-	qword tile_definition_97
-	qword tile_definition_98
-	qword tile_definition_99
-	qword tile_definition_100
-	qword tile_definition_101
-	qword tile_definition_102
-	qword tile_definition_103
-	qword tile_definition_104
-	qword tile_definition_105
-	qword tile_definition_106
-	qword tile_definition_107
-	qword tile_definition_108
-	qword tile_definition_109
-	qword tile_definition_110
-	qword tile_definition_111
-	qword tile_definition_112
-	qword tile_definition_113
-	qword tile_definition_114
-	qword tile_definition_115
-	qword tile_definition_116
-	qword tile_definition_117
-	qword tile_definition_118
-	qword tile_definition_119
-	qword tile_definition_120
-	qword tile_definition_121
-	qword tile_definition_122
-	qword tile_definition_123
-	qword tile_definition_124
-	qword tile_definition_125
-	qword tile_definition_126
-	qword tile_definition_127
-	qword tile_definition_128
-	qword tile_definition_129
-	qword tile_definition_130
-	qword tile_definition_131
-	qword tile_definition_132
-	qword tile_definition_133
-	qword tile_definition_134
-	qword tile_definition_135
-	qword tile_definition_136
-	qword tile_definition_137
-	qword tile_definition_138
-	qword tile_definition_139
-	qword tile_definition_140
-	qword tile_definition_141
-	qword tile_definition_142
-	qword tile_definition_143
-	qword tile_definition_144
-	qword tile_definition_145
-	qword tile_definition_146
-	qword tile_definition_147
-	qword tile_definition_148
-	qword tile_definition_149
-	qword tile_definition_150
-	qword tile_definition_151
-	qword tile_definition_152
-	qword tile_definition_153
-	qword tile_definition_154
-	qword tile_definition_155
-	qword tile_definition_156
-	qword tile_definition_157
-	qword tile_definition_158
-	qword tile_definition_159
-	qword tile_definition_160
-	qword tile_definition_161
-	qword tile_definition_162
-	qword tile_definition_163
-	qword tile_definition_164
-	qword tile_definition_165
-	qword tile_definition_166
-	qword tile_definition_167
-	qword tile_definition_168
-	qword tile_definition_169
-	qword tile_definition_170
-	qword tile_definition_171
-	qword tile_definition_172
-	qword tile_definition_173
-	qword tile_definition_174
-	qword tile_definition_175
-	qword tile_definition_176
-	qword tile_definition_177
-	qword tile_definition_178
-	qword tile_definition_179
-	qword tile_definition_180
-	qword tile_definition_181
-	qword tile_definition_182
-	qword tile_definition_183
-	qword tile_definition_184
-	qword tile_definition_185
-	qword tile_definition_186
-	qword tile_definition_187
-	qword tile_definition_188
-	qword tile_definition_189
-	qword tile_definition_190
-	qword tile_definition_191
-	qword tile_definition_192
-	qword tile_definition_193
-	qword tile_definition_194
-	qword tile_definition_195
-	qword tile_definition_196
-	qword tile_definition_197
-	qword tile_definition_198
-	qword tile_definition_199
-	qword tile_definition_200
-	qword tile_definition_201
-	qword tile_definition_202
-	qword tile_definition_203
-	qword tile_definition_204
-	qword tile_definition_205
-	qword tile_definition_206
-	qword tile_definition_207
-	qword tile_definition_208
-	qword tile_definition_209
-	qword tile_definition_210
-	qword tile_definition_211
-	qword tile_definition_212
-	qword tile_definition_213
-	qword tile_definition_214
-	qword tile_definition_215
-	qword tile_definition_216
-	qword tile_definition_217
-	qword tile_definition_218
-	qword tile_definition_219
-	qword tile_definition_220
-	qword tile_definition_221
-	qword tile_definition_222
-	qword tile_definition_223
-	qword tile_definition_224
-	qword tile_definition_225
-	qword tile_definition_226
-	qword tile_definition_227
-	qword tile_definition_228
-	qword tile_definition_229
-	qword tile_definition_230
-	qword tile_definition_231
-	qword tile_definition_232
-	qword tile_definition_233
-	qword tile_definition_234
-	qword tile_definition_235
-	qword tile_definition_236
-	qword tile_definition_237
-	qword tile_definition_238
-	qword tile_definition_239
-	qword tile_definition_240
-	qword tile_definition_241
-	qword tile_definition_242
-	qword tile_definition_243
-	qword tile_definition_244
-	qword tile_definition_245
-	qword tile_definition_246
-	qword tile_definition_247
-	qword tile_definition_248
-	qword tile_definition_249
-	qword tile_definition_250
-	qword tile_definition_251
-	qword tile_definition_252
-	qword tile_definition_253
-	qword tile_definition_254
-	qword tile_definition_255
+	qword tile_definition_0 - get_tile_definition_jump
+	qword tile_definition_1 - get_tile_definition_jump
+	qword tile_definition_2 - get_tile_definition_jump
+	qword tile_definition_3 - get_tile_definition_jump
+	qword tile_definition_4 - get_tile_definition_jump
+	qword tile_definition_5 - get_tile_definition_jump
+	qword tile_definition_6 - get_tile_definition_jump
+	qword tile_definition_7 - get_tile_definition_jump
+	qword tile_definition_8 - get_tile_definition_jump
+	qword tile_definition_9 - get_tile_definition_jump
+	qword tile_definition_10 - get_tile_definition_jump
+	qword tile_definition_11 - get_tile_definition_jump
+	qword tile_definition_12 - get_tile_definition_jump
+	qword tile_definition_13 - get_tile_definition_jump
+	qword tile_definition_14 - get_tile_definition_jump
+	qword tile_definition_15 - get_tile_definition_jump
+	qword tile_definition_16 - get_tile_definition_jump
+	qword tile_definition_17 - get_tile_definition_jump
+	qword tile_definition_18 - get_tile_definition_jump
+	qword tile_definition_19 - get_tile_definition_jump
+	qword tile_definition_20 - get_tile_definition_jump
+	qword tile_definition_21 - get_tile_definition_jump
+	qword tile_definition_22 - get_tile_definition_jump
+	qword tile_definition_23 - get_tile_definition_jump
+	qword tile_definition_24 - get_tile_definition_jump
+	qword tile_definition_25 - get_tile_definition_jump
+	qword tile_definition_26 - get_tile_definition_jump
+	qword tile_definition_27 - get_tile_definition_jump
+	qword tile_definition_28 - get_tile_definition_jump
+	qword tile_definition_29 - get_tile_definition_jump
+	qword tile_definition_30 - get_tile_definition_jump
+	qword tile_definition_31 - get_tile_definition_jump
+	qword tile_definition_32 - get_tile_definition_jump
+	qword tile_definition_33 - get_tile_definition_jump
+	qword tile_definition_34 - get_tile_definition_jump
+	qword tile_definition_35 - get_tile_definition_jump
+	qword tile_definition_36 - get_tile_definition_jump
+	qword tile_definition_37 - get_tile_definition_jump
+	qword tile_definition_38 - get_tile_definition_jump
+	qword tile_definition_39 - get_tile_definition_jump
+	qword tile_definition_40 - get_tile_definition_jump
+	qword tile_definition_41 - get_tile_definition_jump
+	qword tile_definition_42 - get_tile_definition_jump
+	qword tile_definition_43 - get_tile_definition_jump
+	qword tile_definition_44 - get_tile_definition_jump
+	qword tile_definition_45 - get_tile_definition_jump
+	qword tile_definition_46 - get_tile_definition_jump
+	qword tile_definition_47 - get_tile_definition_jump
+	qword tile_definition_48 - get_tile_definition_jump
+	qword tile_definition_49 - get_tile_definition_jump
+	qword tile_definition_50 - get_tile_definition_jump
+	qword tile_definition_51 - get_tile_definition_jump
+	qword tile_definition_52 - get_tile_definition_jump
+	qword tile_definition_53 - get_tile_definition_jump
+	qword tile_definition_54 - get_tile_definition_jump
+	qword tile_definition_55 - get_tile_definition_jump
+	qword tile_definition_56 - get_tile_definition_jump
+	qword tile_definition_57 - get_tile_definition_jump
+	qword tile_definition_58 - get_tile_definition_jump
+	qword tile_definition_59 - get_tile_definition_jump
+	qword tile_definition_60 - get_tile_definition_jump
+	qword tile_definition_61 - get_tile_definition_jump
+	qword tile_definition_62 - get_tile_definition_jump
+	qword tile_definition_63 - get_tile_definition_jump
+	qword tile_definition_64 - get_tile_definition_jump
+	qword tile_definition_65 - get_tile_definition_jump
+	qword tile_definition_66 - get_tile_definition_jump
+	qword tile_definition_67 - get_tile_definition_jump
+	qword tile_definition_68 - get_tile_definition_jump
+	qword tile_definition_69 - get_tile_definition_jump
+	qword tile_definition_70 - get_tile_definition_jump
+	qword tile_definition_71 - get_tile_definition_jump
+	qword tile_definition_72 - get_tile_definition_jump
+	qword tile_definition_73 - get_tile_definition_jump
+	qword tile_definition_74 - get_tile_definition_jump
+	qword tile_definition_75 - get_tile_definition_jump
+	qword tile_definition_76 - get_tile_definition_jump
+	qword tile_definition_77 - get_tile_definition_jump
+	qword tile_definition_78 - get_tile_definition_jump
+	qword tile_definition_79 - get_tile_definition_jump
+	qword tile_definition_80 - get_tile_definition_jump
+	qword tile_definition_81 - get_tile_definition_jump
+	qword tile_definition_82 - get_tile_definition_jump
+	qword tile_definition_83 - get_tile_definition_jump
+	qword tile_definition_84 - get_tile_definition_jump
+	qword tile_definition_85 - get_tile_definition_jump
+	qword tile_definition_86 - get_tile_definition_jump
+	qword tile_definition_87 - get_tile_definition_jump
+	qword tile_definition_88 - get_tile_definition_jump
+	qword tile_definition_89 - get_tile_definition_jump
+	qword tile_definition_90 - get_tile_definition_jump
+	qword tile_definition_91 - get_tile_definition_jump
+	qword tile_definition_92 - get_tile_definition_jump
+	qword tile_definition_93 - get_tile_definition_jump
+	qword tile_definition_94 - get_tile_definition_jump
+	qword tile_definition_95 - get_tile_definition_jump
+	qword tile_definition_96 - get_tile_definition_jump
+	qword tile_definition_97 - get_tile_definition_jump
+	qword tile_definition_98 - get_tile_definition_jump
+	qword tile_definition_99 - get_tile_definition_jump
+	qword tile_definition_100 - get_tile_definition_jump
+	qword tile_definition_101 - get_tile_definition_jump
+	qword tile_definition_102 - get_tile_definition_jump
+	qword tile_definition_103 - get_tile_definition_jump
+	qword tile_definition_104 - get_tile_definition_jump
+	qword tile_definition_105 - get_tile_definition_jump
+	qword tile_definition_106 - get_tile_definition_jump
+	qword tile_definition_107 - get_tile_definition_jump
+	qword tile_definition_108 - get_tile_definition_jump
+	qword tile_definition_109 - get_tile_definition_jump
+	qword tile_definition_110 - get_tile_definition_jump
+	qword tile_definition_111 - get_tile_definition_jump
+	qword tile_definition_112 - get_tile_definition_jump
+	qword tile_definition_113 - get_tile_definition_jump
+	qword tile_definition_114 - get_tile_definition_jump
+	qword tile_definition_115 - get_tile_definition_jump
+	qword tile_definition_116 - get_tile_definition_jump
+	qword tile_definition_117 - get_tile_definition_jump
+	qword tile_definition_118 - get_tile_definition_jump
+	qword tile_definition_119 - get_tile_definition_jump
+	qword tile_definition_120 - get_tile_definition_jump
+	qword tile_definition_121 - get_tile_definition_jump
+	qword tile_definition_122 - get_tile_definition_jump
+	qword tile_definition_123 - get_tile_definition_jump
+	qword tile_definition_124 - get_tile_definition_jump
+	qword tile_definition_125 - get_tile_definition_jump
+	qword tile_definition_126 - get_tile_definition_jump
+	qword tile_definition_127 - get_tile_definition_jump
+	qword tile_definition_128 - get_tile_definition_jump
+	qword tile_definition_129 - get_tile_definition_jump
+	qword tile_definition_130 - get_tile_definition_jump
+	qword tile_definition_131 - get_tile_definition_jump
+	qword tile_definition_132 - get_tile_definition_jump
+	qword tile_definition_133 - get_tile_definition_jump
+	qword tile_definition_134 - get_tile_definition_jump
+	qword tile_definition_135 - get_tile_definition_jump
+	qword tile_definition_136 - get_tile_definition_jump
+	qword tile_definition_137 - get_tile_definition_jump
+	qword tile_definition_138 - get_tile_definition_jump
+	qword tile_definition_139 - get_tile_definition_jump
+	qword tile_definition_140 - get_tile_definition_jump
+	qword tile_definition_141 - get_tile_definition_jump
+	qword tile_definition_142 - get_tile_definition_jump
+	qword tile_definition_143 - get_tile_definition_jump
+	qword tile_definition_144 - get_tile_definition_jump
+	qword tile_definition_145 - get_tile_definition_jump
+	qword tile_definition_146 - get_tile_definition_jump
+	qword tile_definition_147 - get_tile_definition_jump
+	qword tile_definition_148 - get_tile_definition_jump
+	qword tile_definition_149 - get_tile_definition_jump
+	qword tile_definition_150 - get_tile_definition_jump
+	qword tile_definition_151 - get_tile_definition_jump
+	qword tile_definition_152 - get_tile_definition_jump
+	qword tile_definition_153 - get_tile_definition_jump
+	qword tile_definition_154 - get_tile_definition_jump
+	qword tile_definition_155 - get_tile_definition_jump
+	qword tile_definition_156 - get_tile_definition_jump
+	qword tile_definition_157 - get_tile_definition_jump
+	qword tile_definition_158 - get_tile_definition_jump
+	qword tile_definition_159 - get_tile_definition_jump
+	qword tile_definition_160 - get_tile_definition_jump
+	qword tile_definition_161 - get_tile_definition_jump
+	qword tile_definition_162 - get_tile_definition_jump
+	qword tile_definition_163 - get_tile_definition_jump
+	qword tile_definition_164 - get_tile_definition_jump
+	qword tile_definition_165 - get_tile_definition_jump
+	qword tile_definition_166 - get_tile_definition_jump
+	qword tile_definition_167 - get_tile_definition_jump
+	qword tile_definition_168 - get_tile_definition_jump
+	qword tile_definition_169 - get_tile_definition_jump
+	qword tile_definition_170 - get_tile_definition_jump
+	qword tile_definition_171 - get_tile_definition_jump
+	qword tile_definition_172 - get_tile_definition_jump
+	qword tile_definition_173 - get_tile_definition_jump
+	qword tile_definition_174 - get_tile_definition_jump
+	qword tile_definition_175 - get_tile_definition_jump
+	qword tile_definition_176 - get_tile_definition_jump
+	qword tile_definition_177 - get_tile_definition_jump
+	qword tile_definition_178 - get_tile_definition_jump
+	qword tile_definition_179 - get_tile_definition_jump
+	qword tile_definition_180 - get_tile_definition_jump
+	qword tile_definition_181 - get_tile_definition_jump
+	qword tile_definition_182 - get_tile_definition_jump
+	qword tile_definition_183 - get_tile_definition_jump
+	qword tile_definition_184 - get_tile_definition_jump
+	qword tile_definition_185 - get_tile_definition_jump
+	qword tile_definition_186 - get_tile_definition_jump
+	qword tile_definition_187 - get_tile_definition_jump
+	qword tile_definition_188 - get_tile_definition_jump
+	qword tile_definition_189 - get_tile_definition_jump
+	qword tile_definition_190 - get_tile_definition_jump
+	qword tile_definition_191 - get_tile_definition_jump
+	qword tile_definition_192 - get_tile_definition_jump
+	qword tile_definition_193 - get_tile_definition_jump
+	qword tile_definition_194 - get_tile_definition_jump
+	qword tile_definition_195 - get_tile_definition_jump
+	qword tile_definition_196 - get_tile_definition_jump
+	qword tile_definition_197 - get_tile_definition_jump
+	qword tile_definition_198 - get_tile_definition_jump
+	qword tile_definition_199 - get_tile_definition_jump
+	qword tile_definition_200 - get_tile_definition_jump
+	qword tile_definition_201 - get_tile_definition_jump
+	qword tile_definition_202 - get_tile_definition_jump
+	qword tile_definition_203 - get_tile_definition_jump
+	qword tile_definition_204 - get_tile_definition_jump
+	qword tile_definition_205 - get_tile_definition_jump
+	qword tile_definition_206 - get_tile_definition_jump
+	qword tile_definition_207 - get_tile_definition_jump
+	qword tile_definition_208 - get_tile_definition_jump
+	qword tile_definition_209 - get_tile_definition_jump
+	qword tile_definition_210 - get_tile_definition_jump
+	qword tile_definition_211 - get_tile_definition_jump
+	qword tile_definition_212 - get_tile_definition_jump
+	qword tile_definition_213 - get_tile_definition_jump
+	qword tile_definition_214 - get_tile_definition_jump
+	qword tile_definition_215 - get_tile_definition_jump
+	qword tile_definition_216 - get_tile_definition_jump
+	qword tile_definition_217 - get_tile_definition_jump
+	qword tile_definition_218 - get_tile_definition_jump
+	qword tile_definition_219 - get_tile_definition_jump
+	qword tile_definition_220 - get_tile_definition_jump
+	qword tile_definition_221 - get_tile_definition_jump
+	qword tile_definition_222 - get_tile_definition_jump
+	qword tile_definition_223 - get_tile_definition_jump
+	qword tile_definition_224 - get_tile_definition_jump
+	qword tile_definition_225 - get_tile_definition_jump
+	qword tile_definition_226 - get_tile_definition_jump
+	qword tile_definition_227 - get_tile_definition_jump
+	qword tile_definition_228 - get_tile_definition_jump
+	qword tile_definition_229 - get_tile_definition_jump
+	qword tile_definition_230 - get_tile_definition_jump
+	qword tile_definition_231 - get_tile_definition_jump
+	qword tile_definition_232 - get_tile_definition_jump
+	qword tile_definition_233 - get_tile_definition_jump
+	qword tile_definition_234 - get_tile_definition_jump
+	qword tile_definition_235 - get_tile_definition_jump
+	qword tile_definition_236 - get_tile_definition_jump
+	qword tile_definition_237 - get_tile_definition_jump
+	qword tile_definition_238 - get_tile_definition_jump
+	qword tile_definition_239 - get_tile_definition_jump
+	qword tile_definition_240 - get_tile_definition_jump
+	qword tile_definition_241 - get_tile_definition_jump
+	qword tile_definition_242 - get_tile_definition_jump
+	qword tile_definition_243 - get_tile_definition_jump
+	qword tile_definition_244 - get_tile_definition_jump
+	qword tile_definition_245 - get_tile_definition_jump
+	qword tile_definition_246 - get_tile_definition_jump
+	qword tile_definition_247 - get_tile_definition_jump
+	qword tile_definition_248 - get_tile_definition_jump
+	qword tile_definition_249 - get_tile_definition_jump
+	qword tile_definition_250 - get_tile_definition_jump
+	qword tile_definition_251 - get_tile_definition_jump
+	qword tile_definition_252 - get_tile_definition_jump
+	qword tile_definition_253 - get_tile_definition_jump
+	qword tile_definition_254 - get_tile_definition_jump
+	qword tile_definition_255 - get_tile_definition_jump
 
 bitmap_definition_proc 0, 0, 0
 bitmap_definition_proc 1, 0, 1
@@ -1609,14 +1613,14 @@ bitmap_definition_proc 1, 3, 7
 
 align 8
 get_bitmap_definition_jump:
-	qword bitmap_definition_0
-	qword bitmap_definition_1
-	qword bitmap_definition_2
-	qword bitmap_definition_3
-	qword bitmap_definition_4
-	qword bitmap_definition_5
-	qword bitmap_definition_6
-	qword bitmap_definition_7
+	qword bitmap_definition_0 - get_bitmap_definition_jump
+	qword bitmap_definition_1 - get_bitmap_definition_jump
+	qword bitmap_definition_2 - get_bitmap_definition_jump
+	qword bitmap_definition_3 - get_bitmap_definition_jump
+	qword bitmap_definition_4 - get_bitmap_definition_jump
+	qword bitmap_definition_5 - get_bitmap_definition_jump
+	qword bitmap_definition_6 - get_bitmap_definition_jump
+	qword bitmap_definition_7 - get_bitmap_definition_jump
 	
 
 clear_sprite_buffer proc

@@ -91,102 +91,105 @@ no_reset:
 
 
 	lea r13, mode_jump
-	jmp qword ptr [r13 + r12 * 8]
+	add r13, [r13 + r12 * 8]
+	jmp r13
+
+align 8
 mode_jump:
 	; initial state, address read + rw
-	qword intial_state					; 0
-	qword start_1						; 1
-	qword start_2						; 2
+	qword intial_state					- mode_jump ; 0
+	qword start_1						- mode_jump ; 1
+	qword start_2						- mode_jump ; 2
 
-	qword read_first_bit				; start read address
-	qword clock_low						; 4 
+	qword read_first_bit				- mode_jump ; start read address
+	qword clock_low						- mode_jump ; 4 
 
-	qword read_bit						; 5 
-	qword clock_low						; 6
+	qword read_bit						- mode_jump ; 5 
+	qword clock_low						- mode_jump ; 6
 
-	qword read_bit						; 7
-	qword clock_low						; 8
+	qword read_bit						- mode_jump ; 7
+	qword clock_low						- mode_jump ; 8
 
-	qword read_bit						; 9
-	qword clock_low						; 10
+	qword read_bit						- mode_jump ; 9
+	qword clock_low						- mode_jump ; 10
 
-	qword read_bit						; 11
-	qword clock_low						; 12
+	qword read_bit						- mode_jump ; 11
+	qword clock_low						- mode_jump ; 12
 
-	qword read_bit						; 13
-	qword clock_low						; 14
+	qword read_bit						- mode_jump ; 13
+	qword clock_low						- mode_jump ; 14
 
-	qword read_bit						; 15 - last read into address data
-	qword clock_low						; 16
+	qword read_bit						- mode_jump ; 15 - last read into address data
+	qword clock_low						- mode_jump ; 16
 
-	qword read_rw_bit					; 17 - sets rw bit and moves byte from transmit to address
+	qword read_rw_bit					- mode_jump ; 17 - sets rw bit and moves byte from transmit to address
 
-	qword send_address_ack				; 18 - waits for clock low
-	qword clock_high					; 19
-	qword clock_low_afteraddress		; 20 - end of address sequence, sets the next step
+	qword send_address_ack				- mode_jump ; 18 - waits for clock low
+	qword clock_high					- mode_jump ; 19
+	qword clock_low_afteraddress		- mode_jump ; 20 - end of address sequence, sets the next step
 
-	qword reset_i2c						; 21
+	qword reset_i2c						- mode_jump ; 21
 
 read_byte:	
 	; read data from the i2c bus and hand to the device
-	qword read_first_bit				; 22	 
-	qword clock_low						; 23
+	qword read_first_bit				- mode_jump ; 22	 
+	qword clock_low						- mode_jump ; 23
 
-	qword read_bit						; 24
-	qword clock_low						
+	qword read_bit						- mode_jump ; 24
+	qword clock_low						- mode_jump 
 
-	qword read_bit						; 26
-	qword clock_low						
+	qword read_bit						- mode_jump ; 26
+	qword clock_low						- mode_jump 
 
-	qword read_bit						; 28
-	qword clock_low						
+	qword read_bit						- mode_jump ; 28
+	qword clock_low						- mode_jump					
 
-	qword read_bit						; 30
-	qword clock_low						
+	qword read_bit						- mode_jump ; 30
+	qword clock_low						- mode_jump 
 
-	qword read_bit						; 32
-	qword clock_low						
+	qword read_bit						- mode_jump ; 32
+	qword clock_low						- mode_jump 
 
-	qword read_bit						; 34
-	qword clock_low						
+	qword read_bit						- mode_jump ; 34
+	qword clock_low						- mode_jump 
 
-	qword read_last_bit					; 36 - calls Process Message
+	qword read_last_bit					- mode_jump ; 36 - calls Process Message
 
-	qword send_dataread_ack				; 37 - this also waits for clock low
-	qword clock_high
-	qword clock_low_afterread_ack		; 39
-	qword reset_i2c						; 40
+	qword send_dataread_ack				- mode_jump ; 37 - this also waits for clock low
+	qword clock_high                    - mode_jump 
+	qword clock_low_afterread_ack		- mode_jump ; 39
+	qword reset_i2c						- mode_jump ; 40
 
 write_byte:								; writes wait for clock low
-	qword write_first_bit				; 41
-	qword clock_high					; 42
+	qword write_first_bit				- mode_jump ; 41
+	qword clock_high					- mode_jump ; 42
 
-	qword write_bit						; 43
-	qword clock_high					; 44
+	qword write_bit						- mode_jump ; 43
+	qword clock_high					- mode_jump ; 44
 
-	qword write_bit						; 45
-	qword clock_high
+	qword write_bit						- mode_jump ; 45
+	qword clock_high                    - mode_jump 
 
-	qword write_bit						; 47
-	qword clock_high
+	qword write_bit						- mode_jump ; 47
+	qword clock_high                    - mode_jump 
 
-	qword write_bit						; 49
-	qword clock_high
+	qword write_bit						- mode_jump ; 49
+	qword clock_high                    - mode_jump 
 
-	qword write_bit						; 51
-	qword clock_high
+	qword write_bit						- mode_jump ; 51
+	qword clock_high                    - mode_jump 
 
-	qword write_bit						; 53
-	qword clock_high
+	qword write_bit						- mode_jump ; 53
+	qword clock_high                    - mode_jump 
 
-	qword write_bit						; 55
-	qword clock_high
+	qword write_bit						- mode_jump ; 55
+	qword clock_high                    - mode_jump 
 
-	qword clock_low_setdefault			; 57
+	qword clock_low_setdefault			- mode_jump ; 57
 
 	;qword write_last_bit				
-	qword read_datawrite_ack			; 58
-	qword clock_low_afterwrite_ack		; 59, set mode back to 41. A stop from the CPU will reset.
+	qword read_datawrite_ack			- mode_jump ; 58
+	qword clock_low_afterwrite_ack		- mode_jump ; 59, set mode back to 41. A stop from the CPU will reset.
 
 	; should read ack off the line, if there is one goto 41, otherwise reset.
 	;qword clock_high					; 59 -ack from cpu

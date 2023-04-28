@@ -110,7 +110,7 @@ sprites_render_find proc
 	mov ebx, dword ptr [rsi + rax].sprite.mode
 	
 	lea rax, sprite_definition_jump
-	mov rax, qword ptr [rax + rbx * 8]
+	add rax, qword ptr [rax + rbx * 8]
 
 	mov qword ptr [rdx].state.sprite_jmp, rax
 	mov dword ptr [rdx].state.sprite_wait, 2
@@ -145,17 +145,18 @@ sprite_update_registers proc
 	and rbx, 07h 
 
 	lea r12, sprite_jump_table
-	jmp qword ptr [r12 + rbx * 8]
+	add r12, [r12 + rbx * 8]
+	jmp r12
 
 sprite_jump_table:
-	dq sprite_byte_0
-	dq sprite_byte_1
-	dq sprite_byte_2
-	dq sprite_byte_3
-	dq sprite_byte_4
-	dq sprite_byte_5
-	dq sprite_byte_6
-	dq sprite_byte_7
+	dq sprite_byte_0 - sprite_jump_table
+	dq sprite_byte_1 - sprite_jump_table
+	dq sprite_byte_2 - sprite_jump_table
+	dq sprite_byte_3 - sprite_jump_table
+	dq sprite_byte_4 - sprite_jump_table
+	dq sprite_byte_5 - sprite_jump_table
+	dq sprite_byte_6 - sprite_jump_table
+	dq sprite_byte_7 - sprite_jump_table
 
 ; Address Low
 sprite_byte_0:

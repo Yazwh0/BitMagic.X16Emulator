@@ -2,7 +2,7 @@
 
 extern int64_t asm_func(void *state);
 
-int32_t fmEmulatorCode(void* state)
+int32_t fnEmulatorCode(void* state)
 {
     int32_t toReturn = 0;
 

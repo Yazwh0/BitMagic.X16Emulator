@@ -40,6 +40,11 @@ public class EmulatorWindow
     private static Vector2 _lastMousePosition;
     private static IGamepad[] _joysticks;
 
+    private static object _mouseLock = new object();
+    private static int _mouseX = 0;
+    private static int _mouseY = 0;
+    private static Timer? _mouseTimer = null;
+
     public static void Run(Emulator emulator)
     {
         _closing = false;
@@ -61,7 +66,7 @@ public class EmulatorWindow
         _window.Load += OnLoad;
         _window.Render += OnRender;
         _window.Closing += OnClose;
-
+        
         _stopwatch.Start();
 
         _window.Run();
@@ -206,6 +211,7 @@ public class EmulatorWindow
         var input = _window.CreateInput();
         input.Mice[0].Cursor.CursorMode = CursorMode.Normal;
         _hasMouse = false;
+        _mouseTimer?.Dispose();
     }
 
     // If we click then we capture the mouse and pass movement to the emulator.
@@ -217,6 +223,7 @@ public class EmulatorWindow
         var input = _window.CreateInput();
         input.Mice[0].Cursor.CursorMode = CursorMode.Raw;
         _hasMouse = true;
+        _mouseTimer = new Timer(CheckMouseMove, null, 16, 16);
     }
 
     private static void EmulatorWindow_MouseMove(IMouse arg1, System.Numerics.Vector2 position)
@@ -232,7 +239,9 @@ public class EmulatorWindow
             var yDelta = (int)(position.Y - _lastMousePosition.Y);
 
             _lastMousePosition = position;
-            _emulator.SmcBuffer.PushMouse(xDelta, yDelta, GetButtons(arg1));
+            _mouseX += xDelta;
+            _mouseY += yDelta;
+            //_emulator.SmcBuffer.PushMouse(xDelta, yDelta, GetButtons(arg1));
         }
     }
 
@@ -257,6 +266,16 @@ public class EmulatorWindow
             (mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Right) ? (int)SmcBuffer.MouseButtons.Right : 0) +
             (mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Middle) ? (int)SmcBuffer.MouseButtons.Middle : 0));
 
+
+    private static void CheckMouseMove(Object? stateInfo)
+    {
+        if (_mouseX == 0 && _mouseY == 0)
+            return;
+
+        _emulator.SmcBuffer.PushMouse(_mouseX, _mouseY, SmcBuffer.MouseButtons.None);
+        _mouseX = 0;
+        _mouseY = 0;
+    }
 
     private static unsafe void OnRender(double deltaTime)
     {
@@ -324,6 +343,7 @@ public class EmulatorWindow
         _images = null;
         _layers = null;
         _emulator = null;
+        _mouseTimer?.Dispose();
     }
 
     public static void Stop()

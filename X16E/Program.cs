@@ -69,7 +69,7 @@ static class Program
         [Option('u', "sdcard-update", Required = false, HelpText = "Sets 'sdcard-write' to the 'sdcard' parameter and enables overwrite.")]
         public bool SdCardUpdate { get; set; } = false;
 
-        [Option("cart", Required = false, HelpText = "Cartridge file to load as a standard binary file.")]
+        [Option("cart", Required = false, HelpText = "Cartridge file to load as a standard binary file. Can be a .zip or .gz file, in the form 'name.cart.zip'.")]
         public string Cartridge { get; set; } = "";
 
         //[Option('m', "autorun", Required = false, HelpText = "Automatically run at startup. Ignored if address is specified. NOT YET IMPLEMENTED")]

@@ -69,6 +69,9 @@ static class Program
         [Option('u', "sdcard-update", Required = false, HelpText = "Sets 'sdcard-write' to the 'sdcard' parameter and enables overwrite.")]
         public bool SdCardUpdate { get; set; } = false;
 
+        [Option("cart", Required = false, HelpText = "Cartridge file to load as a standard binary file.")]
+        public string Cartridge { get; set; } = "";
+
         //[Option('m', "autorun", Required = false, HelpText = "Automatically run at startup. Ignored if address is specified. NOT YET IMPLEMENTED")]
         public bool AutoRun { get; set; } = false;
     }
@@ -217,6 +220,26 @@ static class Program
         {
             Console.WriteLine($"ROM '{rom}' not found.");
             return 2;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.Cartridge))
+        {
+            Console.Write($"Loading Cartridge '{options.Cartridge}'... ");
+            var result = emulator.LoadCartridge(options.Cartridge);
+            if (result == CartidgeHelperExtension.LoadCartridgeResult.Ok)
+                Console.WriteLine("Done.");
+            else
+            {
+                Console.WriteLine("Error.");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(result switch
+                {
+                    CartidgeHelperExtension.LoadCartridgeResult.FileNotFound => "*** File not found.",
+                    CartidgeHelperExtension.LoadCartridgeResult.FileTooBig => "*** File too big.",
+                    _ => "*** Unknown error."
+                });
+                Console.ResetColor();
+            }
         }
 
         if (options.StartAddress != 0 && prgLoaded)
@@ -391,7 +414,7 @@ static class Program
                 {
                     Console.WriteLine("(C)ontinue, (S)tep?");
                     var inp = Console.ReadKey(true);
-                    switch(inp.Key)
+                    switch (inp.Key)
                     {
                         case ConsoleKey.C:
                             done = false;

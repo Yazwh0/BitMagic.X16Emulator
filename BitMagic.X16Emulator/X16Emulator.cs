@@ -596,7 +596,7 @@ public class Emulator : IDisposable
     private readonly ulong _pcm_Ptr;
 
     public const int RamSize = 0x10000;
-    public const int RomSize = 0x4000 * 32;
+    public const int RomSize = 0x4000 * 256; // was 32, now 265 for cartridge
     public const int BankedRamSize = 0x2000 * 256;
     public const int VramSize = 0x20000;
     private const int DisplaySize = 800 * 525 * 4 * 6; // *6 for each layer

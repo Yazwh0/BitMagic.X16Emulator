@@ -9,7 +9,7 @@
       "commandLineArgsSpriteCollision": "--rom c:\\dev\\rom_r42.bin --code C:\\Documents\\Source\\BitMagic\\X16E\\test2.bmasm --write --prg c:\\dev\\x16emu\\r41\\example.prg",
       "commandLineArgsPicture": "--rom c:\\dev\\rom_r42.bin --code C:\\Documents\\Source\\BitMagic\\Examples\\DisplayImage\\DisplayImageX16\\src\\main.bmasm --write --prg c:\\dev\\x16emu\\r41\\example.prg",
       "commandLineArgsHardwareTester": "--rom C:\\Dev\\x16_hardware_tester.rom",
-      "commandLineArgs": "--rom c:\\dev\\rom_r42.bin -d C:\\Dev\\sdcard",
+      "commandLineArgs": "--rom C:\\Documents\\Source\\x16-rom\\build\\x16\\rom.bin -d C:\\Dev\\sdcard --cart c:\\dev\\xixit.cart",
       "commandLineArgsWrite": "--rom C:\\Documents\\Source\\x16-rom\\build\\x16\\rom.bin -d C:\\Dev\\Xixit --sdcard-write c:\\Dev\\xixit.vhd.zip --sdcard-overwrite",
       "commandLineArgsx": "--rom C:\\Documents\\Source\\x16-rom\\build\\x16\\rom.bin -d C:\\Dev\\sdcard --sdcard-size 32 --sdcard-write c:\\Dev\\christmas.bin --sdcard-overwrite --warp",
       "commandLineArgsxx": "--rom C:\\Documents\\Source\\x16-rom\\build\\x16\\rom.bin --sdcard c:\\dev\\card.bin --warp",

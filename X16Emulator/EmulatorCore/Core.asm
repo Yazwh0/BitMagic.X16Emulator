@@ -536,10 +536,11 @@ check_bank_switch macro
     jg done
     jl rambank_change
 rombank_change:
-    movzx rax, byte ptr [rsi+1]	
-    and al, 1fh
-    mov byte ptr [rsi+1], al
-    cmp al, 1
+; rom bank is now 256 banks
+;    movzx rax, byte ptr [rsi+1]	
+;    and al, 1fh
+;    mov byte ptr [rsi+1], al
+;    cmp al, 1 --- ??
 
     call copy_rombank_to_memory
 

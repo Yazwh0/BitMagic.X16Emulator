@@ -38,9 +38,8 @@ public class EmulatorWindow
     private static bool _closing = false;
     private static bool _hasMouse = false;
     private static Vector2 _lastMousePosition;
-    private static IGamepad[] _joysticks;
-
-    private static object _mouseLock = new object();
+    private static IGamepad[]? _joysticks;
+    
     private static int _mouseX = 0;
     private static int _mouseY = 0;
     private static Timer? _mouseTimer = null;
@@ -223,7 +222,9 @@ public class EmulatorWindow
         var input = _window.CreateInput();
         input.Mice[0].Cursor.CursorMode = CursorMode.Raw;
         _hasMouse = true;
-        _mouseTimer = new Timer(CheckMouseMove, null, 16, 16);
+        _mouseTimer = new Timer(CheckMouseMove, null, 20, 20);
+        _mouseX = 0;
+        _mouseX = 1;
     }
 
     private static void EmulatorWindow_MouseMove(IMouse arg1, System.Numerics.Vector2 position)

@@ -110,7 +110,7 @@ sprites_render_find proc
 	mov ebx, dword ptr [rsi + rax].sprite.mode
 	
 	lea rax, sprite_definition_jump
-	add rax, qword ptr [rax + rbx * 8]
+	add rax, [rax + rbx * 8]
 
 	mov qword ptr [rdx].state.sprite_jmp, rax
 	mov dword ptr [rdx].state.sprite_wait, 2
@@ -694,131 +694,131 @@ sprite_definition_proc 1, 3, 3, 1, 0, 126
 sprite_definition_proc 1, 3, 3, 1, 1, 127
 
 sprite_definition_jump:
-	qword sprite_definition_0
-	qword sprite_definition_1
-	qword sprite_definition_2
-	qword sprite_definition_3
-	qword sprite_definition_4
-	qword sprite_definition_5
-	qword sprite_definition_6
-	qword sprite_definition_7
-	qword sprite_definition_8
-	qword sprite_definition_9
-	qword sprite_definition_10
-	qword sprite_definition_11
-	qword sprite_definition_12
-	qword sprite_definition_13
-	qword sprite_definition_14
-	qword sprite_definition_15
-	qword sprite_definition_16
-	qword sprite_definition_17
-	qword sprite_definition_18
-	qword sprite_definition_19
-	qword sprite_definition_20
-	qword sprite_definition_21
-	qword sprite_definition_22
-	qword sprite_definition_23
-	qword sprite_definition_24
-	qword sprite_definition_25
-	qword sprite_definition_26
-	qword sprite_definition_27
-	qword sprite_definition_28
-	qword sprite_definition_29
-	qword sprite_definition_30
-	qword sprite_definition_31
-	qword sprite_definition_32
-	qword sprite_definition_33
-	qword sprite_definition_34
-	qword sprite_definition_35
-	qword sprite_definition_36
-	qword sprite_definition_37
-	qword sprite_definition_38
-	qword sprite_definition_39
-	qword sprite_definition_40
-	qword sprite_definition_41
-	qword sprite_definition_42
-	qword sprite_definition_43
-	qword sprite_definition_44
-	qword sprite_definition_45
-	qword sprite_definition_46
-	qword sprite_definition_47
-	qword sprite_definition_48
-	qword sprite_definition_49
-	qword sprite_definition_50
-	qword sprite_definition_51
-	qword sprite_definition_52
-	qword sprite_definition_53
-	qword sprite_definition_54
-	qword sprite_definition_55
-	qword sprite_definition_56
-	qword sprite_definition_57
-	qword sprite_definition_58
-	qword sprite_definition_59
-	qword sprite_definition_60
-	qword sprite_definition_61
-	qword sprite_definition_62
-	qword sprite_definition_63
-	qword sprite_definition_64
-	qword sprite_definition_65
-	qword sprite_definition_66
-	qword sprite_definition_67
-	qword sprite_definition_68
-	qword sprite_definition_69
-	qword sprite_definition_70
-	qword sprite_definition_71
-	qword sprite_definition_72
-	qword sprite_definition_73
-	qword sprite_definition_74
-	qword sprite_definition_75
-	qword sprite_definition_76
-	qword sprite_definition_77
-	qword sprite_definition_78
-	qword sprite_definition_79
-	qword sprite_definition_80
-	qword sprite_definition_81
-	qword sprite_definition_82
-	qword sprite_definition_83
-	qword sprite_definition_84
-	qword sprite_definition_85
-	qword sprite_definition_86
-	qword sprite_definition_87
-	qword sprite_definition_88
-	qword sprite_definition_89
-	qword sprite_definition_90
-	qword sprite_definition_91
-	qword sprite_definition_92
-	qword sprite_definition_93
-	qword sprite_definition_94
-	qword sprite_definition_95
-	qword sprite_definition_96
-	qword sprite_definition_97
-	qword sprite_definition_98
-	qword sprite_definition_99
-	qword sprite_definition_100
-	qword sprite_definition_101
-	qword sprite_definition_102
-	qword sprite_definition_103
-	qword sprite_definition_104
-	qword sprite_definition_105
-	qword sprite_definition_106
-	qword sprite_definition_107
-	qword sprite_definition_108
-	qword sprite_definition_109
-	qword sprite_definition_110
-	qword sprite_definition_111
-	qword sprite_definition_112
-	qword sprite_definition_113
-	qword sprite_definition_114
-	qword sprite_definition_115
-	qword sprite_definition_116
-	qword sprite_definition_117
-	qword sprite_definition_118
-	qword sprite_definition_119
-	qword sprite_definition_120
-	qword sprite_definition_121
-	qword sprite_definition_122
-	qword sprite_definition_123
-	qword sprite_definition_124
-	qword sprite_definition_125
-	qword sprite_definition_126
-	qword sprite_definition_127
+	qword sprite_definition_0 - sprite_definition_jump
+	qword sprite_definition_1 - sprite_definition_jump
+	qword sprite_definition_2 - sprite_definition_jump
+	qword sprite_definition_3 - sprite_definition_jump
+	qword sprite_definition_4 - sprite_definition_jump
+	qword sprite_definition_5 - sprite_definition_jump
+	qword sprite_definition_6 - sprite_definition_jump
+	qword sprite_definition_7 - sprite_definition_jump
+	qword sprite_definition_8 - sprite_definition_jump
+	qword sprite_definition_9 - sprite_definition_jump
+	qword sprite_definition_10 - sprite_definition_jump
+	qword sprite_definition_11 - sprite_definition_jump
+	qword sprite_definition_12 - sprite_definition_jump
+	qword sprite_definition_13 - sprite_definition_jump
+	qword sprite_definition_14 - sprite_definition_jump
+	qword sprite_definition_15 - sprite_definition_jump
+	qword sprite_definition_16 - sprite_definition_jump
+	qword sprite_definition_17 - sprite_definition_jump
+	qword sprite_definition_18 - sprite_definition_jump
+	qword sprite_definition_19 - sprite_definition_jump
+	qword sprite_definition_20 - sprite_definition_jump
+	qword sprite_definition_21 - sprite_definition_jump
+	qword sprite_definition_22 - sprite_definition_jump
+	qword sprite_definition_23 - sprite_definition_jump
+	qword sprite_definition_24 - sprite_definition_jump
+	qword sprite_definition_25 - sprite_definition_jump
+	qword sprite_definition_26 - sprite_definition_jump
+	qword sprite_definition_27 - sprite_definition_jump
+	qword sprite_definition_28 - sprite_definition_jump
+	qword sprite_definition_29 - sprite_definition_jump
+	qword sprite_definition_30 - sprite_definition_jump
+	qword sprite_definition_31 - sprite_definition_jump
+	qword sprite_definition_32 - sprite_definition_jump
+	qword sprite_definition_33 - sprite_definition_jump
+	qword sprite_definition_34 - sprite_definition_jump
+	qword sprite_definition_35 - sprite_definition_jump
+	qword sprite_definition_36 - sprite_definition_jump
+	qword sprite_definition_37 - sprite_definition_jump
+	qword sprite_definition_38 - sprite_definition_jump
+	qword sprite_definition_39 - sprite_definition_jump
+	qword sprite_definition_40 - sprite_definition_jump
+	qword sprite_definition_41 - sprite_definition_jump
+	qword sprite_definition_42 - sprite_definition_jump
+	qword sprite_definition_43 - sprite_definition_jump
+	qword sprite_definition_44 - sprite_definition_jump
+	qword sprite_definition_45 - sprite_definition_jump
+	qword sprite_definition_46 - sprite_definition_jump
+	qword sprite_definition_47 - sprite_definition_jump
+	qword sprite_definition_48 - sprite_definition_jump
+	qword sprite_definition_49 - sprite_definition_jump
+	qword sprite_definition_50 - sprite_definition_jump
+	qword sprite_definition_51 - sprite_definition_jump
+	qword sprite_definition_52 - sprite_definition_jump
+	qword sprite_definition_53 - sprite_definition_jump
+	qword sprite_definition_54 - sprite_definition_jump
+	qword sprite_definition_55 - sprite_definition_jump
+	qword sprite_definition_56 - sprite_definition_jump
+	qword sprite_definition_57 - sprite_definition_jump
+	qword sprite_definition_58 - sprite_definition_jump
+	qword sprite_definition_59 - sprite_definition_jump
+	qword sprite_definition_60 - sprite_definition_jump
+	qword sprite_definition_61 - sprite_definition_jump
+	qword sprite_definition_62 - sprite_definition_jump
+	qword sprite_definition_63 - sprite_definition_jump
+	qword sprite_definition_64 - sprite_definition_jump
+	qword sprite_definition_65 - sprite_definition_jump
+	qword sprite_definition_66 - sprite_definition_jump
+	qword sprite_definition_67 - sprite_definition_jump
+	qword sprite_definition_68 - sprite_definition_jump
+	qword sprite_definition_69 - sprite_definition_jump
+	qword sprite_definition_70 - sprite_definition_jump
+	qword sprite_definition_71 - sprite_definition_jump
+	qword sprite_definition_72 - sprite_definition_jump
+	qword sprite_definition_73 - sprite_definition_jump
+	qword sprite_definition_74 - sprite_definition_jump
+	qword sprite_definition_75 - sprite_definition_jump
+	qword sprite_definition_76 - sprite_definition_jump
+	qword sprite_definition_77 - sprite_definition_jump
+	qword sprite_definition_78 - sprite_definition_jump
+	qword sprite_definition_79 - sprite_definition_jump
+	qword sprite_definition_80 - sprite_definition_jump
+	qword sprite_definition_81 - sprite_definition_jump
+	qword sprite_definition_82 - sprite_definition_jump
+	qword sprite_definition_83 - sprite_definition_jump
+	qword sprite_definition_84 - sprite_definition_jump
+	qword sprite_definition_85 - sprite_definition_jump
+	qword sprite_definition_86 - sprite_definition_jump
+	qword sprite_definition_87 - sprite_definition_jump
+	qword sprite_definition_88 - sprite_definition_jump
+	qword sprite_definition_89 - sprite_definition_jump
+	qword sprite_definition_90 - sprite_definition_jump
+	qword sprite_definition_91 - sprite_definition_jump
+	qword sprite_definition_92 - sprite_definition_jump
+	qword sprite_definition_93 - sprite_definition_jump
+	qword sprite_definition_94 - sprite_definition_jump
+	qword sprite_definition_95 - sprite_definition_jump
+	qword sprite_definition_96 - sprite_definition_jump
+	qword sprite_definition_97 - sprite_definition_jump
+	qword sprite_definition_98 - sprite_definition_jump
+	qword sprite_definition_99 - sprite_definition_jump
+	qword sprite_definition_100 - sprite_definition_jump
+	qword sprite_definition_101 - sprite_definition_jump
+	qword sprite_definition_102 - sprite_definition_jump
+	qword sprite_definition_103 - sprite_definition_jump
+	qword sprite_definition_104 - sprite_definition_jump
+	qword sprite_definition_105 - sprite_definition_jump
+	qword sprite_definition_106 - sprite_definition_jump
+	qword sprite_definition_107 - sprite_definition_jump
+	qword sprite_definition_108 - sprite_definition_jump
+	qword sprite_definition_109 - sprite_definition_jump
+	qword sprite_definition_110 - sprite_definition_jump
+	qword sprite_definition_111 - sprite_definition_jump
+	qword sprite_definition_112 - sprite_definition_jump
+	qword sprite_definition_113 - sprite_definition_jump
+	qword sprite_definition_114 - sprite_definition_jump
+	qword sprite_definition_115 - sprite_definition_jump
+	qword sprite_definition_116 - sprite_definition_jump
+	qword sprite_definition_117 - sprite_definition_jump
+	qword sprite_definition_118 - sprite_definition_jump
+	qword sprite_definition_119 - sprite_definition_jump
+	qword sprite_definition_120 - sprite_definition_jump
+	qword sprite_definition_121 - sprite_definition_jump
+	qword sprite_definition_122 - sprite_definition_jump
+	qword sprite_definition_123 - sprite_definition_jump
+	qword sprite_definition_124 - sprite_definition_jump
+	qword sprite_definition_125 - sprite_definition_jump
+	qword sprite_definition_126 - sprite_definition_jump
+	qword sprite_definition_127 - sprite_definition_jump

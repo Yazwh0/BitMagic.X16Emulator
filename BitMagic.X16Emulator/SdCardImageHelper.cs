@@ -13,6 +13,7 @@ public static class SdCardImageHelper
     public static (Stream Data, bool requiresVhd) ReadFile(string filename, Stream data) =>
         (Path.GetExtension(filename).ToUpper()) switch
         {
+            ".CART" => (data, true), // for cartirdges
             ".BIN" => (data, true),
             ".VHD" => (data, false),
             ".ZIP" => ReadZipFile(Path.GetFileNameWithoutExtension(filename), data),

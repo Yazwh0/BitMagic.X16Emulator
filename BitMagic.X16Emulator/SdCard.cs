@@ -1,16 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.InteropServices;
-using DiscUtils.Fat;
+﻿using DiscUtils.Fat;
 //using DiscUtils.Raw;
 using DiscUtils.Vhd;
 using DiscUtils;
-using DiscUtils.Core;
 using DiscUtils.Partitions;
-using System.Drawing;
 
 namespace BitMagic.X16Emulator;
 

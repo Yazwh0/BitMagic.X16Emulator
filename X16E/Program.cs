@@ -226,16 +226,16 @@ static class Program
         {
             Console.Write($"Loading Cartridge '{options.Cartridge}'... ");
             var result = emulator.LoadCartridge(options.Cartridge);
-            if (result == CartidgeHelperExtension.LoadCartridgeResult.Ok)
+            if (result.Result == CartidgeHelperExtension.LoadCartridgeResultCode.Ok)
                 Console.WriteLine("Done.");
             else
             {
                 Console.WriteLine("Error.");
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(result switch
+                Console.WriteLine(result.Result switch
                 {
-                    CartidgeHelperExtension.LoadCartridgeResult.FileNotFound => "*** File not found.",
-                    CartidgeHelperExtension.LoadCartridgeResult.FileTooBig => "*** File too big.",
+                    CartidgeHelperExtension.LoadCartridgeResultCode.FileNotFound => "*** File not found.",
+                    CartidgeHelperExtension.LoadCartridgeResultCode.FileTooBig => "*** File too big.",
                     _ => "*** Unknown error."
                 });
                 Console.ResetColor();

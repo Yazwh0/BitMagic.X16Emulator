@@ -92,7 +92,7 @@ namespace BitMagic.X16Emulator
 
                 byte btns = (byte)((byte)buttons + (byte)0b1000 + (byte)((toSendX & 0x100) != 0 ? 010000 : 0) + (byte)((toSendY & 0x100) != 0 ? 0100000 : 0));
 
-                Console.WriteLine($"{Convert.ToString(btns, 2)} {(byte)toSendX:X2} {(byte)toSendY:X2}");
+                //Console.WriteLine($"{Convert.ToString(btns, 2)} {(byte)toSendX:X2} {(byte)toSendY:X2}");
                 PushMouseByte(btns);
                 PushMouseByte((byte)toSendX);
                 PushMouseByte((byte)toSendY);

@@ -68,7 +68,7 @@ public class Emulator : IDisposable
 #endif
 #if RELEASE
 #if OS_WINDOWS
-    [DllImport(@"EmulatorCore\EmulatorCore.dll")]
+    [DllImport(@".\EmulatorCore\EmulatorCore.dll")]
 #endif
 #if OS_LINUX
     [DllImport(@"./EmulatorCore/EmulatorCore.so")]

@@ -26,35 +26,41 @@ namespace BitMagic.X16Emulator
             _emulator = emulator;
         }
 
-        public void KeyDown(Key key) => AddKey(true, KeyToPs2ScanCode(key));
+        public void KeyDown(Key key) => AddKey(true, KeyToIbmScanCode(key));
 
-        public void KeyUp(Key key) => AddKey(false, KeyToPs2ScanCode(key));
+        public void KeyUp(Key key) => AddKey(false, KeyToIbmScanCode(key));
 
-        public void AddKey(bool keyDown, uint scancode)
+        public void AddKey(bool keyDown, byte scancode)
         {
-            if (scancode == 0xff && keyDown)
-            {   // sequence from the x16 emulator
-                PushKeyboard(0xe1);
-                PushKeyboard(0x14);
-                PushKeyboard(0x77);
-                PushKeyboard(0xe1);
-                PushKeyboard(0xf0);
-                PushKeyboard(0x14);
-                PushKeyboard(0xf0);
-                PushKeyboard(0x77);
-                return;
-            }
-
-            if ((scancode & EXTENDED_FLAG) != 0)
-                PushKeyboard(0xe0);
-            if (!keyDown)
-                PushKeyboard(0xf0);
-
-            PushKeyboard((byte)(scancode & 0xff));
+            PushKeyboard((byte)(scancode | (keyDown ? 0x00 : 0x80)));
         }
+
+        //public void AddKey(bool keyDown, uint scancode)
+        //{
+        //    if (scancode == 0xff && keyDown)
+        //    {   // sequence from the x16 emulator
+        //        PushKeyboard(0xe1);
+        //        PushKeyboard(0x14);
+        //        PushKeyboard(0x77);
+        //        PushKeyboard(0xe1);
+        //        PushKeyboard(0xf0);
+        //        PushKeyboard(0x14);
+        //        PushKeyboard(0xf0);
+        //        PushKeyboard(0x77);
+        //        return;
+        //    }
+
+        //    if ((scancode & EXTENDED_FLAG) != 0)
+        //        PushKeyboard(0xe0);
+        //    if (!keyDown)
+        //        PushKeyboard(0xf0);
+
+        //    PushKeyboard((byte)(scancode & 0xff));
+        //}
 
         public void PushKeyboard(byte value)
         {
+            Console.WriteLine($"Key press : {value:X2} {value & 0x7f}");
             var next = (_emulator.Keyboard_WritePosition + 1) & (Emulator.SmcKeyboardBufferSize - 1);
             if (next != _emulator.Keyboard_ReadPosition)
             {
@@ -221,6 +227,114 @@ namespace BitMagic.X16Emulator
             _ => 0
         };
 
+        public byte KeyToIbmScanCode(Key key) => key switch
+        {
+            // SDL_SCANCODE_CLEAR
+            Key.GraveAccent => 1,
+            Key.Backspace => 15,
+            Key.Tab => 16,
+            Key.Enter => 43,
+            Key.Pause => 126,
+            Key.Escape => 126, // 126 is break, 110 is esc
+            Key.Space => 61,
+            Key.Apostrophe => 41,
+            Key.Comma => 53,
+            Key.Minus => 12,
+            Key.Period => 54,
+            Key.Slash => 55,
+            Key.Number0 => 11,
+            Key.Number1 => 2,
+            Key.Number2 => 3,
+            Key.Number3 => 4,
+            Key.Number4 => 5,
+            Key.Number5 => 6,
+            Key.Number6 => 7,
+            Key.Number7 => 8,
+            Key.Number8 => 9,
+            Key.Number9 => 10,
+            Key.Semicolon => 40,
+            Key.Equal => 13,
+            Key.LeftBracket => 27,
+            Key.BackSlash => 29,
+            Key.RightBracket => 28,
+            Key.A => 31,
+            Key.B => 50,
+            Key.C => 48,
+            Key.D => 33,
+            Key.E => 19,
+            Key.F => 34,
+            Key.G => 35,
+            Key.H => 36,
+            Key.I => 24,
+            Key.J => 37,
+            Key.K => 38,
+            Key.L => 39,
+            Key.M => 52,
+            Key.N => 51,
+            Key.O => 25,
+            Key.P => 26,
+            Key.Q => 17,
+            Key.R => 20,
+            Key.S => 32,
+            Key.T => 21,
+            Key.U => 23,
+            Key.V => 49,
+            Key.W => 18,
+            Key.X => 47,
+            Key.Y => 22,
+            Key.Z => 46,
+            Key.Delete => 76,
+            Key.Up => 83,
+            Key.Down => 84,
+            Key.Right => 89,
+            Key.Left => 79,
+            Key.Insert => 75,
+            Key.Home => 80,
+            Key.End => 81,
+            Key.PageUp => 85,
+            Key.PageDown => 86,
+            Key.F1 => 112,
+            Key.F2 => 113,
+            Key.F3 => 114,
+            Key.F4 => 115,
+            Key.F5 => 116,
+            Key.F6 => 117,
+            Key.F7 => 118,
+            Key.F8 => 119,
+            Key.F9 => 120,
+            Key.F10 => 121,
+            Key.F11 => 122,
+            Key.F12 => 123,
+            Key.ShiftRight => 57,
+            Key.ShiftLeft => 44,
+            Key.ScrollLock => 125,
+            Key.CapsLock => 30,
+            Key.ControlLeft => 58,
+            Key.ControlRight => 64,
+            Key.AltLeft => 60,
+            Key.AltRight => 62,
+            //SDL_SCANCODE_LGUI // Windows/Command
+            //SDL_SCANCODE_RGUI => 0x5b | EXTENDED_FLAG,
+            Key.Menu => 0,
+            //SDL_SCANCODE_NONUSBACKSLASH => 0x61,
+            Key.KeypadEnter => 108,
+            Key.Keypad0 => 99,
+            Key.Keypad1 => 93,
+            Key.Keypad2 => 98,
+            Key.Keypad3 => 103,
+            Key.Keypad4 => 92,
+            Key.Keypad5 => 97,
+            Key.Keypad6 => 102,
+            Key.Keypad7 => 91,
+            Key.Keypad8 => 96,
+            Key.Keypad9 => 101,
+            Key.KeypadDecimal => 104,
+            Key.KeypadAdd => 106,
+            Key.KeypadSubtract => 105,
+            Key.KeypadMultiply => 100,
+            Key.KeypadDivide => 95,
+            _ => 0
+        };
 
         private bool _running = true;
 

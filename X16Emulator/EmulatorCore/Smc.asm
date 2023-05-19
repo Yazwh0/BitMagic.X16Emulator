@@ -13,6 +13,10 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see https://www.gnu.org/licenses/.
 
+MAJOR_VERSION equ 43
+MINOR_VERSION equ 0
+PATCH_VERSION equ 0
+
 
 ; read the state of the i2c bus and set state as required
 ; expects 
@@ -67,11 +71,82 @@ smc_stop endp
 ; return rbx as data to transmit
 smc_set_next_write proc
 	mov eax, dword ptr [rdx].state.smc_offset
-	cmp eax, 7
-	je keyboard
-	cmp eax, 021h
-	je mouse
+	cmp eax, 03fh
+	jg smc_sendnothing
 
+	lea rdi, smc_transmit
+	add rdi, [rdi + rax * 8]
+	jmp rdi
+
+align 8
+smc_transmit:
+	qword smc_sendnothing	- smc_transmit ; 00
+	qword smc_sendnothing	- smc_transmit ; 01
+	qword smc_sendnothing	- smc_transmit ; 02
+	qword smc_sendnothing	- smc_transmit ; 03
+	qword smc_sendnothing	- smc_transmit ; 04
+	qword smc_sendnothing	- smc_transmit ; 05
+	qword smc_sendnothing	- smc_transmit ; 06
+	qword keyboard			- smc_transmit ; 07
+	qword smc_sendnothing	- smc_transmit ; 08
+	qword smc_sendnothing	- smc_transmit ; 09
+	qword smc_sendnothing	- smc_transmit ; 0a
+	qword smc_sendnothing	- smc_transmit ; 0b
+	qword smc_sendnothing	- smc_transmit ; 0c
+	qword smc_sendnothing	- smc_transmit ; 0d
+	qword smc_sendnothing	- smc_transmit ; 0e
+	qword smc_sendnothing	- smc_transmit ; 0f
+	qword smc_sendnothing	- smc_transmit ; 10
+	qword smc_sendnothing	- smc_transmit ; 11
+	qword smc_sendnothing	- smc_transmit ; 12
+	qword smc_sendnothing	- smc_transmit ; 13
+	qword smc_sendnothing	- smc_transmit ; 14
+	qword smc_sendnothing	- smc_transmit ; 15
+	qword smc_sendnothing	- smc_transmit ; 16
+	qword smc_sendnothing	- smc_transmit ; 17
+	qword smc_sendnothing	- smc_transmit ; 18
+	qword smc_sendnothing	- smc_transmit ; 19
+	qword smc_sendnothing	- smc_transmit ; 1a
+	qword smc_sendnothing	- smc_transmit ; 1b
+	qword smc_sendnothing	- smc_transmit ; 1c
+	qword smc_sendnothing	- smc_transmit ; 1d
+	qword smc_sendnothing	- smc_transmit ; 1e
+	qword smc_sendnothing	- smc_transmit ; 1f
+	qword smc_sendnothing	- smc_transmit ; 20
+	qword mouse				- smc_transmit ; 21
+	qword smc_sendnothing	- smc_transmit ; 22
+	qword smc_sendnothing	- smc_transmit ; 23
+	qword smc_sendnothing	- smc_transmit ; 24
+	qword smc_sendnothing	- smc_transmit ; 25
+	qword smc_sendnothing	- smc_transmit ; 26
+	qword smc_sendnothing	- smc_transmit ; 27
+	qword smc_sendnothing	- smc_transmit ; 28
+	qword smc_sendnothing	- smc_transmit ; 29
+	qword smc_sendnothing	- smc_transmit ; 2a
+	qword smc_sendnothing	- smc_transmit ; 2b
+	qword smc_sendnothing	- smc_transmit ; 2c
+	qword smc_sendnothing	- smc_transmit ; 2d
+	qword smc_sendnothing	- smc_transmit ; 2e
+	qword smc_sendnothing	- smc_transmit ; 2f
+	qword smc_major_version	- smc_transmit ; 30
+	qword smc_minor_version	- smc_transmit ; 31
+	qword smc_patch_version	- smc_transmit ; 32
+	qword smc_sendnothing	- smc_transmit ; 33
+	qword smc_sendnothing	- smc_transmit ; 34
+	qword smc_sendnothing	- smc_transmit ; 35
+	qword smc_sendnothing	- smc_transmit ; 36
+	qword smc_sendnothing	- smc_transmit ; 37
+	qword smc_sendnothing	- smc_transmit ; 38
+	qword smc_sendnothing	- smc_transmit ; 39
+	qword smc_sendnothing	- smc_transmit ; 3a
+	qword smc_sendnothing	- smc_transmit ; 3b
+	qword smc_sendnothing	- smc_transmit ; 3c
+	qword smc_sendnothing	- smc_transmit ; 3d
+	qword smc_sendnothing	- smc_transmit ; 3e
+	qword smc_sendnothing	- smc_transmit ; 3f
+
+
+smc_sendnothing:
 	mov dword ptr [rdx].state.i2c_datatotransmit, 1
 	mov ebx, 0ffh ; In this case the SMC wouldn't respond, so the CPU would just clock in 1s as thats the default.
 	ret
@@ -126,6 +201,19 @@ no_keyboard_data:
 	xor rbx, rbx
 	mov dword ptr [rdx].state.smc_keyboard_readnodata, 1
 	mov dword ptr [rdx].state.i2c_datatotransmit, 0
+	ret
+
+smc_major_version:
+	mov dword ptr [rdx].state.i2c_datatotransmit, 1
+	mov rbx, MAJOR_VERSION
+	ret
+smc_minor_version:
+	mov dword ptr [rdx].state.i2c_datatotransmit, 1
+	mov rbx, MINOR_VERSION
+	ret
+smc_patch_version:
+	mov dword ptr [rdx].state.i2c_datatotransmit, 1
+	mov rbx, PATCH_VERSION
 	ret
 smc_set_next_write endp
 

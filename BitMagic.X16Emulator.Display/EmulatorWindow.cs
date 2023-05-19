@@ -48,7 +48,14 @@ public class EmulatorWindow
     {
         _closing = false;
         _emulator = emulator;
-        _window = Window.Create(WindowOptions.Default);
+
+        var options = WindowOptions.Default;
+
+        options.UpdatesPerSecond = 59.523809;
+        options.VSync = true;
+        options.ShouldSwapAutomatically= true;
+
+        _window = Window.Create(options);
 
         _images = new X16EImage[6];
         _images[0] = new X16EImage(_emulator, 0);

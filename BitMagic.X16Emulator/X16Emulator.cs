@@ -520,6 +520,7 @@ public class Emulator : IDisposable
     }
 
     private CpuState _state;
+    public CpuState State => _state;
 
     public bool DebugMode { get; set; } // lets users of the enumlator know the application is in debug mode.
 
@@ -599,20 +600,20 @@ public class Emulator : IDisposable
     public const int RomSize = 0x4000 * 256; // was 32, now 265 for cartridge
     public const int BankedRamSize = 0x2000 * 256;
     public const int VramSize = 0x20000;
-    private const int DisplaySize = 800 * 525 * 4 * 6; // *6 for each layer
-    private const int PaletteSize = 256 * 4;
-    private const int DisplayBufferSize = 2048 * 2 * 5; // Pallette index for two lines * 4 for each layers 0, 1, sprite value, sprite depth, sprite collision - one line being rendered, one being output, 2048 to provide enough space so scaling of $ff works
-    private const int HistorySize = 16 * 1024;
-    private const int SpriteSize = 64 * 128;
-    private const int I2cBufferSize = 1024;
+    public const int DisplaySize = 800 * 525 * 4 * 6; // *6 for each layer
+    public const int PaletteSize = 256 * 4;
+    public const int DisplayBufferSize = 2048 * 2 * 5; // Pallette index for two lines * 4 for each layers 0, 1, sprite value, sprite depth, sprite collision - one line being rendered, one being output, 2048 to provide enough space so scaling of $ff works
+    public const int HistorySize = 16 * 1024;
+    public const int SpriteSize = 64 * 128;
+    public const int I2cBufferSize = 1024;
     public const int SmcKeyboardBufferSize = 16;
     public const int SmcMouseBufferSize = 8;
-    private const int SpiHistoryPtrSize = 1024 * 2;
-    private const int SpiInboundBufferPtrSize = 1024; // 512 + 4;
-    private const int SpiOutboundBufferPtrSize = 1024; // 512 + 4;
-    private const int BreakpointSize = 0xa000 + 0x2000 * 256 + 0x4000 * 256; // base ram, rambanks, rombanks. 256 rom banks for carts.
-    private const int StackInfoSize = 256 * 4;
-    private const int StackBreakpointSize = 256;
+    public const int SpiHistoryPtrSize = 1024 * 2;
+    public const int SpiInboundBufferPtrSize = 1024; // 512 + 4;
+    public const int SpiOutboundBufferPtrSize = 1024; // 512 + 4;
+    public const int BreakpointSize = 0xa000 + 0x2000 * 256 + 0x4000 * 256; // base ram, rambanks, rombanks. 256 rom banks for carts.
+    public const int StackInfoSize = 256 * 4;
+    public const int StackBreakpointSize = 256;
     public const int RtcNvramSize = 64;
     private const int PcmSize = 1024 * 4;
 

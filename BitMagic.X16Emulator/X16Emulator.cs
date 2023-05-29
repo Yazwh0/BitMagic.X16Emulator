@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.Tracing;
-using System.Formats.Asn1;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using BitMagic.Common;
 
 namespace BitMagic.X16Emulator;
@@ -209,6 +206,7 @@ public class Emulator : IDisposable
         public uint Mode { get => _emulator._state.I2cMode; set => _emulator._state.I2cMode = value; }
         public uint Address { get => _emulator._state.I2cAddress; set => _emulator._state.I2cAddress = value; }
         public uint DataToTransmit { get => _emulator._state.I2cDataToTransmit; set => _emulator._state.I2cDataToTransmit = value; }
+        public unsafe Span<byte> Buffer => new Span<byte>((void*) _emulator._i2cBuffer_ptr, I2cBufferSize);
     }
 
     public class SmcState
@@ -478,7 +476,11 @@ public class Emulator : IDisposable
         public byte Via_Timer2_Running = 0;
         public byte _Padding2 = 0;
 
-        public unsafe CpuState(ulong memory, ulong rom, ulong ramBank, ulong vram,
+        public CpuState()
+        {
+        }
+
+        public unsafe void SetPointers(ulong memory, ulong rom, ulong ramBank, ulong vram,
             ulong display, ulong palette, ulong sprite, ulong displayBuffer, ulong history, ulong i2cBuffer,
             ulong smcKeyboardPtr, ulong smcMousePtr, ulong spiHistoryPtr, ulong spiInboundBufferPtr, ulong spiOutbandBufferPtr,
             ulong breakpointPtr, ulong stackInfoPtr, ulong stackBreakpointPtr, ulong rtcNvramPtr, ulong pcmPtr)
@@ -664,10 +666,8 @@ public class Emulator : IDisposable
 
         _pcm_Ptr = (ulong)NativeMemory.Alloc(PcmSize);
 
-        _state = new CpuState(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,
-            _sprite_ptr, _display_buffer_ptr_rounded, _history_ptr, _i2cBuffer_ptr, _smcKeyboard_ptr, _smcMouse_ptr, _spiHistory_ptr,
-            _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded, _stackInfo_Ptr, _stackBreakpoint_Ptr, _rtcNvram_Ptr,
-            _pcm_Ptr);
+        _state = new CpuState();
+        SetPointers();
 
         var memory_span = new Span<byte>((void*)_memory_ptr, RamSize);
         for (var i = 0; i < RamSize; i++)
@@ -752,12 +752,16 @@ public class Emulator : IDisposable
         SmcBuffer = new SmcBuffer(this);
     }
 
-
+    private void SetPointers() => _state.SetPointers(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,
+            _sprite_ptr, _display_buffer_ptr_rounded, _history_ptr, _i2cBuffer_ptr, _smcKeyboard_ptr, _smcMouse_ptr, _spiHistory_ptr,
+            _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded, _stackInfo_Ptr, _stackBreakpoint_Ptr, _rtcNvram_Ptr,
+            _pcm_Ptr);
 
     public unsafe Span<byte> Memory => new Span<byte>((void*)_memory_ptr_rounded, RamSize);
     public unsafe Span<byte> RamBank => new Span<byte>((void*)_ram_ptr_rounded, BankedRamSize);
     public unsafe Span<byte> RomBank => new Span<byte>((void*)_rom_ptr_rounded, RomSize);
     public unsafe Span<PixelRgba> Display => new Span<PixelRgba>((void*)_display_ptr, DisplaySize / 4);
+    public unsafe Span<byte> DisplayRaw => new Span<byte>((void*)_display_ptr, DisplaySize);
     public unsafe Span<PixelRgba> Palette => new Span<PixelRgba>((void*)_palette_ptr, PaletteSize / 4);
     public unsafe Span<Sprite> Sprites => new Span<Sprite>((void*)_sprite_ptr, 128);
     public unsafe Span<EmulatorHistory> History => new Span<EmulatorHistory>((void*)_history_ptr, HistorySize / 16);
@@ -767,6 +771,9 @@ public class Emulator : IDisposable
     public unsafe Span<uint> StackInfo => new Span<uint>((void*)_stackInfo_Ptr, StackInfoSize / 4);
     public unsafe Span<byte> StackBreakpoints => new Span<byte>((void*)_stackBreakpoint_Ptr, StackBreakpointSize);
     public unsafe Span<byte> RtcNvram => new Span<byte>((void*)_rtcNvram_Ptr, RtcNvramSize);
+    public unsafe Span<byte> DisplayBuffer => new Span<byte>((void*)_display_buffer_ptr_rounded, DisplayBufferSize);
+    public unsafe Span<byte> SpiInboundBuffer => new Span<byte>((void*)_spiInboundBufferPtr, SpiInboundBufferPtrSize);
+    public unsafe Span<byte> SpiOutboundBuffer => new Span<byte>((void*)_spiOutboundBufferPtr, SpiOutboundBufferPtrSize);
 
     public SmcBuffer SmcBuffer { get; }
 
@@ -791,6 +798,12 @@ public class Emulator : IDisposable
         //i2c.Stop();
 
         return result;
+    }
+
+    public void SetState(CpuState state)
+    {
+        _state = state;
+        SetPointers();
     }
 
     public unsafe void Dispose()

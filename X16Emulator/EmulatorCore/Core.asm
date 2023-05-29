@@ -181,8 +181,8 @@ asm_func proc state_ptr:QWORD
 
     pop rdx
     
-    mov last_cpuclock, 0
-    mov cpu_posy, 0
+    mov [rdx].state.last_cpuclock, 0
+    mov [rdx].state.cpu_posy, 0
 
     call vera_init
     call via_init
@@ -196,7 +196,7 @@ asm_func proc state_ptr:QWORD
     call copy_rombank_to_memory
 
     mov dword ptr [rdx].state.stack_breakpoint_hit, 0
-    mov ignoreBreakpoint, 1
+    mov [rdx].state.ignore_breakpoint, 1
     mov dword ptr [rdx].state.exit_code, 0
 
     mov dword ptr [rdx].state.initial_startup, 0
@@ -242,7 +242,7 @@ next_opcode::
     ; if we're stepping, we dont check for breakpoints
     mov eax, [rdx].state.stepping
     test eax, eax
-    or eax, ignoreBreakpoint
+    or eax, [rdx].state.ignore_breakpoint
     jnz dont_test_breakpoint
 
     ; check for breakpoint
@@ -258,7 +258,7 @@ next_opcode::
     jnz breakpoint_exit
 
 dont_test_breakpoint:
-    mov ignoreBreakpoint, 0
+    mov [rdx].state.ignore_breakpoint, 0
     movzx rbx, byte ptr [rsi+r11]	; Get opcode
 
     ;cmp r11, 0E38Dh
@@ -276,7 +276,7 @@ dont_test_breakpoint:
     mov rdi, [rdx].state.history_ptr
     mov rcx, [rdx].state.history_pos
     add rdi, rcx
-    mov debug_pos, rdi
+    mov [rdx].state.debug_pos, rdi
     add rcx, 16
     and rcx, (1024*16)-1
     mov [rdx].state.history_pos, rcx
@@ -360,7 +360,7 @@ no_break:
 cpu_is_waiting:
     add r14, 1
 opcode_done::
-    mov rdi, debug_pos
+    mov rdi, [rdx].state.debug_pos
 
     ;----------- DOESN@T REACH HERE
     ;int 3
@@ -370,19 +370,19 @@ opcode_done::
     ; check for line irq (requires rbx to be the last cpu clock)
     mov rax, r14
     and rax, 0ffffffffffffff00h		; mask off lower bytes
-    mov rbx, last_cpuclock
+    mov rbx, [rdx].state.last_cpuclock
     cmp rax, rbx
     je main_loop
 
-    mov last_cpuclock, rax			; store for next time
+    mov [rdx].state.last_cpuclock, rax			; store for next time
 
-    mov rbx, cpu_posy
+    mov rbx, [rdx].state.cpu_posy
     add rbx, 1
     cmp rbx, SCREEN_HEIGHT			; are we into the new frame?
     jl check_line_type		
     
     xor rbx, rbx					; if so, zero the current line
-    mov cpu_posy, rbx
+    mov [rdx].state.cpu_posy, rbx
     jmp line_check
 
 check_line_type:
@@ -391,7 +391,7 @@ check_line_type:
     xor cl, 10000000b
     mov byte ptr [rsi+DC_VIDEO], cl
 
-    mov cpu_posy, rbx
+    mov [rdx].state.cpu_posy, rbx
     cmp rbx, VBLANK
     jg main_loop
     je vsync
@@ -3367,17 +3367,6 @@ noinstruction PROC
     
 noinstruction ENDP
 
-.DATA
-;
-; Variables
-;
-
-last_cpuclock qword 0
-cpu_posy qword 0
-debug_pos qword 0
-ignoreBreakpoint dword 0
-
-.code
 ;
 ; Opcode jump table
 ;

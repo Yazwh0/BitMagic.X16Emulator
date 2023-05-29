@@ -7,16 +7,12 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using static System.Collections.Specialized.BitVector32;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
 using Image = SixLabors.ImageSharp.Image;
 using Silk.NET.Core;
 using Silk.NET.Input;
 using SixLabors.ImageSharp.PixelFormats;
-using Silk.NET.Core.Attributes;
 using System.Numerics;
+using BitMagic.X16Emulator.Serializer;
 //using Silk.NET.SDL;
 
 namespace BitMagic.X16Emulator.Display;
@@ -39,10 +35,12 @@ public class EmulatorWindow
     private static bool _hasMouse = false;
     private static Vector2 _lastMousePosition;
     private static IGamepad[]? _joysticks;
-    
+
     private static int _mouseX = 0;
     private static int _mouseY = 0;
     private static Timer? _mouseTimer = null;
+
+    private static bool _waitingOnSync = false;
 
     public static void Run(Emulator emulator)
     {
@@ -53,7 +51,7 @@ public class EmulatorWindow
 
         options.UpdatesPerSecond = 59.523809;
         options.VSync = true;
-        options.ShouldSwapAutomatically= true;
+        options.ShouldSwapAutomatically = true;
 
         _window = Window.Create(options);
 
@@ -72,14 +70,46 @@ public class EmulatorWindow
         _window.Load += OnLoad;
         _window.Render += OnRender;
         _window.Closing += OnClose;
-        
+
         _stopwatch.Start();
 
         _window.Run();
     }
 
-    private static void EmulatorWindow_KeyUp(IKeyboard arg1, Key arg2, int arg3) => _emulator!.SmcBuffer.KeyUp(arg2);
-    private static void EmulatorWindow_KeyDown(IKeyboard arg1, Key arg2, int arg3) => _emulator!.SmcBuffer.KeyDown(arg2);
+    private static void EmulatorWindow_KeyUp(IKeyboard arg1, Key arg2, int arg3)
+    {
+        if (arg2 == Key.S && arg1.IsKeyPressed(Key.ControlLeft))
+        {
+            return;
+        }
+        _emulator!.SmcBuffer.KeyUp(arg2);
+    }
+
+    private static void EmulatorWindow_KeyDown(IKeyboard arg1, Key arg2, int arg3)
+    {
+        if (arg2 == Key.S && arg1.IsKeyPressed(Key.ControlLeft))
+        {
+            var prevFrameControl = _emulator!.FrameControl;
+            _emulator.FrameControl = FrameControl.Synced;
+
+            while(!_emulator.RenderReady)
+            {
+                Thread.Sleep(1); // wait for render event
+            }
+
+            var toSave = _emulator.Serialize();
+
+            _emulator.Control = Control.Run; // release Emulator
+            _emulator.FrameControl = prevFrameControl;
+
+            var filename = Path.Combine(Directory.GetCurrentDirectory(), $"BitMagic.Dump.{DateTime.Now:yyyymmdd-HHmmss}.json");
+            File.WriteAllText(filename, toSave);
+            Console.WriteLine($"Dump saved to {filename}");
+
+            return;
+        }
+        _emulator!.SmcBuffer.KeyDown(arg2);
+    }    
 
     private static unsafe void OnLoad()
     {
@@ -172,7 +202,7 @@ public class EmulatorWindow
         _shader = new Shader(_gl, @"shader.vert", @"shader.frag");
         _emulator!.Control = Control.Run;
 
-        #if OS_WINDOWS
+#if OS_WINDOWS
 
         var assembly = Assembly.GetEntryAssembly();
         if (assembly != null)
@@ -200,11 +230,11 @@ public class EmulatorWindow
                 var rawIcon = new RawImage(icon.Width, icon.Height, new Memory<byte>(silkIcon));
 
                 _window.SetWindowIcon(ref rawIcon);
-            
+
             }
         }
 
-        #endif
+#endif
     }
 
 

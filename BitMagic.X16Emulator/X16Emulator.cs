@@ -262,9 +262,12 @@ public class Emulator : IDisposable
 
         public ulong Clock_Previous = 0x00;
         public ulong Clock = 0x00;
+        public ulong Last_CpuClock = 0x00;
         public ulong VeraClock = 0x00;
+        public ulong Cpu_YPos = 0x00;
 
         public ulong History_Pos = 0x00;
+        public ulong Debug_Pos = 0x00;
 
         public ulong Layer0_Jmp = 0;
         public ulong Layer0_Rtn = 0;
@@ -285,6 +288,8 @@ public class Emulator : IDisposable
         public ulong JoypadLive = 0;
         public ulong Joypad = 0;
         public ulong JoypadNewMask = 0;
+
+        public uint IgnoreBreakpoint = 0;
 
         public uint ExitCode = 0;
 

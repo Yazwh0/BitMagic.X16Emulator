@@ -47,9 +47,12 @@ state struct
 
 	clock_previous			qword ?
 	clock					qword ?
+	last_cpuclock			qword ?
 	vera_clock				qword ?
+	cpu_posy				qword ?
 
 	history_pos				qword ?
+	debug_pos				qword ?
 
 	layer0_jmp				qword ?
 	layer0_rtn				qword ?
@@ -70,6 +73,8 @@ state struct
 	joypad_live				qword ?
 	joypad					qword ?
 	joypad_newmask			qword ?
+
+	ignore_breakpoint		dword ?
 
 	exit_code				dword ?
 

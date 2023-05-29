@@ -35,32 +35,9 @@ namespace BitMagic.X16Emulator
             PushKeyboard((byte)(scancode | (keyDown ? 0x00 : 0x80)));
         }
 
-        //public void AddKey(bool keyDown, uint scancode)
-        //{
-        //    if (scancode == 0xff && keyDown)
-        //    {   // sequence from the x16 emulator
-        //        PushKeyboard(0xe1);
-        //        PushKeyboard(0x14);
-        //        PushKeyboard(0x77);
-        //        PushKeyboard(0xe1);
-        //        PushKeyboard(0xf0);
-        //        PushKeyboard(0x14);
-        //        PushKeyboard(0xf0);
-        //        PushKeyboard(0x77);
-        //        return;
-        //    }
-
-        //    if ((scancode & EXTENDED_FLAG) != 0)
-        //        PushKeyboard(0xe0);
-        //    if (!keyDown)
-        //        PushKeyboard(0xf0);
-
-        //    PushKeyboard((byte)(scancode & 0xff));
-        //}
-
         public void PushKeyboard(byte value)
         {
-            Console.WriteLine($"Key press : {value:X2} {value & 0x7f}");
+            //Console.WriteLine($"Key press : {value:X2} {value & 0x7f}");
             var next = (_emulator.Keyboard_WritePosition + 1) & (Emulator.SmcKeyboardBufferSize - 1);
             if (next != _emulator.Keyboard_ReadPosition)
             {

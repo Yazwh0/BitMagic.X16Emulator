@@ -3,6 +3,7 @@ using BitMagic.Compiler;
 using BitMagic.Decompiler;
 using BitMagic.X16Emulator;
 using BitMagic.X16Emulator.Display;
+using BitMagic.X16Emulator.Serializer;
 using CommandLine;
 using System.Diagnostics;
 using System.Text;
@@ -71,6 +72,9 @@ static class Program
 
         [Option("cart", Required = false, HelpText = "Cartridge file to load as a standard binary file. Can be a .zip or .gz file, in the form 'name.cart.zip'.")]
         public string Cartridge { get; set; } = "";
+
+        [Option("dump", Required = false, HelpText = "Start emulator with the state from a dump file.")]
+        public string DumpFile { get; set; } = "";
 
         //[Option('m', "autorun", Required = false, HelpText = "Automatically run at startup. Ignored if address is specified. NOT YET IMPLEMENTED")]
         public bool AutoRun { get; set; } = false;
@@ -257,6 +261,25 @@ static class Program
                 emulator.SmcBuffer.KeyUp(Silk.NET.Input.Key.N);
                 emulator.SmcBuffer.KeyDown(Silk.NET.Input.Key.Enter);
                 emulator.SmcBuffer.KeyUp(Silk.NET.Input.Key.Enter);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.DumpFile))
+        {
+            Console.Write($"Loading Dumpfile '{options.DumpFile}'... ");
+            if (!File.Exists(options.DumpFile))
+            {
+                Console.WriteLine("Error.");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Dump file '{options.DumpFile}' not found.");
+                Console.ResetColor();
+            }
+            else
+            {
+                var data = File.ReadAllText(options.DumpFile);
+                emulator.Deserialize(data);
+                emulator.Stepping = false;
+                Console.WriteLine("Done.");
             }
         }
 

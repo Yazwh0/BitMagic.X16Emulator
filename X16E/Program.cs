@@ -22,8 +22,9 @@ static class Program
     private static bool RestartOnStop = false;
     private static readonly AutoResetEvent ContinueEvent = new AutoResetEvent(false);
     private static Emulator Emulator;
+    private static CommandLineOptions Options;
 
-    public class Options
+    public class CommandLineOptions
     {
         [Option('p', "prg", Required = false, HelpText = ".prg file to load.")]
         public string PrgFilename { get; set; } = "";
@@ -80,6 +81,9 @@ static class Program
         [Option("dump", Required = false, HelpText = "Start emulator with the state from a dump file.")]
         public string DumpFile { get; set; } = "";
 
+        [Option("dump-folder", Required = false, HelpText = "Folder to write dump files (Menu + Left Ctrl + S) to.")]
+        public string DumpFolder { get; set; } = "";
+
         //[Option('m', "autorun", Required = false, HelpText = "Automatically run at startup. Ignored if address is specified. NOT YET IMPLEMENTED")]
         public bool AutoRun { get; set; } = false;
     }
@@ -91,10 +95,10 @@ static class Program
         var emulator = new Emulator();
         Emulator = emulator;
 
-        ParserResult<Options>? argumentsResult;
+        ParserResult<CommandLineOptions>? argumentsResult;
         try
         {
-            argumentsResult = Parser.Default.ParseArguments<Options>(args);
+            argumentsResult = Parser.Default.ParseArguments<CommandLineOptions>(args);
         }
         catch (Exception ex)
         {
@@ -104,6 +108,7 @@ static class Program
         }
 
         var options = argumentsResult.Value;
+        Options = argumentsResult.Value;
 
         if (options == null)
         {
@@ -385,10 +390,13 @@ static class Program
 
         Emulator.Stepping = false;
 
-
         var toSave = Emulator.Serialize();
 
-        var filename = Path.Combine(System.IO.Directory.GetCurrentDirectory(), $"BitMagic.Dump.{DateTime.Now:yyyymmdd-HHmmss}.json.zip");
+        var filename = Path.Combine(
+                string.IsNullOrWhiteSpace(Options.DumpFolder) ?
+                    System.IO.Directory.GetCurrentDirectory() :
+                    Options.DumpFolder,
+                $"BitMagic.Dump.{DateTime.Now:yyyymmdd-HHmmss}.json.zip");
 
         SdCardImageHelper.WriteFile(filename, new MemoryStream(Encoding.UTF8.GetBytes(toSave)));
 

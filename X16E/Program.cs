@@ -5,6 +5,7 @@ using BitMagic.X16Emulator;
 using BitMagic.X16Emulator.Display;
 using BitMagic.X16Emulator.Serializer;
 using CommandLine;
+using DiscUtils.Fat;
 using System.Diagnostics;
 using System.Text;
 using System.Transactions;
@@ -18,6 +19,9 @@ static class Program
     private static Thread? EmulatorThread;
 
     private const string RomEnvironmentVariable = "BITMAGIC_ROM";
+    private static bool RestartOnStop = false;
+    private static readonly AutoResetEvent ContinueEvent = new AutoResetEvent(false);
+    private static Emulator Emulator;
 
     public class Options
     {
@@ -85,6 +89,7 @@ static class Program
         Console.WriteLine("BitMagic - X16E");
 
         var emulator = new Emulator();
+        Emulator = emulator;
 
         ParserResult<Options>? argumentsResult;
         try
@@ -276,9 +281,10 @@ static class Program
             }
             else
             {
-                var data = File.ReadAllText(options.DumpFile);
+                using var fileStream = new FileStream(options.DumpFile, FileMode.Open, FileAccess.Read);
+                var (data, _) = SdCardImageHelper.ReadFile(options.DumpFile, fileStream); // decompresses if necessary
                 emulator.Deserialize(data);
-                emulator.Stepping = false;
+                emulator.Control = Control.Run;
                 Console.WriteLine("Done.");
             }
         }
@@ -341,6 +347,8 @@ static class Program
         EmulatorWork.Emulator = emulator;
         EmulatorThread = new Thread(EmulatorWork.DoWork);
 
+        EmulatorWindow.ControlKeyPressed += EmulatorWindow_ControlKeyPressed;
+
         EmulatorThread.Priority = System.Threading.ThreadPriority.Highest;
         EmulatorThread.Start();
 
@@ -363,6 +371,32 @@ static class Program
         return 0;
     }
 
+    private static void EmulatorWindow_ControlKeyPressed(object? sender, ControlKeyPressedEventArgs e)
+    {
+        if (e.Key != Silk.NET.Input.Key.S)
+            return;
+
+        RestartOnStop = true;
+
+        Emulator.Stepping = true;
+        Emulator.Control = Control.Run;
+
+        ContinueEvent.WaitOne(); // wait for main thread to stop
+
+        Emulator.Stepping = false;
+
+
+        var toSave = Emulator.Serialize();
+
+        var filename = Path.Combine(System.IO.Directory.GetCurrentDirectory(), $"BitMagic.Dump.{DateTime.Now:yyyymmdd-HHmmss}.json.zip");
+
+        SdCardImageHelper.WriteFile(filename, new MemoryStream(Encoding.UTF8.GetBytes(toSave)));
+
+        Console.WriteLine($"Dump saved to {filename}");
+
+        ContinueEvent.Set(); // tell main thread to continue
+    }
+
     public static class EmulatorWork
     {
         public static Emulator.EmulatorResult Return { get; set; }
@@ -377,7 +411,18 @@ static class Program
 
             while (!done)
             {
-                Return = Emulator.Emulate();
+                do
+                {
+                    Return = Emulator.Emulate();
+
+                    if (RestartOnStop)
+                    {
+                        ContinueEvent.Set();        // lets the event know we've stopped
+                        ContinueEvent.WaitOne();
+                    }
+
+                } while (RestartOnStop);
+
 
                 if (Return != Emulator.EmulatorResult.ExitCondition)
                 {

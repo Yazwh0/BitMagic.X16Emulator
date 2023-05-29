@@ -1,8 +1,6 @@
 ﻿using DiscUtils.Streams;
-using ICSharpCode.SharpZipLib.Core;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Zip;
-using System.Diagnostics.Tracing;
 
 namespace BitMagic.X16Emulator;
 

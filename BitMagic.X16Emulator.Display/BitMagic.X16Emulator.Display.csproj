@@ -29,7 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BitMagic.X16Emulator.Serializer\BitMagic.X16Emulator.Serializer.csproj" />
     <ProjectReference Include="..\BitMagic.X16Emulator\BitMagic.X16Emulator.csproj" />
   </ItemGroup>
 

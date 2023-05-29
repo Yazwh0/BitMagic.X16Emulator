@@ -1,23 +1,28 @@
-﻿using BitMagic.Common;
-using BitMagic.X16Emulator;
-using Silk.NET.GLFW;
+﻿using Silk.NET.GLFW;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
 using Image = SixLabors.ImageSharp.Image;
 using Silk.NET.Core;
 using Silk.NET.Input;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Numerics;
-using BitMagic.X16Emulator.Serializer;
 //using Silk.NET.SDL;
 
 namespace BitMagic.X16Emulator.Display;
 
-public class EmulatorWindow
+public class ControlKeyPressedEventArgs : EventArgs
+{
+    public Key Key { get; set; }
+    public ControlKeyPressedEventArgs(Key key)
+    {
+        Key = key;
+    }
+}
+
+public static class EmulatorWindow
 {
     private static GL? _gl;
     private static IWindow? _window;
@@ -41,6 +46,7 @@ public class EmulatorWindow
     private static Timer? _mouseTimer = null;
 
     private static bool _waitingOnSync = false;
+    public static event EventHandler<ControlKeyPressedEventArgs>? ControlKeyPressed;
 
     public static void Run(Emulator emulator)
     {
@@ -87,24 +93,37 @@ public class EmulatorWindow
 
     private static void EmulatorWindow_KeyDown(IKeyboard arg1, Key arg2, int arg3)
     {
-        if (arg2 == Key.S && arg1.IsKeyPressed(Key.ControlLeft))
+        if (arg1.IsKeyPressed(Key.Menu) && arg1.IsKeyPressed(Key.ControlLeft))
         {
-            var prevFrameControl = _emulator!.FrameControl;
-            _emulator.FrameControl = FrameControl.Synced;
+            if (ControlKeyPressed != null)
+                ControlKeyPressed(null, new ControlKeyPressedEventArgs(arg2));
 
-            while(!_emulator.RenderReady)
-            {
-                Thread.Sleep(1); // wait for render event
-            }
+            // todo: move to calling application.
+            //_waitingOnSync = true;
 
-            var toSave = _emulator.Serialize();
+            //_emulator!.Stepping = true; // cause the emulator to stop.
 
-            _emulator.Control = Control.Run; // release Emulator
-            _emulator.FrameControl = prevFrameControl;
 
-            var filename = Path.Combine(Directory.GetCurrentDirectory(), $"BitMagic.Dump.{DateTime.Now:yyyymmdd-HHmmss}.json");
-            File.WriteAllText(filename, toSave);
-            Console.WriteLine($"Dump saved to {filename}");
+
+            //var prevFrameControl = _emulator!.FrameControl;
+            //_emulator.FrameControl = FrameControl.Synced;
+
+            //while(!_emulator.RenderReady)
+            //{
+            //    Thread.Sleep(1); // wait for render event
+            //}
+
+            //var toSave = _emulator.Serialize();
+
+            //_emulator.Control = Control.Run; // release Emulator
+            //_emulator.FrameControl = prevFrameControl;
+
+            //var filename = Path.Combine(Directory.GetCurrentDirectory(), $"BitMagic.Dump.{DateTime.Now:yyyymmdd-HHmmss}.json.zip");
+
+            //SdCardImageHelper.WriteFile(filename, new MemoryStream(Encoding.UTF8.GetBytes(toSave)));
+
+            ////File.WriteAllText(filename, toSave);
+            //Console.WriteLine($"Dump saved to {filename}");
 
             return;
         }

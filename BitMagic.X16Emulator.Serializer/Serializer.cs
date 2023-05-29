@@ -29,9 +29,13 @@ public static class X16EmulatorSerilizer
         return JsonConvert.SerializeObject(toReturn);
     }
 
-    public static void Deserialize(this Emulator emulator, string data)
+    public static void Deserialize(this Emulator emulator, Stream data)
     {
-        var state = JsonConvert.DeserializeObject<EmulatorState>(data);
+        using StreamReader sr = new StreamReader(data);
+        using JsonReader reader = new JsonTextReader(sr);
+        var serializer = new JsonSerializer();
+
+        var state = serializer.Deserialize<EmulatorState>(reader);
 
         if (state == null)
             throw new Exception("could not deserialize state");

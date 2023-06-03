@@ -1,6 +1,6 @@
 ﻿namespace BitMagic.X16Emulator;
 
-public static class CartidgeHelperExtension
+public static class CartridgeHelperExtension
 {
     public enum LoadCartridgeResultCode
     {

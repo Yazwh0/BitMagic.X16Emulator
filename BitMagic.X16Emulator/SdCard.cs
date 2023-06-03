@@ -11,10 +11,10 @@ public unsafe class SdCard : IDisposable
     private ulong _memoryPtr;
     private MemoryStream _data;
     private ulong _size;
-    private readonly FatFileSystem _fileSystem;
     private ulong _offset;
     private const int Padding = 32;
     private FileSystemWatcher? _watcher;
+    public FatFileSystem FileSystem { get; }
 
     private string? _homeFolder;
     internal bool _watching = false;
@@ -33,7 +33,7 @@ public unsafe class SdCard : IDisposable
         var disk = Disk.InitializeFixed(_data, DiscUtils.Streams.Ownership.None, (long)_size - 512);
         BiosPartitionTable.Initialize(disk, WellKnownPartitionType.WindowsFat);
 
-        _fileSystem = FatFileSystem.FormatPartition(disk, 0, "BITMAGIC!", true);
+        FileSystem = FatFileSystem.FormatPartition(disk, 0, "BITMAGIC!", true);
     }
 
     public SdCard(string sdcardFilename)
@@ -57,7 +57,7 @@ public unsafe class SdCard : IDisposable
             data.CopyTo(_data);
 
             disk = new Disk(_data, DiscUtils.Streams.Ownership.None);
-            _fileSystem = new FatFileSystem(disk.Partitions[0].Open(), true);
+            FileSystem = new FatFileSystem(disk.Partitions[0].Open(), true);
         }
         else
         {
@@ -68,7 +68,7 @@ public unsafe class SdCard : IDisposable
                 throw new Exception("Data is null.");
 
             var disk = new Disk(_data, DiscUtils.Streams.Ownership.None);
-            _fileSystem = new FatFileSystem(disk.Partitions[0].Open(), true);
+            FileSystem = new FatFileSystem(disk.Partitions[0].Open(), true);
         }
     }
 
@@ -106,15 +106,15 @@ public unsafe class SdCard : IDisposable
 
     private static void WatchSdCard(SdCard card)
     {
-        Dictionary<string, long> previousEntries = card._fileSystem.Root.GetFiles().ToDictionary(i => i.Name, i => i.Length);
+        Dictionary<string, long> previousEntries = card.FileSystem.Root.GetFiles().ToDictionary(i => i.Name, i => i.Length);
         List<DiscFileInfo> files = new List<DiscFileInfo>();
 
         while (card._watching)
         {
             Thread.Sleep(1000);
 
-            card._fileSystem.UpdateCaches();
-            var root = card._fileSystem.Root;
+            card.FileSystem.UpdateCaches();
+            var root = card.FileSystem.Root;
 
             // compare previous with current to see if there are any changes
             lock (card.Lock)
@@ -149,7 +149,7 @@ public unsafe class SdCard : IDisposable
                         card.FileUpdates.Add(file.Name);
                         var localname = Path.Join(card._homeFolder, file.Name);
 
-                        using var datastream = card._fileSystem.OpenFile(file.Name, FileMode.Open, FileAccess.Read);
+                        using var datastream = card.FileSystem.OpenFile(file.Name, FileMode.Open, FileAccess.Read);
                         using var fs = new FileStream(localname, FileMode.OpenOrCreate, FileAccess.Write);
 
                         datastream.CopyTo(fs);
@@ -205,7 +205,7 @@ public unsafe class SdCard : IDisposable
     {
         _watcher?.Dispose();
         _data?.Dispose();
-        _fileSystem?.Dispose();
+        FileSystem?.Dispose();
     }
 
     // Copies a directory and starts a watcher
@@ -280,7 +280,7 @@ public unsafe class SdCard : IDisposable
             var actName = FixFilename(filename);
             Console.WriteLine($"[PC] >> [16] Creating : {actName}");
 
-            using var file = _fileSystem.OpenFile(actName, FileMode.CreateNew, FileAccess.Write);
+            using var file = FileSystem.OpenFile(actName, FileMode.CreateNew, FileAccess.Write);
             file.Write(data);
 
             file.Close();
@@ -316,16 +316,16 @@ public unsafe class SdCard : IDisposable
 
             Console.Write($" -> '{actName}'...");
 
-            if (_fileSystem.FileExists(actName))
+            if (FileSystem.FileExists(actName))
             {
-                _fileSystem.DeleteFile(actName);
+                FileSystem.DeleteFile(actName);
             }
-            using var file = _fileSystem.OpenFile(actName, FileMode.CreateNew, FileAccess.Write);
+            using var file = FileSystem.OpenFile(actName, FileMode.CreateNew, FileAccess.Write);
             file.Write(source);
 
             file.Close();
 
-            _fileSystem.UpdateFsInfoFreeSpace();
+            FileSystem.UpdateFsInfoFreeSpace();
 
             Console.WriteLine(" Done.");
         }
@@ -344,10 +344,10 @@ public unsafe class SdCard : IDisposable
 
             Console.Write($"[PC] >> [16] Deleteing: '{filename}' -> '{actName}'... ");
 
-            if (_fileSystem.FileExists(actName))
+            if (FileSystem.FileExists(actName))
             {
-                _fileSystem.DeleteFile(actName);
-                _fileSystem.UpdateFsInfoFreeSpace();
+                FileSystem.DeleteFile(actName);
+                FileSystem.UpdateFsInfoFreeSpace();
 
                 Console.WriteLine(" Done.");
             }

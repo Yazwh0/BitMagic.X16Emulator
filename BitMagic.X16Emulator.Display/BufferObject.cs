@@ -10,9 +10,9 @@ namespace BitMagic.X16Emulator.Display;
 public class BufferObject<TDataType> : IDisposable
     where TDataType : unmanaged
 {
-    private uint _handle;
-    private BufferTargetARB _bufferType;
-    private GL _gl;
+    private readonly uint _handle;
+    private readonly BufferTargetARB _bufferType;
+    private readonly GL _gl;
 
     public unsafe BufferObject(GL gl, Span<TDataType> data, BufferTargetARB bufferType)
     {

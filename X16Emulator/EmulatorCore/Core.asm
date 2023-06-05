@@ -181,8 +181,8 @@ asm_func proc state_ptr:QWORD
 
     pop rdx
     
-    mov [rdx].state.last_cpuclock, 0
-    mov [rdx].state.cpu_posy, 0
+    ;mov [rdx].state.last_cpuclock, 0
+    ;mov [rdx].state.cpu_posy, 0
 
     call vera_init
     call via_init

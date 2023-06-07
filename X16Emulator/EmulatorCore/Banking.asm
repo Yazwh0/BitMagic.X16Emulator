@@ -62,6 +62,7 @@ preserve_current_rambank endp
 copy_rombank_to_memory proc
 	mov rbx, [rdx].state.rom_ptr
 	movzx rax, byte ptr [rsi+1]
+	mov [rdx].state.rom_bank, eax		; store
 	shl rax, 14							; bank * 8k
 	add rax, rbx						; source
 
@@ -81,8 +82,35 @@ copy_rombank_to_memory proc
 	call copy_8k
 	add rbx, 02000h						; next dest and source
 	add rax, 02000h
-	jmp copy_8k
+	jmp copy_8k							; calls ret
 copy_rombank_to_memory endp
+
+; for VBP, we switch the rom bank, but its not reflected in the code
+copy_rombank0_to_memory proc
+	mov rbx, [rdx].state.rom_ptr
+	xor rax, rax
+	mov [rdx].state.rom_bank, eax		; store
+	shl rax, 14							; bank * 8k
+	add rax, rbx						; source
+
+	lea rbx, [rsi + 0c000h]
+	call copy_8k
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k
+
+	; breakpoints
+	mov rbx, [rdx].state.breakpoint_ptr	
+	movzx rax, byte ptr [rsi+1]
+	shl rax, 14							; bank * 8k
+	lea rax, [rax + rbx + 210000h]		; source
+
+	add rbx, 0c000h
+	call copy_8k
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	jmp copy_8k							; calls ret
+copy_rombank0_to_memory endp
 
 ; copys 8k from rax to rbx
 copy_8k proc

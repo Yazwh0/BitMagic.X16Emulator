@@ -2868,11 +2868,13 @@ handle_interrupt proc
     mov byte ptr [rdx].state.flags_decimal, 0	; clear decimal flag
     mov byte ptr [rdx].state.flags_interruptDisable, 1 ; set interrupt Disable to true, gets reverted at the rti
 
-    movzx rax, byte ptr [rsi+1]						; get rom bank
-    and al, 00011111b					; remove top bits
-    sal rax, 14							; multiply by 0x4000
+    ;
+    ; Copy rom bank 0 to ram
+    ;
+    call copy_rombank0_to_memory
+
     mov rdi, [rdx].state.rom_ptr
-    mov r11w, word ptr [rdi + rax + 03ffeh] ; get address at $fffe of current rom
+    mov r11w, word ptr [rdi + 03ffeh] ; get address at $fffe of rom 0.
 
     add r14, 7							; Clock 
 
@@ -2921,11 +2923,13 @@ handle_nmi proc
     mov byte ptr [rdx].state.stackpointer, bl	; Store stack pointer
     mov byte ptr [rdx].state.flags_interruptDisable, 1 ; set interrupt Disable to true, gets reverted at the rti
 
-    movzx rax, byte ptr [rsi+1]			; get rom bank
-    and al, 00011111b					; remove top bits
-    sal rax, 14							; multiply by 0x4000
+    ;
+    ; Copy rom bank 0 to ram
+    ;
+    call copy_rombank0_to_memory
+
     mov rdi, [rdx].state.rom_ptr
-    mov r11w, word ptr [rdi + rax + 03ffah] ; get address at $fffa of current rom
+    mov r11w, word ptr [rdi + 03ffah] ; get address at $fffa of current rom
 
     add r14, 7							; Clock 
 
@@ -3309,11 +3313,13 @@ x00_brk proc
     mov byte ptr [rdx].state.stackpointer, bl		; Store stack pointer
     mov byte ptr [rdx].state.flags_interruptDisable, 1 ; set interrupt Disable to true, gets reverted at the rti
 
-    movzx rax, byte ptr [rsi+1]						; get rom bank
-    and al, 00011111b					; remove top bits
-    sal rax, 14							; multiply by 0x4000
+    ;
+    ; Copy rom bank 0 to ram
+    ;
+    call copy_rombank0_to_memory
+
     mov rdi, [rdx].state.rom_ptr
-    mov r11w, word ptr [rdi + rax + 03ffah] ; get address at $fffa of current rom
+    mov r11w, word ptr [rdi + 03ffah] ; get address at $fffa of current rom
 
     add r14, 7							; Clock 
 

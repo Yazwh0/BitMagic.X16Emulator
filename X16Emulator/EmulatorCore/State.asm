@@ -141,6 +141,8 @@ state struct
 	pcm_samplerate			dword ?
 	pcm_cpucount			dword ?
 
+	rom_bank				dword ?
+
 	register_pc				word ?
 	stackpointer			word ?
 

@@ -313,19 +313,20 @@ via_prb endp
 
 ; I2C
 ; Data Direction Register 0: input, 1: output.
+; todo: maybe remove this as the joypad sets the values??
 via_dra proc
-	mov r13b, byte ptr [rsi+rbx]
+	movzx r13, byte ptr [rsi+rbx]
 
 	mov byte ptr [rdx].state.via_register_a_direction, r13b
 
-	mov al, byte ptr [rdx].state.via_register_a_outvalue
-	and al, r13b											; mask off output bits
+	movzx rax, byte ptr [rdx].state.via_register_a_outvalue
+	and eax, r13d											; mask off output bits
 
 	xor r13b, 0ffh											; invert
 
-	mov r12b, byte ptr [rdx].state.via_register_a_invalue
-	and r12b, r13b											; mask off input bits
-	or r12b, al												; combine
+	movzx r12, byte ptr [rdx].state.via_register_a_invalue
+	and r12d, r13d											; mask off input bits
+	or r12d, eax											; combine
 	mov byte ptr [rsi+V_PRA], r12b
 	mov byte ptr [rsi+V_ORA], r12b
 

@@ -181,8 +181,18 @@ asm_func proc state_ptr:QWORD
 
     pop rdx
     
-    ;mov [rdx].state.last_cpuclock, 0
-    ;mov [rdx].state.cpu_posy, 0
+    ; get base ticks to compare against, only do this on the iniital start.
+    mov eax, [rdx].state.initial_startup
+    test eax, eax
+    jz not_initial
+
+    push rdx
+    push rcx
+    call qword ptr [rdx].state.get_ticks
+    pop rcx
+    pop rdx
+    mov [rdx].state.base_ticks, rax
+not_initial:
 
     call vera_init
     call via_init
@@ -217,6 +227,9 @@ skip_stepping:
     jg exit_loop
 
     pause
+
+    clflushopt [rdx].state.control
+
     jmp skip_stepping	; spin while waiting for control
 
 cpu_running:
@@ -362,19 +375,31 @@ cpu_is_waiting:
 opcode_done::
     mov rdi, [rdx].state.debug_pos
 
-    ;----------- DOESN@T REACH HERE
-    ;int 3
-
     call via_step	; todo: change to macro call
+
+    ; ----------------------- AUDIO
+    pushf
+    mov rax, [rdx].state.clock_audionext    ; rax is a parameter to vera_render_audio
+    cmp r14, rax
+    jl no_audio
+
+    push rsi
+    call vera_render_audio
+    pop rsi
+
+    no_audio:
+    popf
+    ; ----------------------- AUDIO DONE
+
 
     ; check for line irq (requires rbx to be the last cpu clock)
     mov rax, r14
-    and rax, 0ffffffffffffff00h		; mask off lower bytes
-    mov rbx, [rdx].state.last_cpuclock
+    and rax, 0ffffffffffffff00h		; mask off lower bytes - 0xff * 3.125 is 800 dots.
+    mov rbx, [rdx].state.last_cpulineclock
     cmp rax, rbx
     je main_loop
 
-    mov [rdx].state.last_cpuclock, rax			; store for next time
+    mov [rdx].state.last_cpulineclock, rax			; store for next time
 
     mov rbx, [rdx].state.cpu_posy
     add rbx, 1
@@ -427,27 +452,75 @@ vsync:
     call vera_render_display
 
     mov [rdx].state.render_ready, 1						; signal that we need to redraw the UI
+    clflushopt [rdx].state.render_ready
     jmp vera_render_done
 
 no_render_required:
     mov byte ptr [rdx].state.display_dirty, 0
 
 vera_render_done:
-    mov eax, dword ptr [rdx].state.frame_control	; 0 for no control, 1 for wait every frame -- same as control
-    or qword ptr [rdx].state.control, rax			; or on, just in case the host app has made a change
-
-    ; Check if the cpu has gotten too high. if so then reset it.
-    mov rax, 08000000000000000h
-    test r14, rax
-    jz no_cpu_reset
-    mov rax, 07fffffffffffffffh
-    and r14, rax
-    mov [rdx].state.vera_clock, r14	; update vera clock as well.
-
-no_cpu_reset:
-
     add dword ptr [rdx].state.frame_count, 1
 
+    mov eax, dword ptr [rdx].state.frame_control	; 0 for no control, 1 for wait every frame -- same as control
+    test eax, eax
+    jz in_warp
+
+    pushf
+    push r15
+    push r14
+    push r13
+    push r12
+    push r11
+    push r10
+    push r9
+    push r8
+    
+    push rdx    ; we need rdx
+    ;push rcx                                ; appears to be needed to add some space to the stack.
+    call qword ptr [rdx].state.get_ticks    ; ticks to rax
+    ;pop rcx
+    pop rdx
+
+    sub rax, [rdx].state.base_ticks         ; get host tick delta, this is milliseconds
+
+    mov rbx, r14                            ; total cpu ticks
+    shr rbx, 3                              ; / 8 (Mhz)
+
+    imul rax, 1000                          ; host time * 1000
+    sub rbx, rax                            ; rbx has the time to wait, in *microseconds*.
+    jle no_cpu_wait                         ; we only wait for possitive values
+
+    push rdx
+
+    push rcx                                ; appears to be needed to add some space to the stack.
+    mov rcx, rbx
+    call qword ptr [rdx].state.sleep
+    pop rcx
+
+    pop rdx
+
+no_cpu_wait:
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+    pop r12
+    pop r13
+    pop r14
+    pop r15
+    popf
+
+in_warp:
+    ; todo: check if we need to do this, this should never really overflow
+    ; Check if the cpu has gotten too high. if so then reset it.
+;    mov rax, 08000000000000000h
+;    test r14, rax
+;    jz no_cpu_reset
+;    mov rax, 07fffffffffffffffh
+;    and r14, rax
+;    mov [rdx].state.vera_clock, r14	; update vera clock as well.
+
+no_cpu_reset:
     ; check and fire sprite collision IRQ
     ; if IRQ hit, bump display_dirty to ensure a re-render
 
@@ -490,6 +563,7 @@ vsync_test:
 exit_loop:
     call vera_render_display
     mov [rdx].state.render_ready, 1						; signal that we need to redraw the UI
+    clflushopt [rdx].state.render_ready
     
     ; return all ok
     write_state_obj
@@ -506,6 +580,7 @@ not_supported:
 step_exit:
     call vera_render_display
     mov [rdx].state.render_ready, 1						; signal that we need to redraw the UI
+    clflushopt [rdx].state.render_ready
 
     write_state_obj
     mov rax, EXIT_STEPPING    ; stepping
@@ -517,6 +592,7 @@ step_exit:
 breakpoint_exit:
     call vera_render_display
     mov [rdx].state.render_ready, 1						; signal that we need to redraw the UI
+    clflushopt [rdx].state.render_ready
 
     write_state_obj
     mov rax, EXIT_BREAKPOINT    ; breakpoint

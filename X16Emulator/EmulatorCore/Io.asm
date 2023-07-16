@@ -389,9 +389,9 @@ io_registers_readwrite:
 	vera_rw_9f38 qword vera_update_l1hscroll_h - io_registers_readwrite
 	vera_rw_9f39 qword vera_update_l1vscroll_l - io_registers_readwrite
 	vera_rw_9f3a qword vera_update_l1vscroll_h - io_registers_readwrite
-	vera_rw_9f3b qword io_rw_readmemory - io_registers_readwrite
-	vera_rw_9f3c qword io_rw_readmemory - io_registers_readwrite
-	vera_rw_9f3d qword io_rw_readmemory - io_registers_readwrite
+	vera_rw_9f3b qword vera_update_audioctrl - io_registers_readwrite
+	vera_rw_9f3c qword vera_update_audiorate - io_registers_readwrite
+	vera_rw_9f3d qword vera_update_audiodata - io_registers_readwrite
 	vera_rw_9f3e qword vera_update_spi_data - io_registers_readwrite
 	vera_rw_9f3f qword vera_update_spi_ctrl - io_registers_readwrite
 
@@ -653,9 +653,9 @@ io_registers_write:
 	vera_w_9f38 qword vera_update_l1hscroll_h - io_registers_write
 	vera_w_9f39 qword vera_update_l1vscroll_l - io_registers_write
 	vera_w_9f3a qword vera_update_l1vscroll_h - io_registers_write
-	vera_w_9f3b qword vera_update_notimplemented - io_registers_write
-	vera_w_9f3c qword vera_update_notimplemented - io_registers_write
-	vera_w_9f3d qword vera_update_notimplemented - io_registers_write
+	vera_w_9f3b qword vera_update_audioctrl - io_registers_write
+	vera_w_9f3c qword vera_update_audiorate - io_registers_write
+	vera_w_9f3d qword vera_update_audiodata - io_registers_write
 	vera_w_9f3e qword vera_update_spi_data - io_registers_write
 	vera_w_9f3f qword vera_update_spi_ctrl - io_registers_write
 	

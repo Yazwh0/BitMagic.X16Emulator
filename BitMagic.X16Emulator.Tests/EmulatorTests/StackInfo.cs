@@ -448,6 +448,8 @@ public class StackInfo
 
         emulator.RomBank[0x3ffa + 0x4000 * 0x0f] = 0x00;
         emulator.RomBank[0x3ffb + 0x4000 * 0x0f] = 0x09;
+        emulator.RomBank[0x3ffa] = 0x00;
+        emulator.RomBank[0x3ffb] = 0x0a;
 
         emulator.Brk_Causes_Stop = false;
 
@@ -457,6 +459,8 @@ public class StackInfo
                 brk
                 stp
                 .org $900
+                stp
+                .org $a00
                 stp
                 ",
                 emulator, dontChangeEmulatorOptions: true);
@@ -478,6 +482,8 @@ public class StackInfo
 
         emulator.RomBank[0x3ffa + 0x4000 * 0x19] = 0x00;
         emulator.RomBank[0x3ffb + 0x4000 * 0x19] = 0x09;
+        emulator.RomBank[0x3ffa] = 0x00;
+        emulator.RomBank[0x3ffb] = 0x0a;
 
         emulator.Brk_Causes_Stop = false;
 
@@ -487,6 +493,8 @@ public class StackInfo
                 brk
                 stp
                 .org $900
+                stp
+                .org $a00
                 stp
                 ",
                 emulator, dontChangeEmulatorOptions: true);

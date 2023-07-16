@@ -255,7 +255,13 @@ public unsafe class SdCard : IDisposable
 
     private void AddDirectoryFiles(string directory)
     {
-        foreach (var filename in System.IO.Directory.GetFiles(directory))
+        string wildcard = "*.*";
+        if (!System.IO.Directory.Exists(directory)) { 
+            wildcard = Path.GetFileName(directory);
+            directory = Path.GetDirectoryName(directory) ?? "";
+        }
+
+        foreach (var filename in System.IO.Directory.GetFiles(directory, wildcard))
         {
             AddFile(filename);
         }

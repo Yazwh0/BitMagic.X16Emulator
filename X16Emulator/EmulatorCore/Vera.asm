@@ -37,6 +37,7 @@
 include Constants.inc
 include State.asm
 include Vera_Display.asm
+include Vera_Audio.asm
 
 vera_setaddress_0 macro 
 	local search_loop, match, not_negative
@@ -244,6 +245,7 @@ vera_init proc
 	mov word ptr [rdx].state.layer0_next_render, 1
 	mov word ptr [rdx].state.layer1_next_render, 1
 	;mov dword ptr [rdx].state.buffer_render_position, 010000000000b
+	mov [rdx].state.frame_count, 0		; always start with 0 frames, as we use this for timing.
 
 	;
 	; DATA0\1
@@ -481,11 +483,37 @@ dc_done:
 	or al, bl
 	mov byte ptr [rsi+IEN], al
 
+	; todo: Add setting ISR based on hit parameters
+
 	; Layer 0 jump
 	set_layer0_jump
 
 	; Layer 1 jump
 	set_layer1_jump
+
+	; PCM Set CTRL
+	mov eax, [rdx].state.pcm_bufferread
+	mov ebx, [rdx].state.pcm_bufferwrite
+	movzx r13, byte ptr [rsi + AUDIO_CTRL]
+	and r13d, 3fh
+
+	cmp eax, ebx
+	jne check_full
+
+	or r13d, 40h		; set empty bit
+	jmp pcm_done
+
+	check_full:
+
+	inc ebx
+	and ebx, 0fffh
+	cmp ebx, eax
+	jne pcm_done
+
+	or r13d, 80h		; set full bit
+
+	pcm_done:
+	mov byte ptr [rsi + AUDIO_CTRL], r13b
 
 	mov eax, [rdx].state.initial_startup
 	test eax, eax
@@ -620,14 +648,18 @@ vera_dataaccess_body macro doublestep, write_value
 
 set_data0_address:
 		
-	mov rsi, [rdx].state.memory_ptr
-	mov [rsi+ADDRx_L], di
+	;mov rsi, [rdx].state.memory_ptr
+	mov word ptr [rsi + ADDRx_L], di			; write M and L bytes
 
-	shr rdi, 16
-	mov al, [rsi+ADDRx_H]						; Add on stepping nibble
-	and al, 0f8h								; mask off what isnt changable
-	or dil, al
-	mov [rsi+ADDRx_H], dil
+	;shr rdi, 8
+	;mov byte ptr [rsi + ADDRx_M], dil
+
+	shr rdi, 16									; need to add bottom bit of the address, so shift and mask
+	and rdi, 1
+	movzx rax, byte ptr [rsi + ADDRx_H]			; Add on stepping nibble
+	and eax, 0f8h								; mask off what isnt changable
+	or rdi, rax
+	mov byte ptr [rsi + ADDRx_H], dil
 
 	xor r13, r13								; clear r13b, as we use this to detect if we need to call vera
 	pop rsi
@@ -672,16 +704,22 @@ step_data1:
 
 set_data1_address:
 		
-	mov rsi, [rdx].state.memory_ptr
-	mov [rsi+ADDRx_L], di
+	;mov rsi, [rdx].state.memory_ptr
+	mov word ptr [rsi + ADDRx_L], di			; write L and M bytes
 
-	shr rdi, 16
-	mov al, [rsi+ADDRx_H]						; Add on stepping nibble
-	and al, 0f8h								; mask off what isnt changable
-	or dil, al
-	mov [rsi+ADDRx_H], dil
+	;shr rdi, 8
+	;mov byte ptr [rsi + ADDRx_M], dil
 
+	shr rdi, 16									; need to add bottom bit of the address, so shift and mask
+	and rdi, 1
+	movzx rax, byte ptr [rsi + ADDRx_H]			; Add on stepping nibble
+	and eax, 0f8h								; mask off what isnt changable
+	or rdi, rax
+	mov byte ptr [rsi + ADDRx_H], dil
+
+	xor r13, r13								; clear r13b, as we use this to detect if we need to call vera
 	pop rsi
+
 	ret
 endm
 
@@ -1244,9 +1282,9 @@ vera_update_l1vscroll_h proc
 	ret
 vera_update_l1vscroll_h endp
 
-; Todo: reconstruct ISR
 vera_update_isr proc
 	mov r13b, byte ptr [rsi+rbx]
+	and r12, 0f8h				; mask out lower three bits from previous value
 
 	bt r13, 0
 	jnc check_line
@@ -1271,10 +1309,12 @@ construct_isr:
 	or r13b, byte ptr [rdx].state.interrupt_line_hit
 	shl r13, 1
 	or r13b, byte ptr [rdx].state.interrupt_vsync_hit
+	or r13, r12						; or back on the top 5 bits.
 	mov byte ptr [rsi+rbx], r13b
 
 	xor rax, rax
 	mov bl, byte ptr [rsi+IEN]
+	and ebx, 0fh					; only consider bottom 4 bits.
 	and r13b, bl
 
 	setnz al
@@ -1283,6 +1323,83 @@ construct_isr:
 
 	ret
 vera_update_isr endp
+
+vera_update_audiorate proc
+	movzx r13, byte ptr [rsi+rbx]
+	mov [rdx].state.pcm_samplerate, r13d
+
+	ret
+vera_update_audiorate endp
+
+vera_update_audiodata proc
+	mov eax, [rdx].state.pcm_bufferwrite
+	mov ecx, eax
+	inc eax
+	and eax, 0fffh	; constrain to 4k
+	cmp eax, [rdx].state.pcm_bufferread
+	je full
+
+	movzx r13, byte ptr [rsi+rbx]	
+
+	mov rbx, [rdx].state.pcm_ptr
+	mov [rdx].state.pcm_bufferwrite, eax
+
+	mov byte ptr[rbx + rcx], r13b			; write to the original write index
+
+	; Todo: the check for empty and aflow could be merged.
+	; check if fifo is empty now so we can set the AUDIO_CTRL bit!
+	xor ebx, ebx
+	mov r13d, 080h							; buffer full bit
+	inc eax
+	and eax, 0fffh
+	cmp eax, [rdx].state.pcm_bufferread
+
+	cmovne r13d, ebx						; clear buffer full bit
+
+	and byte ptr [rsi + AUDIO_CTRL], 03fh	; clear empty bit
+	or byte ptr [rsi + AUDIO_CTRL], r13b	; set buffer full if necessary
+
+	; AFLOW
+	mov eax, [rdx].state.pcm_bufferwrite
+	sub eax, [rdx].state.pcm_bufferread
+	xor ebx, ebx
+	mov rcx, 01000b							; AFLOW flag
+	cmp eax, 0400h
+	cmova ecx, ebx							; clear if greater
+	movzx rbx, byte ptr [rsi+ISR]
+	and ebx, 011110111b						; clear
+	or ebx, ecx								; set if neccesary
+	mov byte ptr [rsi+ISR], bl				; write
+	shr ecx, 4
+	or byte ptr [rdx].state.interrupt, cl
+
+	ret
+full:
+	or byte ptr [rsi + AUDIO_CTRL], 080h	; set full bit
+
+	ret
+
+vera_update_audiodata endp
+
+vera_update_audioctrl proc
+	movzx r13, byte ptr [rsi+rbx]
+
+	; handle reset
+
+	; set 16bit / stereo
+	mov rbx, r13
+	and rbx, 030h
+	shr rbx, 4
+	mov [rdx].state.pcm_mode, ebx
+
+	and r13, 0fh
+	lea rbx, pcm_volume
+	mov r13d, dword ptr [rbx + r13 * 4]
+	mov [rdx].state.pcm_volume, r13d
+
+	ret
+vera_update_audioctrl endp
+
 
 vera_step_table:
 	dw 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 40, 80, 160, 320, 640

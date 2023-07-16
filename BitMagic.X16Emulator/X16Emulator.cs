@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using BitMagic.Common;
 
 namespace BitMagic.X16Emulator;
@@ -159,6 +160,23 @@ public class Emulator : IDisposable
         public uint Sprite_CollisionMask { get => _emulator._state.Sprite_CollisionMask; }
     }
 
+    public class VeraAudioState
+    {
+        private readonly Emulator _emulator;
+        public VeraAudioState(Emulator emulator)
+        {
+            _emulator = emulator;
+        }
+
+        public uint PcmBufferRead { get => _emulator._state.PcmBufferRead; set => _emulator._state.PcmBufferRead = value; } 
+        public uint PcmBufferWrite { get => _emulator._state.PcmBufferWrite; set => _emulator._state.PcmBufferWrite = value; }
+        public uint PcmVolume { get => _emulator._state.PcmVolume; set => _emulator._state.PcmVolume = value; }
+        public uint PcmMode { get => _emulator._state.PcmMode; set => _emulator._state.PcmMode = value; }
+        public uint PcmSampleRate { get => _emulator._state.PcmSampleRate; set => _emulator._state.PcmSampleRate = value; }
+        public unsafe Span<byte> PcmBuffer => new Span<byte>((void*)_emulator._state.PcmPtr, PcmSize);
+        public ulong PcmPtr => _emulator._pcm_Ptr;
+    }
+
     public class ViaState
     {
         private readonly Emulator _emulator;
@@ -206,7 +224,7 @@ public class Emulator : IDisposable
         public uint Mode { get => _emulator._state.I2cMode; set => _emulator._state.I2cMode = value; }
         public uint Address { get => _emulator._state.I2cAddress; set => _emulator._state.I2cAddress = value; }
         public uint DataToTransmit { get => _emulator._state.I2cDataToTransmit; set => _emulator._state.I2cDataToTransmit = value; }
-        public unsafe Span<byte> Buffer => new Span<byte>((void*) _emulator._i2cBuffer_ptr, I2cBufferSize);
+        public unsafe Span<byte> Buffer => new Span<byte>((void*)_emulator._i2cBuffer_ptr, I2cBufferSize);
     }
 
     public class SmcState
@@ -227,9 +245,16 @@ public class Emulator : IDisposable
         public uint Led { get => _emulator._state.SmcLed; set => _emulator._state.SmcLed = value; }
     }
 
+
     [StructLayout(LayoutKind.Sequential)]
     public struct CpuState
     {
+
+        // functions
+        public ulong GetTicks = 0;
+        public ulong Sleep = 0;
+        
+        // arrays
         public ulong MemoryPtr = 0;
         public ulong RomPtr = 0;
         public ulong RamBankPtr = 0;
@@ -248,6 +273,8 @@ public class Emulator : IDisposable
         public ulong StackBreakpointPtr = 0;
         public ulong RtcNvram_ptr = 0;
         public ulong PcmPtr = 0;
+        public ulong AudioOutputPtr = 0;
+
 
         public ulong CurrentBankAddress = 0;
 
@@ -262,7 +289,8 @@ public class Emulator : IDisposable
 
         public ulong Clock_Previous = 0x00;
         public ulong Clock = 0x00;
-        public ulong Last_CpuClock = 0x00;
+        public ulong Clock_AudioNext = 0;
+        public ulong Last_CpuLineClock = 0x00;
         public ulong VeraClock = 0x00;
         public ulong Cpu_YPos = 0x00;
 
@@ -288,6 +316,8 @@ public class Emulator : IDisposable
         public ulong JoypadLive = 0;
         public ulong Joypad = 0;
         public ulong JoypadNewMask = 0;
+
+        public ulong BaseTicks = 0;
 
         public uint IgnoreBreakpoint = 0;
 
@@ -349,11 +379,17 @@ public class Emulator : IDisposable
 
         public uint InitialStartup = 1;
 
-        public uint PcmBufferStart = 0;
-        public uint PcmBufferEnd = 0;
-        public uint PcmBufferCounter = 0;
+        public uint AudioWrite = 0;
+
+        public uint PcmBufferRead = 0;
+        public uint PcmBufferWrite = 0;
         public uint PcmSampleRate = 0;
-        public uint PcmCpuCount = 0;
+        public uint PcmMode = 0;
+        public uint PcmCount = 0;
+        public uint PcmVolume = 0;
+
+        public uint PcmValue_L = 0;
+        public uint PcmValue_R = 0;
 
         public uint RomBank = 0;
 
@@ -490,7 +526,8 @@ public class Emulator : IDisposable
         public unsafe void SetPointers(ulong memory, ulong rom, ulong ramBank, ulong vram,
             ulong display, ulong palette, ulong sprite, ulong displayBuffer, ulong history, ulong i2cBuffer,
             ulong smcKeyboardPtr, ulong smcMousePtr, ulong spiHistoryPtr, ulong spiInboundBufferPtr, ulong spiOutbandBufferPtr,
-            ulong breakpointPtr, ulong stackInfoPtr, ulong stackBreakpointPtr, ulong rtcNvramPtr, ulong pcmPtr)
+            ulong breakpointPtr, ulong stackInfoPtr, ulong stackBreakpointPtr, ulong rtcNvramPtr, ulong pcmPtr,
+            ulong audioOutputPtr)
         {
             MemoryPtr = memory;
             RomPtr = rom;
@@ -512,6 +549,7 @@ public class Emulator : IDisposable
             StackBreakpointPtr = stackBreakpointPtr;
             RtcNvram_ptr = rtcNvramPtr;
             PcmPtr = pcmPtr;
+            AudioOutputPtr = audioOutputPtr;
         }
     }
 
@@ -565,10 +603,16 @@ public class Emulator : IDisposable
 
     public bool StackBreakpointHit { get => _state.StackBreakpointHit != 0; set => _state.StackBreakpointHit = (uint)(value ? 1 : 0); }
 
+    public ulong Clock_AudioNext { get => _state.Clock_AudioNext; set => _state.Clock_AudioNext = value; }
+
+    public uint AudioWrite => _state.AudioWrite;
+
     public VeraState Vera => new VeraState(this);
     public ViaState Via => new ViaState(this);
     public I2cState I2c => new I2cState(this);
     public SmcState Smc => new SmcState(this);
+    public VeraAudioState VeraAudio => new VeraAudioState(this);
+
     public uint Keyboard_ReadPosition => _state.Keyboard_ReadPosition;
     public uint Keyboard_WritePosition { get => _state.Keyboard_WritePosition; set => _state.Keyboard_WritePosition = value; }
     public uint Mouse_ReadPosition => _state.Mouse_ReadPosition;
@@ -605,9 +649,10 @@ public class Emulator : IDisposable
     private readonly ulong _stackBreakpoint_Ptr;
     private readonly ulong _rtcNvram_Ptr;
     private readonly ulong _pcm_Ptr;
+    private readonly ulong _audioOutput_ptr;
 
     public const int RamSize = 0x10000;
-    public const int RomSize = 0x4000 * 256; // was 32, now 265 for cartridge
+    public const int RomSize = 0x4000 * 256; // was 32, now 256 for cartridge
     public const int BankedRamSize = 0x2000 * 256;
     public const int VramSize = 0x20000;
     public const int DisplaySize = 800 * 525 * 4 * 6; // *6 for each layer
@@ -621,11 +666,12 @@ public class Emulator : IDisposable
     public const int SpiHistoryPtrSize = 1024 * 2;
     public const int SpiInboundBufferPtrSize = 1024; // 512 + 4;
     public const int SpiOutboundBufferPtrSize = 1024; // 512 + 4;
-    public const int BreakpointSize = 0xa000 + 0x2000 * 256 + 0x4000 * 256; // base ram, rambanks, rombanks. 256 rom banks for carts.
+    public const int BreakpointSize = 0x10000 + 0x2000 * 256 + 0x4000 * 256; // base ram, rambanks, rombanks. 256 rom banks for carts.
     public const int StackInfoSize = 256 * 4;
     public const int StackBreakpointSize = 256;
     public const int RtcNvramSize = 64;
     private const int PcmSize = 1024 * 4;
+    public const int AudioOutputSize = 1024 * 1024 * 2; // 2meg for both Left and Right
 
     private static ulong RoundMemoryPtr(ulong inp) => (inp & _roundingMask) + (ulong)_rounding;
 
@@ -673,6 +719,7 @@ public class Emulator : IDisposable
         _rtcNvram_Ptr = (ulong)NativeMemory.Alloc(RtcNvramSize);
 
         _pcm_Ptr = (ulong)NativeMemory.Alloc(PcmSize);
+        _audioOutput_ptr = (ulong)NativeMemory.Alloc(AudioOutputSize);
 
         _state = new CpuState();
         SetPointers();
@@ -749,6 +796,10 @@ public class Emulator : IDisposable
         for (var i = 0; i < PcmSize; i++)
             pcm_span[i] = 0;
 
+        var audioOutput_span = new Span<short>((void*)_audioOutput_ptr, AudioOutputSize / 2);
+        for (var i = 0; i < AudioOutputSize / 2; i++)
+            audioOutput_span[i] = 0;
+
         // set defaults
         var sprite_act_span = new Span<Sprite>((void*)_sprite_ptr, 128);
         for (var i = 0; i < 128; i++)
@@ -763,7 +814,7 @@ public class Emulator : IDisposable
     private void SetPointers() => _state.SetPointers(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,
             _sprite_ptr, _display_buffer_ptr_rounded, _history_ptr, _i2cBuffer_ptr, _smcKeyboard_ptr, _smcMouse_ptr, _spiHistory_ptr,
             _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded, _stackInfo_Ptr, _stackBreakpoint_Ptr, _rtcNvram_Ptr,
-            _pcm_Ptr);
+            _pcm_Ptr, _audioOutput_ptr);
 
     public unsafe Span<byte> Memory => new Span<byte>((void*)_memory_ptr_rounded, RamSize);
     public unsafe Span<byte> RamBank => new Span<byte>((void*)_ram_ptr_rounded, BankedRamSize);
@@ -782,7 +833,8 @@ public class Emulator : IDisposable
     public unsafe Span<byte> DisplayBuffer => new Span<byte>((void*)_display_buffer_ptr_rounded, DisplayBufferSize);
     public unsafe Span<byte> SpiInboundBuffer => new Span<byte>((void*)_spiInboundBufferPtr, SpiInboundBufferPtrSize);
     public unsafe Span<byte> SpiOutboundBuffer => new Span<byte>((void*)_spiOutboundBufferPtr, SpiOutboundBufferPtrSize);
-
+    public unsafe Span<short> AudioOutputBuffer => new Span<short>((void*)_audioOutput_ptr, AudioOutputSize / 2);
+    public ulong AudioOutputPtr => _audioOutput_ptr;
     public SmcBuffer SmcBuffer { get; }
 
     public EmulatorResult Emulate()
@@ -842,5 +894,6 @@ public class Emulator : IDisposable
         NativeMemory.Free((void*)_stackBreakpoint_Ptr);
         NativeMemory.Free((void*)_rtcNvram_Ptr);
         NativeMemory.Free((void*)_pcm_Ptr);
+        NativeMemory.Free((void*)_audioOutput_ptr);
     }
 }

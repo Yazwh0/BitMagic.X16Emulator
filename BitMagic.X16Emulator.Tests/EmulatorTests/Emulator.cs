@@ -225,13 +225,13 @@ public class EmulatorTests
         var emulator = new Emulator();
 
         emulator.Interrupt = true;
-
-        // set interrupt vector to $900
-        //emulator.Memory[0xfffe] = 0x00;
-        //emulator.Memory[0xffff] = 0x09;
+    
+        // always uses rom bank 0 for interrupts
 
         emulator.RomBank[0x4000 * 5 + 0x3ffe] = 0x00;
-        emulator.RomBank[0x4000 * 5+ 0x3fff] = 0x09;
+        emulator.RomBank[0x4000 * 5 + 0x3fff] = 0x09;
+        emulator.RomBank[0x4000 * 0 + 0x3ffe] = 0x00;
+        emulator.RomBank[0x4000 * 0 + 0x3fff] = 0x0a;
         emulator.Memory[0x01] = 0x05;
 
         await X16TestHelper.Emulate(@"
@@ -239,11 +239,13 @@ public class EmulatorTests
                 .org $810
                 stp
                 .org $900
+                stp
+                .org $a00
                 stp",
                 emulator);
 
         // emulation
-        emulator.AssertState(0x00, 0x00, 0x00, 0x901, stackPointer: 0x1fd - 3);
+        emulator.AssertState(0x00, 0x00, 0x00, 0xa01, stackPointer: 0x1fd - 3);
         emulator.AssertFlags(Interrupt: true, InterruptDisable: true);
     }
 
@@ -404,7 +406,8 @@ public class EmulatorTests
 
         emulator.Nmi = true;
 
-        // set interrupt vector to $900
+        emulator.RomBank[0x4000 * 0 + 0x3ffa] = 0x00;
+        emulator.RomBank[0x4000 * 0 + 0x3ffb] = 0x0a;
         emulator.RomBank[0x4000 * 5 + 0x3ffa] = 0x00;
         emulator.RomBank[0x4000 * 5 + 0x3ffb] = 0x09;
         emulator.Memory[0x01] = 0x05;
@@ -414,11 +417,13 @@ public class EmulatorTests
                 .org $810
                 stp
                 .org $900
+                stp
+                .org $a00
                 stp",
                 emulator);
 
         // emulation
-        emulator.AssertState(0x00, 0x00, 0x00, 0x901, stackPointer: 0x1fd - 3);
+        emulator.AssertState(0x00, 0x00, 0x00, 0xa01, stackPointer: 0x1fd - 3);
         emulator.AssertFlags(Nmi: true, InterruptDisable: true);
     }
 

@@ -14,6 +14,12 @@
 ;    along with this program.  If not, see https://www.gnu.org/licenses/.
 
 state struct 
+
+	; functions
+	get_ticks				qword ?
+	sleep					qword ?
+	
+	; arrays
 	memory_ptr				qword ?
 	rom_ptr					qword ?
 	rambank_ptr				qword ?
@@ -32,6 +38,8 @@ state struct
 	stackbreakpoint_ptr		qword ?
 	rtc_nvram_ptr			qword ?
 	pcm_ptr					qword ?
+	audiooutput_ptr			qword ?
+
 
 	current_bank_address	qword ?
 
@@ -47,7 +55,8 @@ state struct
 
 	clock_previous			qword ?
 	clock					qword ?
-	last_cpuclock			qword ?
+	clock_audionext			qword ?
+	last_cpulineclock		qword ?
 	vera_clock				qword ?
 	cpu_posy				qword ?
 
@@ -73,6 +82,8 @@ state struct
 	joypad_live				qword ?
 	joypad					qword ?
 	joypad_newmask			qword ?
+
+	base_ticks				qword ?
 
 	ignore_breakpoint		dword ?
 
@@ -135,11 +146,17 @@ state struct
 
 	initial_startup			dword ?
 
-	pcm_bufferstart			dword ?
-	pcm_bufferend			dword ?
-	pcm_buffercount			dword ?
+	audio_write				dword ?
+
+	pcm_bufferread			dword ?
+	pcm_bufferwrite			dword ?
 	pcm_samplerate			dword ?
-	pcm_cpucount			dword ?
+	pcm_mode				dword ?
+	pcm_count				dword ?
+	pcm_volume				dword ?
+
+	pcm_value_l				dword ?
+	pcm_value_r				dword ?
 
 	rom_bank				dword ?
 
@@ -209,7 +226,7 @@ state struct
 	interrupt_line			byte ?
 	interrupt_vsync			byte ?
 
-	interrupt_line_hit		byte ?
+	interrupt_line_hit		byte ? ; todo: remove hit parameters
 	interrupt_vsync_hit		byte ?
 	interrupt_spcol_hit		byte ?
 	drawing					byte ?

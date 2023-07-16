@@ -108,5 +108,8 @@
     <Text Include="Joypad.asm">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="Vera_Audio.asm">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

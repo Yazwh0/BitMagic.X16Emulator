@@ -48,6 +48,8 @@ public static class EmulatorWindow
     private static bool _waitingOnSync = false;
     public static event EventHandler<ControlKeyPressedEventArgs>? ControlKeyPressed;
 
+    private static EmulatorAudio? _audio;
+
     public static void Run(Emulator emulator)
     {
         _closing = false;
@@ -55,8 +57,9 @@ public static class EmulatorWindow
 
         var options = WindowOptions.Default;
 
-        options.UpdatesPerSecond = 59.523809;
-        options.VSync = true;
+        //options.UpdatesPerSecond = 59.523809 * 4;
+        //options.FramesPerSecond = 59.523809;
+        options.VSync = false;
         options.ShouldSwapAutomatically = true;
 
         _window = Window.Create(options);
@@ -77,8 +80,11 @@ public static class EmulatorWindow
         _window.Render += OnRender;
         _window.Closing += OnClose;
 
+        _audio = new EmulatorAudio(_emulator);
+
         _stopwatch.Start();
 
+        _audio.StartPlayback();
         _window.Run();
     }
 
@@ -371,18 +377,19 @@ public static class EmulatorWindow
                 _fps = (thisCount - _lastCount) / (tickDelta / 1000.0);
                 _speed = _fps / 59.523809;
             }
-            _lastCount = thisCount;
-            _lastTicks = thisTicks;
 
             _window!.Title = $"BitMagic! X16E [{_speed:0.00%} \\ {_fps:0.0} fps \\ {_speed * 8.0:0}Mhz] {(_hasMouse ? "* MOUSE CAPTURED *" : "")}";
+            _lastCount = thisCount;
+            _lastTicks = thisTicks;
         }
 
-        _emulator.Control = Control.Run;
+        //_emulator.Control = Control.Run;
     }
 
     private static void OnClose()
     {
         _closing = true;
+        _audio?.StopPlayback();
         _gl?.Dispose();
         _shader?.Dispose();
         if (_layers != null)
@@ -401,6 +408,7 @@ public static class EmulatorWindow
         _layers = null;
         _emulator = null;
         _mouseTimer?.Dispose();
+        _audio?.Dispose();
     }
 
     public static void Stop()

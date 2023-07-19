@@ -1385,7 +1385,25 @@ vera_update_audioctrl proc
 	movzx r13, byte ptr [rsi+rbx]
 
 	; handle reset
+	bt r13, 7
+	jnc no_reset
+	xor ebx, ebx
+	mov [rdx].state.pcm_bufferwrite, ebx
+	mov [rdx].state.pcm_bufferread, ebx
 
+	or byte ptr [rsi + AUDIO_CTRL], 040h	; set empty flag
+
+	xor ecx, ecx
+	movzx rbx, byte ptr [rsi + ISR]			
+	or ebx, 1000b							; set aflow
+	mov byte ptr [rsi + ISR], bl
+	and bl, byte ptr [rsi + IEN]
+	and ebx, 1000b
+	shr ebx, 4
+
+	or byte ptr [rdx].state.interrupt, bl	; or on the interrupt
+
+no_reset:
 	; set 16bit / stereo
 	mov rbx, r13
 	and rbx, 030h

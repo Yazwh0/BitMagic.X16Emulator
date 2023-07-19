@@ -276,6 +276,7 @@ vera_step_psg:
 	; AFLOW
 	mov eax, [rdx].state.pcm_bufferwrite
 	sub eax, [rdx].state.pcm_bufferread
+	and eax, 0fffh
 
 	xor ebx, ebx
 	mov rcx, 01000b					; AFLOW flag

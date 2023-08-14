@@ -104,37 +104,15 @@ public static class EmulatorWindow
             if (ControlKeyPressed != null)
                 ControlKeyPressed(null, new ControlKeyPressedEventArgs(arg2));
 
-            // todo: move to calling application.
-            //_waitingOnSync = true;
-
-            //_emulator!.Stepping = true; // cause the emulator to stop.
-
-
-
-            //var prevFrameControl = _emulator!.FrameControl;
-            //_emulator.FrameControl = FrameControl.Synced;
-
-            //while(!_emulator.RenderReady)
-            //{
-            //    Thread.Sleep(1); // wait for render event
-            //}
-
-            //var toSave = _emulator.Serialize();
-
-            //_emulator.Control = Control.Run; // release Emulator
-            //_emulator.FrameControl = prevFrameControl;
-
-            //var filename = Path.Combine(Directory.GetCurrentDirectory(), $"BitMagic.Dump.{DateTime.Now:yyyymmdd-HHmmss}.json.zip");
-
-            //SdCardImageHelper.WriteFile(filename, new MemoryStream(Encoding.UTF8.GetBytes(toSave)));
-
-            ////File.WriteAllText(filename, toSave);
-            //Console.WriteLine($"Dump saved to {filename}");
-
             return;
         }
         _emulator!.SmcBuffer.KeyDown(arg2);
-    }    
+    }
+
+    private static void EmulatorWindow_KeyChar(IKeyboard arg1, char arg2)
+    {
+        Console.WriteLine($"Rec {(byte)arg2:X2}");
+    }
 
     private static unsafe void OnLoad()
     {
@@ -144,7 +122,8 @@ public static class EmulatorWindow
         var input = _window.CreateInput();
         input.Keyboards[0].KeyUp += EmulatorWindow_KeyUp;
         input.Keyboards[0].KeyDown += EmulatorWindow_KeyDown;
-
+        input.Keyboards[0].KeyChar += EmulatorWindow_KeyChar;
+        
         input.Mice[0].Cursor.CursorMode = CursorMode.Normal;
         input.Mice[0].DoubleClick += EmulatorWindow_Click;
         input.Mice[0].MouseUp += EmulatorWindow_MouseUp;
@@ -262,7 +241,6 @@ public static class EmulatorWindow
 #endif
     }
 
-
     // If we lose focus, then stop capturing the mouse
     private static void _window_FocusChanged(bool obj)
     {
@@ -378,7 +356,9 @@ public static class EmulatorWindow
                 _speed = _fps / 59.523809;
             }
 
-            _window!.Title = $"BitMagic! X16E [{_speed:0.00%} \\ {_fps:0.0} fps \\ {_speed * 8.0:0}Mhz] {(_hasMouse ? "* MOUSE CAPTURED *" : "")}";
+            var audioDelay = _audio?.Delay / (double)0x100;
+
+            _window!.Title = $"BitMagic! X16E [{_speed:0.00%} \\ {_fps:0.0} fps \\ {_speed * 8.0:0}Mhz] AD {audioDelay:0.0} {(_hasMouse ? "* MOUSE CAPTURED *" : "")}";
             _lastCount = thisCount;
             _lastTicks = thisTicks;
         }

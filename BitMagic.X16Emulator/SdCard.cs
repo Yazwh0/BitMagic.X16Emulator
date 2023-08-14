@@ -380,10 +380,14 @@ public unsafe class SdCard : IDisposable
 
     private static string FixFilename(string filename)
     {
+        return Path.GetFileName(filename.ToUpper());
         filename = filename.ToUpper().Replace(" ", "");
+        return Path.GetFileName(filename);
         var ext = Path.GetExtension(filename);
         ext = ext[..Math.Min(4, ext.Length)];
         var rawname = Path.GetFileNameWithoutExtension(filename);
+        return rawname + ext;
+
         return rawname[..Math.Min(8, rawname.Length)] + ext;
     }
 }

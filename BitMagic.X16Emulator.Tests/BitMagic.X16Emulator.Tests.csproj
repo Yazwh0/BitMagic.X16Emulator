@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Audio\" />
     <Folder Include="Vera\Images\" />
   </ItemGroup>
 

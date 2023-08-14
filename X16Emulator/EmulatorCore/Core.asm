@@ -3074,7 +3074,6 @@ bit_body_end macro checkvera, clock, pc
     setc byte ptr [rdx].state.flags_overflow
 
     ; check the zero flag, which is the and of input and the accumulator
-
     and dil, r8b
     test dil, dil
     lahf
@@ -3090,6 +3089,27 @@ bit_body_end macro checkvera, clock, pc
     jmp opcode_done
 endm
 
+bit_body_end_nochangetov macro checkvera, clock, pc
+    test dil, dil				; sets zero and sign flags, we will overwrite zero later
+    write_flags_r15_preservecarry
+    
+    ; check the zero flag, which is the and of input and the accumulator
+    and dil, r8b
+    test dil, dil
+    lahf
+    and rax, 0100000000000000b ; isolate zero
+    and r15, 1011111111111111b ; remove zero
+    or r15, rax                ; map on
+
+    step_vera_read checkvera
+    
+    add r14, clock			
+    add r11w, pc			
+
+    jmp opcode_done
+endm
+
+
 bit_body macro checkvera, clock, pc
     movzx rdi, byte ptr [rsi+rbx]
     bit_body_end checkvera, clock, pc
@@ -3097,7 +3117,7 @@ endm
 
 x89_bit_imm proc
     movzx rdi, byte ptr [rsi+r11]
-    bit_body_end 0, 3, 1
+    bit_body_end_nochangetov 0, 3, 1
 x89_bit_imm endp
 
 x2C_bit_abs proc

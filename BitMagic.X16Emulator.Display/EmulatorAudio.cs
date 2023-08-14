@@ -1,12 +1,13 @@
-﻿using Silk.NET.Core;
+﻿//#define LOG_OUTPUT
+
+using Silk.NET.Core;
 using Silk.NET.Core.Contexts;
 using Silk.NET.SDL;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Thread = System.Threading.Thread;
 
 namespace BitMagic.X16Emulator.Display;
-
-
 
 public unsafe class EmulatorAudio : IDisposable
 {
@@ -16,10 +17,15 @@ public unsafe class EmulatorAudio : IDisposable
     private uint _bufferRead;
     private readonly uint _bufferMask;
     private readonly uint _bufferSize;
+    private readonly ulong _ptr;
+    public uint Delay { get; private set; }
+    #if LOG_OUTPUT
+    private readonly StreamWriter _writer;
+    #endif
 
     public EmulatorAudio(Emulator emulator)
     {
-        _bufferMask = Emulator.AudioOutputSize / 4 - 1 ;
+        _bufferMask = Emulator.AudioOutputSize / 4 - 1 - 1;
         _bufferSize = Emulator.AudioOutputSize / 4;
 
         _emulator = emulator;
@@ -38,6 +44,12 @@ public unsafe class EmulatorAudio : IDisposable
         var actual = new AudioSpec();
         IntPtr _desired = Marshal.AllocHGlobal(Marshal.SizeOf(desired));
         IntPtr _actual = Marshal.AllocHGlobal(Marshal.SizeOf(actual));
+
+        _ptr = _emulator.VeraAudio.PcmPtr;
+
+        #if LOG_OUTPUT
+        _writer = new StreamWriter("c:\\temp\\audio.txt");
+        #endif
 
         try
         {
@@ -69,65 +81,90 @@ public unsafe class EmulatorAudio : IDisposable
     {
         if (_audio_device != 0)
             _sdl.CloseAudioDevice(_audio_device);
+
+        #if LOG_OUTPUT
+        _writer.Flush();
+        _writer.Close();
+        _writer.Dispose();
+        #endif
     }
 
     // Buffer Sizes and indexes are in 4 byte steps!
-    // SDL length is in bytes?
+    // SDL length is in bytes.
     public void AudioCallback(void* userdata, byte* stream, int length)
     {
-        var bufferWrite = _emulator.AudioWrite;
-        var actLength = length / 4;
+        //var buffW = _emulator.AudioWrite;
+        //var bufferWrite = buffW & _bufferMask;
+        var bufferWrite = _emulator.AudioWrite & ~(uint)3;
+        var actLength = 0x100;
+        var outputOffset = 0;
 
-//        Console.WriteLine($"Callback for {actLength} Read: {_bufferRead} Write: {bufferWrite}, Behind {bufferWrite - _bufferRead}");
-
-        //if (bufferWrite - _bufferRead > 150)
-        //{
-        //    _bufferRead = bufferWrite - 0x150;
-        //    _bufferRead &= _bufferMask;
-        //}
+        if (length != 0x400)
+            throw new Exception("Audio request size missmatch!");
 
         if (_bufferRead == bufferWrite)
+        {
+            new Span<byte>(stream, length).Clear();
+
             return;
-
-        // check if the write has looped around or not
-        if (_bufferRead > bufferWrite)
-        {
-            //Buffer.MemoryCopy((void*)(_emulator.VeraAudio.PcmPtr + _bufferRead * 4), stream, length, len);
-
-            var len = Math.Min(length / 4, _bufferSize - _bufferRead + bufferWrite - 1);
-
-            _bufferRead += (uint)len;
-            _bufferRead &= _bufferMask;
-
-            _bufferRead = 0;
-
-            if (actLength - len != 0)
-                Console.WriteLine($"Audio Under flow: {actLength - len}");
         }
-        else
+
+        Delay = (bufferWrite - _bufferRead) & _bufferMask;
+
+        if (Delay > 0xb00) // more than 11 frames behind
         {
-            var len = Math.Min(length / 4, bufferWrite - _bufferRead - 1);
+            Console.Write($"Audio to far behind (0x{Delay:X4}) was {_bufferRead:X8}");
+            _bufferRead = (bufferWrite - 0x700) & _bufferMask & ~(uint)0xff;
+            Console.WriteLine($" now {_bufferRead:X8}");
+        }
 
+        bool showDebug = false;
+        if (_bufferRead + 0x100 > _bufferSize)
+        {
+            showDebug = true;
+            var toWrite = Math.Min(_bufferSize - _bufferRead, actLength);
+            Console.Write($"Wrap {_bufferRead:X8} vs {bufferWrite:X8} writing {toWrite:X4}");
+            
+            // copy from the read position to the end of the buffer
+            Buffer.MemoryCopy((void*)(_emulator.AudioOutputPtr + _bufferRead * 4), stream, toWrite * 4, toWrite * 4);
 
-            Buffer.MemoryCopy((void*)(_emulator.AudioOutputPtr + _bufferRead * 4), stream, length, len * 4);
+            if (toWrite == actLength)
+            {
+                Console.WriteLine(" all done");
+                _bufferRead = 0;
+                return;
+            }
 
-            //bool hasData = false;
-            //for(var i = 0; i < len; i++)
-            //{
-            //    if (_emulator.AudioOutputBuffer[(int)_bufferRead+i] != 0  && _emulator.AudioOutputBuffer[(int)_bufferRead+i] != 0x1c00) {
-            //        hasData = true;
-            //        break;
-            //    }
-            //}
+            actLength -= (int)toWrite;
+            outputOffset = (int)toWrite;
+            _bufferRead = 0;
+        }
 
-            _bufferRead += (uint)len;
-            _bufferRead &= _bufferMask;
+        var len = Math.Min(actLength, bufferWrite - _bufferRead);
 
-            //if (hasData)
-            //    Console.WriteLine("Data found!");
+        if (showDebug)
+        {
+            Console.WriteLine($" and writing {len:X4} more at {outputOffset:X2}");
+        }
 
-            if (actLength - len != 0)
-                Console.WriteLine($"Audio Under flow: {actLength - len}");
+        Buffer.MemoryCopy((void*)(_emulator.AudioOutputPtr + _bufferRead * 4), stream + outputOffset * 4, len * 4, len * 4);
+        
+        #if LOG_OUTPUT
+        for (var i = 0; i < len; i++)
+        {
+            _writer.Write(((short)(stream[i * 4] + (stream[i * 4 + 1] << 8))).ToString());
+            _writer.Write(",");
+            _writer.WriteLine(((short)(stream[i * 4 + 2] + (stream[i * 4 + 3] << 8))).ToString());
+        }
+        #endif
+
+        _bufferRead += (uint)len;
+        _bufferRead &= _bufferMask;
+
+        if (actLength - len != 0)
+        {
+            _bufferRead &= ~(uint)0xff;
+            Console.WriteLine($"Audio Under flow: {actLength - len}");
         }
     }
 }

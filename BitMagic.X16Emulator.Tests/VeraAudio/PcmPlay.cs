@@ -44,8 +44,8 @@ public class PcmPlay
                 stp",
                 emulator);
 
-        Assert.AreEqual(0xab, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0xab, emulator.AudioOutputBuffer[1]);
+        Assert.AreEqual(0xab * 2, emulator.AudioOutputBuffer[0]);
+        Assert.AreEqual(0xab * 2, emulator.AudioOutputBuffer[1]);
     }
 
     [TestMethod]
@@ -55,7 +55,7 @@ public class PcmPlay
 
         emulator.VeraAudio.PcmBufferWrite = 1;
         emulator.VeraAudio.PcmSampleRate = 0x80; // max
-        emulator.VeraAudio.PcmVolume = 0x0f;    // max volume
+        emulator.VeraAudio.PcmVolume = 128;    // max volume
         emulator.VeraAudio.PcmBuffer[0] = 0xab;
 
         await X16TestHelper.Emulate(@"
@@ -66,9 +66,9 @@ public class PcmPlay
                 stp",
                 emulator);
 
-        // 0xab * 64 = 0xa05.
-        Assert.AreEqual(0xa05, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0xa05, emulator.AudioOutputBuffer[1]);
+        // ((0xab << 8) * 128) >> 7 = 0xab00
+        Assert.AreEqual(unchecked((short)0xab00), emulator.AudioOutputBuffer[0]);
+        Assert.AreEqual(unchecked((short)0xab00), emulator.AudioOutputBuffer[1]);
     }
 
     [TestMethod]
@@ -76,12 +76,11 @@ public class PcmPlay
     {
         var emulator = new Emulator();
 
-        emulator.VeraAudio.PcmBufferWrite = 1;
+        emulator.VeraAudio.PcmBufferWrite = 0;
         emulator.VeraAudio.PcmSampleRate = 0x80; // max
-        emulator.VeraAudio.PcmVolume = 0x0f;    // max volume
+        emulator.VeraAudio.PcmVolume = 128;    // max volume
         emulator.A = 0xab;
         emulator.Clock_AudioNext = 10;
-
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -96,8 +95,7 @@ public class PcmPlay
                 stp",
                 emulator);
 
-        // 0xab * 64 = 0xa05.
-        Assert.AreEqual(0xa05, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0xa05, emulator.AudioOutputBuffer[1]);
+        Assert.AreEqual(unchecked((short)0xab00), emulator.AudioOutputBuffer[0]);
+        Assert.AreEqual(unchecked((short)0xab00), emulator.AudioOutputBuffer[1]);
     }
 }

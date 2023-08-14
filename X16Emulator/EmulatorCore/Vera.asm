@@ -23,7 +23,7 @@
 ; rbx  : scratch
 ; rcx  : scratch
 ; rdx  : state object 
-; rdi  : current memory contexth
+; rdi  : current memory context
 ; rsi  : scratch
 ; r8b  : a
 ; r9b  : x
@@ -513,7 +513,10 @@ dc_done:
 	or r13d, 80h		; set full bit
 
 	pcm_done:
+
 	mov byte ptr [rsi + AUDIO_CTRL], r13b
+
+	call vera_init_psg
 
 	mov eax, [rdx].state.initial_startup
 	test eax, eax
@@ -533,12 +536,15 @@ vera_init endp
 ; Todo, add PSG\Sprite changes if reqd
 ;
 vera_dataupdate_stuctures macro
-	local skip, xx_red, sprite_change
+	local skip, xx_red, sprite_change, psg_change
 	push rsi
-	cmp rdi, 1fa00h
-	jb skip
-
 	push rax
+
+	cmp rdi, 1f9bfh
+	jl skip
+
+	cmp rdi, 1fa00h
+	jb psg_change
 
 	cmp rdi, 1fbffh
 	ja sprite_change
@@ -570,7 +576,7 @@ vera_dataupdate_stuctures macro
 	or rcx, r12								; or in second nibble
 
 	mov dword ptr [rsi + rax * 2], ecx		; persist
-	pop rax
+;	pop rax
 	jmp skip
 xx_red:
 	; r13 is xR
@@ -584,15 +590,23 @@ xx_red:
 	or rcx, r12								; or in second nibble
 
 	mov dword ptr [rsi + rax * 2], ecx
-	pop rax
+;	pop rax
 	jmp skip
 sprite_change:
 	push rbx
 	call sprite_update_registers
 	pop rbx
-	pop rax
+;	pop rax
+	jmp skip
+
+psg_change:
+	push rbx
+	call psg_update_registers
+	pop rbx
+;	pop rax
 
 skip:
+	pop rax
 	pop rsi
 endm
 

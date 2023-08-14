@@ -47,6 +47,7 @@ state struct
 	vram_ptr				qword ?
 	palette_ptr				qword ? 
 	sprite_ptr				qword ?
+	psg_ptr					qword ?
 
 	data0_address			qword ?
 	data1_address			qword ?
@@ -147,6 +148,7 @@ state struct
 	initial_startup			dword ?
 
 	audio_write				dword ?
+	audio_cpu_partial		dword ?
 
 	pcm_bufferread			dword ?
 	pcm_bufferwrite			dword ?
@@ -157,6 +159,9 @@ state struct
 
 	pcm_value_l				dword ?
 	pcm_value_r				dword ?
+
+	psg_noise_signal		dword ?
+	psg_noise				dword ?
 
 	rom_bank				dword ?
 
@@ -309,4 +314,3 @@ state struct
 
 
 state ends
-

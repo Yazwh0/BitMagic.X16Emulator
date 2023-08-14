@@ -126,7 +126,7 @@ all_done:
 	ret
 sprites_render_find endp
 
-; Inptus:
+; Inputs:
 ; r13b value
 ; rdi vram address
 sprite_update_registers proc

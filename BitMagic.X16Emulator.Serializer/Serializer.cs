@@ -25,6 +25,8 @@ public static class X16EmulatorSerilizer
         toReturn.SpiOutboundBuffer = emulator.SpiOutboundBuffer.ToArray();
         toReturn.StackInfo = emulator.StackInfo.ToArray();
         toReturn.RtcNvram = emulator.RtcNvram.ToArray();
+        toReturn.PsgVoices = emulator.VeraAudio.PsgVoices.ToArray();
+        toReturn.PcmBuffer = emulator.VeraAudio.PcmBuffer.ToArray();
 
         return JsonConvert.SerializeObject(toReturn);
     }
@@ -57,6 +59,8 @@ public static class X16EmulatorSerilizer
         CopyData(state.SpiOutboundBuffer, emulator.SpiOutboundBuffer);
         CopyData(state.StackInfo, emulator.StackInfo);
         CopyData(state.RtcNvram, emulator.RtcNvram);
+        CopyData(state.PsgVoices, emulator.VeraAudio.PsgVoices);
+        CopyData(state.PcmBuffer, emulator.VeraAudio.PcmBuffer);
     }
 
     private static unsafe void CopyData<T>(T[] source, Span<T> dest)
@@ -86,4 +90,6 @@ internal class EmulatorState
     public byte[] SpiOutboundBuffer { get; set; } = Array.Empty<byte>();
     public uint[] StackInfo { get; set; } = Array.Empty<uint>();
     public byte[] RtcNvram { get; set; } = Array.Empty<byte>();
+    public PsgVoice[] PsgVoices { get; set; } = Array.Empty<PsgVoice>();
+    public byte[] PcmBuffer { get; set; } = Array.Empty<byte>();
 }

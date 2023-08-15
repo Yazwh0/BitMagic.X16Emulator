@@ -49,6 +49,7 @@ public static class EmulatorWindow
     public static event EventHandler<ControlKeyPressedEventArgs>? ControlKeyPressed;
 
     private static EmulatorAudio? _audio;
+    private static object _lock = new();
 
     public static void Run(Emulator emulator)
     {
@@ -320,75 +321,90 @@ public static class EmulatorWindow
 
     private static unsafe void OnRender(double deltaTime)
     {
-        if (_closing) return;
-        if (_gl == null) throw new ArgumentNullException(nameof(_gl));
-        if (_shader == null) throw new ArgumentNullException(nameof(_shader));
-        if (_layers == null) throw new ArgumentNullException(nameof(_layers));
-
-        //_gl.Enable(EnableCap.DepthTest);
-        //_gl.Enable(GLEnum.Blend);
-        // _gl.BlendFunc(BlendingFactor.SrcColor, BlendingFactor.SrcColor);
-        _gl.Clear(ClearBufferMask.ColorBufferBit);
-
-        //_layers[0].OnRender(_gl, _shader, _requireUpdate);
-
-        foreach (var i in _layers)
+        lock (_lock)
         {
             if (_closing) return;
-            i.OnRender(_gl, _shader, _emulator!.RenderReady);
-        }
+            if (_gl == null) throw new ArgumentNullException(nameof(_gl));
+            if (_shader == null) throw new ArgumentNullException(nameof(_shader));
+            if (_layers == null) throw new ArgumentNullException(nameof(_layers));
 
-        _emulator!.RenderReady = false;
-        var thisTicks = _stopwatch.ElapsedMilliseconds;
-        if (thisTicks - _lastTicks > 1000)
-        {
-            var thisCount = _emulator.Vera.Frame_Count;
+            //_gl.Enable(EnableCap.DepthTest);
+            //_gl.Enable(GLEnum.Blend);
+            // _gl.BlendFunc(BlendingFactor.SrcColor, BlendingFactor.SrcColor);
+            _gl.Clear(ClearBufferMask.ColorBufferBit);
 
-            if (thisCount == _lastCount) // no frames this second?
+            //_layers[0].OnRender(_gl, _shader, _requireUpdate);
+
+            foreach (var i in _layers)
             {
-                _speed = 0;
-                _fps = 0;
-            }
-            else
-            {
-                var tickDelta = thisTicks - _lastTicks;
-                _fps = (thisCount - _lastCount) / (tickDelta / 1000.0);
-                _speed = _fps / 59.523809;
+                if (_closing) return;
+                i.OnRender(_gl, _shader, _emulator!.RenderReady);
             }
 
-            var audioDelay = _audio?.Delay / (double)0x100;
+            _emulator!.RenderReady = false;
+            var thisTicks = _stopwatch.ElapsedMilliseconds;
+            if (thisTicks - _lastTicks > 1000)
+            {
+                var thisCount = _emulator.Vera.Frame_Count;
 
-            _window!.Title = $"BitMagic! X16E [{_speed:0.00%} \\ {_fps:0.0} fps \\ {_speed * 8.0:0}Mhz] AD {audioDelay:0.0} {(_hasMouse ? "* MOUSE CAPTURED *" : "")}";
-            _lastCount = thisCount;
-            _lastTicks = thisTicks;
+                if (thisCount == _lastCount) // no frames this second?
+                {
+                    _speed = 0;
+                    _fps = 0;
+                }
+                else
+                {
+                    var tickDelta = thisTicks - _lastTicks;
+                    _fps = (thisCount - _lastCount) / (tickDelta / 1000.0);
+                    _speed = _fps / 59.523809;
+                }
+
+                var audioDelay = _audio?.Delay / (double)0x100;
+
+                _window!.Title = $"BitMagic! X16E [{_speed:0.00%} \\ {_fps:0.0} fps \\ {_speed * 8.0:0}Mhz] AD {audioDelay:0.0} {(_hasMouse ? "* MOUSE CAPTURED *" : "")}";
+                _lastCount = thisCount;
+                _lastTicks = thisTicks;
+            }
         }
-
         //_emulator.Control = Control.Run;
+    }
+
+    public static void PauseAudio()
+    {
+        _audio?.StopPlayback();
+    }
+
+    public static void ContinueAudio()
+    {
+        _audio?.StartPlayback();
     }
 
     private static void OnClose()
     {
-        _closing = true;
-        _audio?.StopPlayback();
-        _gl?.Dispose();
-        _shader?.Dispose();
-        if (_layers != null)
+        lock (_lock)
         {
-            foreach (var i in _layers)
+            _closing = true;
+            _audio?.StopPlayback();
+            _gl?.Dispose();
+            _shader?.Dispose();
+            if (_layers != null)
             {
-                i.Dispose();
+                foreach (var i in _layers)
+                {
+                    i.Dispose();
+                }
             }
-        }
-        _emulator!.Control = Control.Stop;
+            _emulator!.Control = Control.Stop;
 
-        _gl = null;
-        _window = null;
-        _shader = null;
-        _images = null;
-        _layers = null;
-        _emulator = null;
-        _mouseTimer?.Dispose();
-        _audio?.Dispose();
+            _gl = null;
+            _window = null;
+            _shader = null;
+            _images = null;
+            _layers = null;
+            _emulator = null;
+            _mouseTimer?.Dispose();
+            _audio?.Dispose();
+        }
     }
 
     public static void Stop()

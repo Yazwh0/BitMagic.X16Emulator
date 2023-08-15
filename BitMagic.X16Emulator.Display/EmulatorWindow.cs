@@ -49,7 +49,7 @@ public static class EmulatorWindow
     public static event EventHandler<ControlKeyPressedEventArgs>? ControlKeyPressed;
 
     private static EmulatorAudio? _audio;
-    private static object _lock = new();
+    private static readonly object _lock = new();
 
     public static void Run(Emulator emulator)
     {

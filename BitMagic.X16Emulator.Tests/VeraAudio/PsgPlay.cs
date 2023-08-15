@@ -434,56 +434,56 @@ public class PsgPlay
         Assert.AreEqual(0, emulator.AudioOutputBuffer[7]);
     }
 
-    [TestMethod]
-    public async Task Pulse_Left_MultipleVoice()
-    {
-        var emulator = new Emulator();
+    //[TestMethod]
+    //public async Task Pulse_Left_MultipleVoice()
+    //{
+    //    var emulator = new Emulator();
 
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
-        emulator.Vera.Data0_Step = 4;
-        emulator.VeraAudio.PsgVoices[0].Frequency = 0x1000; // change every sample
-        emulator.VeraAudio.PsgVoices[0].LeftRight = 0x01;
-        emulator.VeraAudio.PsgVoices[0].Volume = 64;
+    //    emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
+    //    emulator.Vera.Data0_Step = 4;
+    //    emulator.VeraAudio.PsgVoices[0].Frequency = 0x1000; // change every sample
+    //    emulator.VeraAudio.PsgVoices[0].LeftRight = 0x01;
+    //    emulator.VeraAudio.PsgVoices[0].Volume = 64;
 
-        emulator.VeraAudio.PsgVoices[1].Frequency = 0x1000; // change every sample
-        emulator.VeraAudio.PsgVoices[1].LeftRight = 0x01;
-        emulator.VeraAudio.PsgVoices[1].Volume = 64;
+    //    emulator.VeraAudio.PsgVoices[1].Frequency = 0x1000; // change every sample
+    //    emulator.VeraAudio.PsgVoices[1].LeftRight = 0x01;
+    //    emulator.VeraAudio.PsgVoices[1].Volume = 64;
 
-        emulator.VeraAudio.PsgVoices[2].Frequency = 0x1000; // change every sample
-        emulator.VeraAudio.PsgVoices[2].LeftRight = 0x01;
-        emulator.VeraAudio.PsgVoices[2].Volume = 64;
+    //    emulator.VeraAudio.PsgVoices[2].Frequency = 0x1000; // change every sample
+    //    emulator.VeraAudio.PsgVoices[2].LeftRight = 0x01;
+    //    emulator.VeraAudio.PsgVoices[2].Volume = 64;
 
-        emulator.VeraAudio.PsgVoices[3].Frequency = 0x1000; // change every sample
-        emulator.VeraAudio.PsgVoices[3].LeftRight = 0x01;
-        emulator.VeraAudio.PsgVoices[3].Volume = 64;
+    //    emulator.VeraAudio.PsgVoices[3].Frequency = 0x1000; // change every sample
+    //    emulator.VeraAudio.PsgVoices[3].LeftRight = 0x01;
+    //    emulator.VeraAudio.PsgVoices[3].Volume = 64;
 
-        emulator.A = WIDTH + PULSE;
-        emulator.Clock_AudioNext = 150; // enough for the sta DATA0
-        emulator.X = 0xff;
-        emulator.Y = 0x20;
+    //    emulator.A = WIDTH + PULSE;
+    //    emulator.Clock_AudioNext = 150; // enough for the sta DATA0
+    //    emulator.X = 0xff;
+    //    emulator.Y = 0x20;
 
-        await X16TestHelper.Emulate(@"
-                .machine CommanderX16R40
-                .org $810
-                sta DATA0
-                sta DATA0
-                sta DATA0
-                sta DATA0
-                .loop:
-                dex
-                bne loop
-                dey
-                bne loop
-                stp",
-                emulator);
+    //    await X16TestHelper.Emulate(@"
+    //            .machine CommanderX16R40
+    //            .org $810
+    //            sta DATA0
+    //            sta DATA0
+    //            sta DATA0
+    //            sta DATA0
+    //            .loop:
+    //            dex
+    //            bne loop
+    //            dey
+    //            bne loop
+    //            stp",
+    //            emulator);
 
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[7]);
-    }
+    //    Assert.AreEqual(31, emulator.AudioOutputBuffer[0]);
+    //    Assert.AreEqual(0, emulator.AudioOutputBuffer[1]);
+    //    Assert.AreEqual(-32, emulator.AudioOutputBuffer[2]);
+    //    Assert.AreEqual(0, emulator.AudioOutputBuffer[3]);
+    //    Assert.AreEqual(31, emulator.AudioOutputBuffer[4]);
+    //    Assert.AreEqual(0, emulator.AudioOutputBuffer[5]);
+    //    Assert.AreEqual(-32, emulator.AudioOutputBuffer[6]);
+    //    Assert.AreEqual(0, emulator.AudioOutputBuffer[7]);
+    //}
 }

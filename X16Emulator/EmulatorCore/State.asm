@@ -18,6 +18,8 @@ state struct
 	; functions
 	get_ticks				qword ?
 	sleep					qword ?
+
+	wrapper_flags			qword ?
 	
 	; arrays
 	memory_ptr				qword ?

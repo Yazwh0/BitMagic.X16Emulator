@@ -263,14 +263,14 @@ public class Emulator : IDisposable
         public uint Led { get => _emulator._state.SmcLed; set => _emulator._state.SmcLed = value; }
     }
 
-
     [StructLayout(LayoutKind.Sequential)]
     public struct CpuState
     {
-
         // functions
         public ulong GetTicks = 0;
         public ulong Sleep = 0;
+
+        public ulong WrapperFlags = 0;  // used by the linux wrapper to see if these calls have had their handlers injected.
 
         // arrays
         public ulong MemoryPtr = 0;

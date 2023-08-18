@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <signal.h>
 
 extern int64_t asm_func(void *state);
 
@@ -12,7 +13,7 @@ struct EmulatorState
 };
 
 void __attribute__((fastcall))sleepWrapper(int64_t usec);
-int64_t __attribute__((fastcall))getTicks();
+int64_t getTicks();
 
 int32_t fnEmulatorCode(void* state)
 {
@@ -33,14 +34,16 @@ int32_t fnEmulatorCode(void* state)
 
 void __attribute__((fastcall))sleepWrapper(int64_t usec)
 {
+    raise(SIGTRAP);
     sleep(usec);
 }
 
-int64_t __attribute__((fastcall))getTicks()
+int64_t getTicks()
 {
     struct timeval tp;
     gettimeofday(&tp, NULL);
     int64_t ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+
     return ms;
 }
 

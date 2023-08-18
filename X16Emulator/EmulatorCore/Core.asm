@@ -466,6 +466,7 @@ vera_render_done:
     jz in_warp
 
     pushf
+    push rsi
     push r15
     push r14
     push r13
@@ -508,6 +509,7 @@ no_cpu_wait:
     pop r13
     pop r14
     pop r15
+    pop rsi
     popf
 
 in_warp:

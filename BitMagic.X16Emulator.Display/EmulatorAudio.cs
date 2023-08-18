@@ -29,7 +29,8 @@ public unsafe class EmulatorAudio : IDisposable
         _bufferSize = Emulator.AudioOutputSize / 4;
 
         _emulator = emulator;
-        _sdl = new Sdl(new DefaultNativeContext("SDL2"));
+        //_sdl = new Sdl(new DefaultNativeContext("SDL2"));
+        _sdl = Sdl.GetApi();
 
         _sdl.Init(Sdl.InitAudio);
 

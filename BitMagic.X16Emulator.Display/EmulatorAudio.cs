@@ -1,4 +1,5 @@
 ﻿//#define LOG_OUTPUT
+//#define SHOW_AUDIO_WARNINGS
 
 using Silk.NET.Core;
 using Silk.NET.Core.Contexts;
@@ -114,9 +115,13 @@ public unsafe class EmulatorAudio : IDisposable
 
         if (Delay > 0xb00) // more than 11 frames behind
         {
+            #if SHOW_AUDIO_WARNINGS
             Console.Write($"Audio to far behind (0x{Delay:X4}) was {_bufferRead:X8}");
+            #endif
             _bufferRead = (bufferWrite - 0x700) & _bufferMask & ~(uint)0xff;
+            #if SHOW_AUDIO_WARNINGS
             Console.WriteLine($" now {_bufferRead:X8}");
+            #endif
         }
 
         bool showDebug = false;
@@ -124,14 +129,18 @@ public unsafe class EmulatorAudio : IDisposable
         {
             showDebug = true;
             var toWrite = Math.Min(_bufferSize - _bufferRead, actLength);
+            #if SHOW_AUDIO_WARNINGS
             Console.Write($"Wrap {_bufferRead:X8} vs {bufferWrite:X8} writing {toWrite:X4}");
-            
+            #endif
+
             // copy from the read position to the end of the buffer
             Buffer.MemoryCopy((void*)(_emulator.AudioOutputPtr + _bufferRead * 4), stream, toWrite * 4, toWrite * 4);
 
             if (toWrite == actLength)
             {
+                #if SHOW_AUDIO_WARNINGS
                 Console.WriteLine(" all done");
+                #endif
                 _bufferRead = 0;
                 return;
             }
@@ -143,10 +152,12 @@ public unsafe class EmulatorAudio : IDisposable
 
         var len = Math.Min(actLength, bufferWrite - _bufferRead);
 
+        #if SHOW_AUDIO_WARNINGS
         if (showDebug)
         {
             Console.WriteLine($" and writing {len:X4} more at {outputOffset:X2}");
         }
+        #endif
 
         Buffer.MemoryCopy((void*)(_emulator.AudioOutputPtr + _bufferRead * 4), stream + outputOffset * 4, len * 4, len * 4);
         
@@ -165,7 +176,9 @@ public unsafe class EmulatorAudio : IDisposable
         if (actLength - len != 0)
         {
             _bufferRead &= ~(uint)0xff;
+            #if SHOW_AUDIO_WARNINGS
             Console.WriteLine($"Audio Under flow: {actLength - len}");
+            #endif
         }
     }
 }

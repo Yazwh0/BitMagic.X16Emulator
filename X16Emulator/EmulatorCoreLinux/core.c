@@ -12,7 +12,7 @@ struct EmulatorState
    int64_t WrapperFlags;
 };
 
-void __attribute__((fastcall))sleepWrapper(int64_t usec);
+void sleepWrapper(int64_t usec);
 int64_t getTicks();
 
 int32_t fnEmulatorCode(void* state)
@@ -32,9 +32,8 @@ int32_t fnEmulatorCode(void* state)
     return toReturn;
 }
 
-void __attribute__((fastcall))sleepWrapper(int64_t usec)
+void sleepWrapper(int64_t usec)
 {
-    raise(SIGTRAP);
     sleep(usec);
 }
 

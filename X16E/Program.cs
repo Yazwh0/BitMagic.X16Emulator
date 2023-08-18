@@ -515,6 +515,7 @@ static class Program
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("*** Close emulator window to exit ***");
+                EmulatorWindow.PauseAudio();
             }
             Console.ResetColor();
         }

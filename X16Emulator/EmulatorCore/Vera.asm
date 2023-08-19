@@ -516,11 +516,15 @@ dc_done:
 
 	mov byte ptr [rsi + AUDIO_CTRL], r13b
 
+	push rsi
 	call vera_init_psg
+	pop rsi
 
 	mov eax, [rdx].state.initial_startup
 	test eax, eax
 	jz not_initial
+
+	or byte ptr [rsi + ISR], 08h	; set AFLOW but only on initial
 
 	jmp vera_initialise_palette
 

@@ -1,10 +1,13 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using BitMagic.Compiler;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BitMagic.X16Emulator.Tests.Vera;
 
 [TestClass]
 public class Isr
 {
+    private const int AFLOW = 0x08;
+
     [TestMethod]
     public async Task Clear_Vsync()
     {
@@ -22,7 +25,7 @@ public class Isr
                 stp",
                 emulator);
 
-        Assert.AreEqual(0x00, emulator.Memory[0x9F27]);
+        Assert.AreEqual(AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Vera.Interrupt_Vsync_Hit);
         Assert.IsFalse(emulator.Vera.Interrupt_Line_Hit);
         Assert.IsFalse(emulator.Vera.Interrupt_SpCol_Hit);
@@ -70,7 +73,7 @@ public class Isr
                 stp",
                 emulator);
 
-        Assert.AreEqual(0x00, emulator.Memory[0x9F27]);
+        Assert.AreEqual(AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Vera.Interrupt_Vsync_Hit);
         Assert.IsFalse(emulator.Vera.Interrupt_Line_Hit);
         Assert.IsFalse(emulator.Vera.Interrupt_SpCol_Hit);
@@ -119,7 +122,7 @@ public class Isr
                 stp",
                 emulator);
 
-        Assert.AreEqual(0x00, emulator.Memory[0x9F27]);
+        Assert.AreEqual(AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Vera.Interrupt_Vsync_Hit);
         Assert.IsFalse(emulator.Vera.Interrupt_Line_Hit);
         Assert.IsFalse(emulator.Vera.Interrupt_SpCol_Hit);
@@ -195,7 +198,7 @@ public class Isr
                 stp",
                 emulator);
 
-        Assert.AreEqual(0x00, emulator.Memory[0x9F27]);
+        Assert.AreEqual(AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Vera.Interrupt_Vsync_Hit);
         Assert.IsFalse(emulator.Vera.Interrupt_Line_Hit);
         Assert.IsFalse(emulator.Vera.Interrupt_SpCol_Hit);

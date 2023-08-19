@@ -27,7 +27,7 @@ public class BBS
         // compilation
         Assert.AreEqual(0x8f, emulator.Memory[0x810]);
         Assert.AreEqual(0x10, emulator.Memory[0x811]);
-        Assert.AreEqual(0x02, emulator.Memory[0x812]);
+        Assert.AreEqual(0x01, emulator.Memory[0x812]);
 
         // emulation
         emulator.AssertState(0x10, 0x00, 0x00, 0x817, 8); // 5 for bbs + 1 for taken + 2 for lda
@@ -129,7 +129,7 @@ public class BBS
         // compilation
         Assert.AreEqual(0x9f, emulator.Memory[0x810]);
         Assert.AreEqual(0x10, emulator.Memory[0x811]);
-        Assert.AreEqual(0x02, emulator.Memory[0x812]);
+        Assert.AreEqual(0x01, emulator.Memory[0x812]);
 
         // emulation
         emulator.AssertState(0x10, 0x00, 0x00, 0x817, 8); // 5 for bbs + 1 for taken + 2 for lda
@@ -231,7 +231,7 @@ public class BBS
         // compilation
         Assert.AreEqual(0xaf, emulator.Memory[0x810]);
         Assert.AreEqual(0x10, emulator.Memory[0x811]);
-        Assert.AreEqual(0x02, emulator.Memory[0x812]);
+        Assert.AreEqual(0x01, emulator.Memory[0x812]);
 
         // emulation
         emulator.AssertState(0x10, 0x00, 0x00, 0x817, 8); // 5 for bbs + 1 for taken + 2 for lda
@@ -333,7 +333,7 @@ public class BBS
         // compilation
         Assert.AreEqual(0xbf, emulator.Memory[0x810]);
         Assert.AreEqual(0x10, emulator.Memory[0x811]);
-        Assert.AreEqual(0x02, emulator.Memory[0x812]);
+        Assert.AreEqual(0x01, emulator.Memory[0x812]);
 
         // emulation
         emulator.AssertState(0x10, 0x00, 0x00, 0x817, 8); // 5 for bbs + 1 for taken + 2 for lda
@@ -435,7 +435,7 @@ public class BBS
         // compilation
         Assert.AreEqual(0xcf, emulator.Memory[0x810]);
         Assert.AreEqual(0x10, emulator.Memory[0x811]);
-        Assert.AreEqual(0x02, emulator.Memory[0x812]);
+        Assert.AreEqual(0x01, emulator.Memory[0x812]);
 
         // emulation
         emulator.AssertState(0x10, 0x00, 0x00, 0x817, 8); // 5 for bbs + 1 for taken + 2 for lda
@@ -537,7 +537,7 @@ public class BBS
         // compilation
         Assert.AreEqual(0xdf, emulator.Memory[0x810]);
         Assert.AreEqual(0x10, emulator.Memory[0x811]);
-        Assert.AreEqual(0x02, emulator.Memory[0x812]);
+        Assert.AreEqual(0x01, emulator.Memory[0x812]);
 
         // emulation
         emulator.AssertState(0x10, 0x00, 0x00, 0x817, 8); // 5 for bbs + 1 for taken + 2 for lda
@@ -639,7 +639,7 @@ public class BBS
         // compilation
         Assert.AreEqual(0xef, emulator.Memory[0x810]);
         Assert.AreEqual(0x10, emulator.Memory[0x811]);
-        Assert.AreEqual(0x02, emulator.Memory[0x812]);
+        Assert.AreEqual(0x01, emulator.Memory[0x812]);
 
         // emulation
         emulator.AssertState(0x10, 0x00, 0x00, 0x817, 8); // 5 for bbs + 1 for taken + 2 for lda
@@ -741,7 +741,7 @@ public class BBS
         // compilation
         Assert.AreEqual(0xff, emulator.Memory[0x810]);
         Assert.AreEqual(0x10, emulator.Memory[0x811]);
-        Assert.AreEqual(0x02, emulator.Memory[0x812]);
+        Assert.AreEqual(0x01, emulator.Memory[0x812]);
 
         // emulation
         emulator.AssertState(0x10, 0x00, 0x00, 0x817, 8); // 5 for bbs + 1 for taken + 2 for lda

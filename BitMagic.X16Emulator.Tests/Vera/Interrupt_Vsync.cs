@@ -5,6 +5,9 @@ namespace BitMagic.X16Emulator.Tests;
 [TestClass]
 public class Interrupt_Vsync
 {
+    private const int VSYNC = 0x01;
+    private const int AFLOW = 0x08;
+
     [TestMethod]
     public async Task Hit()
     {
@@ -39,7 +42,7 @@ public class Interrupt_Vsync
         Assert.AreEqual(true, emulator.Vera.Interrupt_Vsync_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_Line_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_SpCol_Hit);
-        Assert.AreEqual(0x01, emulator.Memory[0x9F27]);
+        Assert.AreEqual(VSYNC + AFLOW, emulator.Memory[0x9F27]);
         Assert.IsTrue(emulator.Vera.Beam_X <= 31);      // not 0 as the interrupt has to process + stp
         Assert.AreEqual(480, emulator.Vera.Beam_Y);     // will be on line 480
     }
@@ -79,7 +82,7 @@ public class Interrupt_Vsync
         Assert.AreEqual(true, emulator.Vera.Interrupt_Vsync_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_Line_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_SpCol_Hit);
-        Assert.AreEqual(0x01, emulator.Memory[0x9F27]);
+        Assert.AreEqual(VSYNC + AFLOW, emulator.Memory[0x9F27]);
     }
 
     [TestMethod]
@@ -117,7 +120,7 @@ public class Interrupt_Vsync
         Assert.AreEqual(false, emulator.Vera.Interrupt_Vsync_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_Line_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_SpCol_Hit);
-        Assert.AreEqual(0x00, emulator.Memory[0x9F27]);
+        Assert.AreEqual(AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Interrupt);
     }
 
@@ -156,7 +159,7 @@ public class Interrupt_Vsync
         Assert.AreEqual(true, emulator.Vera.Interrupt_Vsync_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_Line_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_SpCol_Hit);
-        Assert.AreEqual(0x01, emulator.Memory[0x9F27]);
+        Assert.AreEqual(VSYNC + AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Interrupt);
     }
 
@@ -195,7 +198,7 @@ public class Interrupt_Vsync
         Assert.AreEqual(true, emulator.Vera.Interrupt_Vsync_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_Line_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_SpCol_Hit);
-        Assert.AreEqual(0x01, emulator.Memory[0x9F27]);
+        Assert.AreEqual(VSYNC + AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Interrupt);
     }
 
@@ -237,7 +240,7 @@ public class Interrupt_Vsync
         Assert.AreEqual(true, emulator.Vera.Interrupt_Vsync_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_Line_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_SpCol_Hit);
-        Assert.AreEqual(0x01, emulator.Memory[0x9F27]);
+        Assert.AreEqual(VSYNC + AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Interrupt);
     }
 
@@ -278,7 +281,7 @@ public class Interrupt_Vsync
         // emulation
         Assert.AreEqual(0x01, emulator.Memory[0x03]);
         Assert.AreEqual(0x00, emulator.Memory[0x9F26]);
-        Assert.AreEqual(0x00, emulator.Memory[0x9F27]);
+        Assert.AreEqual(AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Interrupt);
     }
 

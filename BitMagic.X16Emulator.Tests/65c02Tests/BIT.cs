@@ -65,7 +65,7 @@ public class BIT
 
         // emulation
         emulator.AssertState(0x00, 0x00, 0x00, 0x813, 3);
-        emulator.AssertFlags(true, true, false, false);
+        emulator.AssertFlags(true, false, false, false);
     }
 
     [TestMethod]
@@ -85,7 +85,7 @@ public class BIT
 
         // emulation
         emulator.AssertState(0x00, 0x00, 0x00, 0x813, 3);
-        emulator.AssertFlags(true, false, true, false);
+        emulator.AssertFlags(true, false, false, false);
     }
 
     [TestMethod]
@@ -105,7 +105,7 @@ public class BIT
 
         // emulation
         emulator.AssertState(0x00, 0x00, 0x00, 0x813, 3);
-        emulator.AssertFlags(true, true, true, false);
+        emulator.AssertFlags(true, false, false, false);
     }
 
     [TestMethod]
@@ -160,7 +160,7 @@ public class BIT
                 emulator);
 
         // emulation
-        emulator.AssertFlags(false, true, false, false);
+        emulator.AssertFlags(false, false, false, false);
     }
 
     [TestMethod]
@@ -178,7 +178,7 @@ public class BIT
                 emulator);
 
         // emulation
-        emulator.AssertFlags(false, false, true, false);
+        emulator.AssertFlags(false, false, false, false);
     }
 
     [TestMethod]

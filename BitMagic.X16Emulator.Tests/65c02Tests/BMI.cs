@@ -39,8 +39,9 @@ public class BMI
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
-                lda #$00
-                bit #$80
+                lda #$80
+                sta $10
+                bit $10
                 bmi exit
                 lda #0
                 stp

@@ -816,26 +816,26 @@ endm
 ; -----------------------------
 
 read_flags_rax macro
-    mov rax, r15	; move flags to rax
+    mov eax, r15d	; move flags to rax
     sahf			; set eflags
 endm
 
 write_flags_r15 macro
     lahf			; move new flags to rax
-    mov r15, rax	; store
+    mov r15d, eax	; store
 endm
 
 ; we dont use stc, as its actually slower!
 write_flags_r15_preservecarry macro
     lahf						; move new flags to rax
-    and r15w, 0100h				; preserve carry		
-    or r15w, ax					; store flags over (carry is always clear)
+    and r15d, 0100h				; preserve carry		
+    or r15d, eax				; store flags over (carry is always clear)
 endm
 
 write_flags_r15_setnegative macro
     lahf						; move new flags to rax
-    or rax, 1000000000000000b	; set negative flag
-    mov r15, rax				; store
+    or eax, 1000000000000000b	; set negative flag
+    mov r15d, eax				; store
 endm
 
 ; -----------------------------
@@ -3091,10 +3091,8 @@ bit_body_end macro checkvera, clock, pc
     jmp opcode_done
 endm
 
-bit_body_end_nochangetov macro checkvera, clock, pc
-    test dil, dil				; sets zero and sign flags, we will overwrite zero later
-    write_flags_r15_preservecarry
-    
+bit_body_end_nochangetovn macro checkvera, clock, pc
+    ; no call to write flags, as only Z can change.    
     ; check the zero flag, which is the and of input and the accumulator
     and dil, r8b
     test dil, dil
@@ -3119,7 +3117,7 @@ endm
 
 x89_bit_imm proc
     movzx rdi, byte ptr [rsi+r11]
-    bit_body_end_nochangetov 0, 3, 1
+    bit_body_end_nochangetovn 0, 3, 1
 x89_bit_imm endp
 
 x2C_bit_abs proc

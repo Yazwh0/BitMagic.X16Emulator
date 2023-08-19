@@ -127,9 +127,9 @@ public unsafe class EmulatorAudio : IDisposable
         bool showDebug = false;
         if (_bufferRead + 0x100 > _bufferSize)
         {
-            showDebug = true;
             var toWrite = Math.Min(_bufferSize - _bufferRead, actLength);
             #if SHOW_AUDIO_WARNINGS
+            showDebug = true;
             Console.Write($"Wrap {_bufferRead:X8} vs {bufferWrite:X8} writing {toWrite:X4}");
             #endif
 

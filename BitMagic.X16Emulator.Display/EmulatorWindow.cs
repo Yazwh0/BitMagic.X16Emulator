@@ -26,6 +26,7 @@ public static class EmulatorWindow
 {
     private static GL? _gl;
     private static IWindow? _window;
+    private static IInputContext _input;
     private static Shader? _shader;
     private static X16EImage[]? _images;
 
@@ -91,6 +92,7 @@ public static class EmulatorWindow
 
     private static void EmulatorWindow_KeyUp(IKeyboard arg1, Key arg2, int arg3)
     {
+        if (_emulator == null) return;
         if (arg2 == Key.S && arg1.IsKeyPressed(Key.ControlLeft))
         {
             return;
@@ -100,6 +102,7 @@ public static class EmulatorWindow
 
     private static void EmulatorWindow_KeyDown(IKeyboard arg1, Key arg2, int arg3)
     {
+        if (_emulator == null) return;
         if (arg1.IsKeyPressed(Key.Menu) && arg1.IsKeyPressed(Key.ControlLeft))
         {
             if (ControlKeyPressed != null)
@@ -110,28 +113,28 @@ public static class EmulatorWindow
         _emulator!.SmcBuffer.KeyDown(arg2);
     }
 
-    private static void EmulatorWindow_KeyChar(IKeyboard arg1, char arg2)
-    {
-        Console.WriteLine($"Rec {(byte)arg2:X2}");
-    }
+    //private static void EmulatorWindow_KeyChar(IKeyboard arg1, char arg2)
+    //{
+    //    Console.WriteLine($"Rec {(byte)arg2:X2}");
+    //}
 
     private static unsafe void OnLoad()
     {
         if (_window == null) throw new Exception("_window not set");
         if (_images == null) throw new Exception("_images not set");
 
-        var input = _window.CreateInput();
-        input.Keyboards[0].KeyUp += EmulatorWindow_KeyUp;
-        input.Keyboards[0].KeyDown += EmulatorWindow_KeyDown;
-        input.Keyboards[0].KeyChar += EmulatorWindow_KeyChar;
-        
-        input.Mice[0].Cursor.CursorMode = CursorMode.Normal;
-        input.Mice[0].DoubleClick += EmulatorWindow_Click;
-        input.Mice[0].MouseUp += EmulatorWindow_MouseUp;
-        input.Mice[0].MouseDown += EmulatorWindow_MouseDown;
-        input.Mice[0].MouseMove += EmulatorWindow_MouseMove;
+        _input = _window.CreateInput();
+        _input.Keyboards[0].KeyUp += EmulatorWindow_KeyUp;
+        _input.Keyboards[0].KeyDown += EmulatorWindow_KeyDown;
+        //input.Keyboards[0].KeyChar += EmulatorWindow_KeyChar;
 
-        _joysticks = input.Gamepads.Take(4).ToArray();
+        _input.Mice[0].Cursor.CursorMode = CursorMode.Normal;
+        _input.Mice[0].DoubleClick += EmulatorWindow_Click;
+        _input.Mice[0].MouseUp += EmulatorWindow_MouseUp;
+        _input.Mice[0].MouseDown += EmulatorWindow_MouseDown;
+        _input.Mice[0].MouseMove += EmulatorWindow_MouseMove;
+
+        _joysticks = _input.Gamepads.Take(4).ToArray();
         _emulator!.JoystickData = 0;
         _emulator.JoystickNewMask = 0;
 
@@ -395,6 +398,13 @@ public static class EmulatorWindow
                 }
             }
             _emulator!.Control = Control.Stop;
+
+            _input.Keyboards[0].KeyUp -= EmulatorWindow_KeyUp;
+            _input.Keyboards[0].KeyDown -= EmulatorWindow_KeyDown;
+            _input.Mice[0].DoubleClick -= EmulatorWindow_Click;
+            _input.Mice[0].MouseUp -= EmulatorWindow_MouseUp;
+            _input.Mice[0].MouseDown -= EmulatorWindow_MouseDown;
+            _input.Mice[0].MouseMove -= EmulatorWindow_MouseMove;
 
             _gl = null;
             _window = null;

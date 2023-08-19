@@ -2468,7 +2468,7 @@ bb_perform_jump macro
     local page_change
 
     movsx bx, byte ptr [rsi+r11+1]	; Get value at PC+1 and turn it into a 2byte signed value
-    add r11w, 1						; move PC on -- all jumps are relative
+    add r11w, 2						; move PC on -- all jumps are relative
     mov rax, r11					; store PC
     add r11w, bx
     

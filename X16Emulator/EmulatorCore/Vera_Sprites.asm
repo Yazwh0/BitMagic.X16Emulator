@@ -306,14 +306,15 @@ sprite_update_registers endp
 ; r14 : pixel data
 ; rdi : sprite collision_mask
 ; rsi : display buffer
+; r8  : sprite depth
 ; r13 : output x
 render_pixel_data macro mask, shift, pixeladd
 	local dont_draw, no_value, sprite_collision
-	mov r14, r12
-	and r14, mask
+	mov r14d, r12d
+	and r14d, mask
 
 	if shift ne 0
-		shr r14, shift
+		shr r14d, shift
 	endif
 
 	; dont write blank pixels
@@ -322,32 +323,34 @@ render_pixel_data macro mask, shift, pixeladd
 	; ensure output pixel is in visible bounds
 	; we do this in parts as r13 can be either extended to go into the buffer (opposite lines)
 	; or negative if off screen.
+	;int 3
 	mov rax, r13
-	and rax, 0011111111111b
-	add rax, pixeladd
+	if pixeladd ne 0
+		add eax, pixeladd
+	endif
 
-	; cant do this in one cmp, as we dont have the sign extended
-	bt rax, 10
-	jc dont_draw	
+	test eax, eax			 ; off the screen to the left?
+	js dont_draw
 
-	cmp rax, VISIBLE_WIDTH-1 ; off the screen to the right?
-	jg dont_draw
+	and eax, 0011111111111b 
 
+	cmp eax, VISIBLE_WIDTH-1 ; off the screen to the right or left?
+	ja dont_draw
 	
 	; can only write on pixels that are the same depth or lower
 	movzx rax, byte ptr [rsi + r13 + pixeladd + BUFFER_SPRITE_DEPTH]
-	cmp r8, rax
+	cmp r8d, eax
 	jl sprite_collision
 
 	; if there is something written, dont overwrite
 	movzx rax, byte ptr [rsi + r13 + pixeladd + BUFFER_SPRITE_VALUE]
-	test rax, rax
+	test eax, eax
 	jnz sprite_collision
 
-	lea rax, [r14 + r10] ; colour if we apply palette shift
-	lea rbx, [r14 - 1]	 ; 0-16 -> -1-15, so we can test on 0-15.
-	cmp rbx, 16
-	cmovb r14, rax
+	lea eax, [r14 + r10] ; colour if we apply palette shift
+	lea ebx, [r14 - 1]	 ; 0-16 -> -1-15, so we can test on 0-15.
+	cmp ebx, 16
+	cmovb r14d, eax
 
 	mov byte ptr [rsi + r13 + pixeladd + BUFFER_SPRITE_VALUE], r14b
 	mov byte ptr [rsi + r13 + pixeladd + BUFFER_SPRITE_DEPTH], r8b
@@ -356,14 +359,14 @@ render_pixel_data macro mask, shift, pixeladd
 	; sprite collision
 	; or on the collision to the line buffer
 	movzx rax, byte ptr [rsi + r13 + pixeladd + BUFFER_SPRITE_COL]
-	mov rbx, rax
+	mov ebx, eax
 
 	; write the or'd value to the frame buffer
-	or rax, rdi
+	or eax, edi
 	mov byte ptr[rsi + r13 + pixeladd + BUFFER_SPRITE_COL], al
 
 	; to check for a collision that can fire IRQ we and with the sprite's mask and or that onto the frame collision value
-	and rbx, rdi
+	and ebx, edi
 	or dword ptr [rdx].state.frame_sprite_collision, ebx
 
 	dont_draw:
@@ -390,7 +393,6 @@ render_sprite macro bpp, inp_height, inp_width, vflip, hflip
 
 	mov r8d, dword ptr [rdx].state.sprite_depth
 
-	;int 3
 	; calculate offset
 	mov r14d, dword ptr [rdx].state.sprite_y	; this shouldn't ever result in a negative position
 	sub r12d, r14d
@@ -487,9 +489,9 @@ render_sprite macro bpp, inp_height, inp_width, vflip, hflip
 	add r12d, r13d		; add on vram start
 
 	; set r13 to the output x
-	mov r13d, dword ptr [rdx].state.sprite_x
-	add r13d, ebx
-	add r13d, r15d		; add offset in buffer
+	movsxd r13, dword ptr [rdx].state.sprite_x
+	add r13, rbx
+	add r13, r15		; add offset in buffer
 
 	push rdi
 	mov rdi, qword ptr [rdx].state.vram_ptr

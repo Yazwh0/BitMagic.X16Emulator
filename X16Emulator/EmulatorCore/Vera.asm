@@ -38,6 +38,7 @@ include Constants.inc
 include State.asm
 include Vera_Display.asm
 include Vera_Audio.asm
+include Vera_Render_Layers.asm
 
 vera_setaddress_0 macro 
 	local search_loop, match, not_negative
@@ -120,20 +121,45 @@ set_layer0_jump macro
 
 	mov rsi, [rdx].state.memory_ptr
 
+	; get generic map fetch proc
+	movzx rax, byte ptr [rsi + L0_CONFIG]
+	and rax, 0f0h			; map height / width
+	shr eax, 2
+	movzx rbx, byte ptr [rsi + L0_TILEBASE]
+	and ebx, 011b			; tile height / width
+	or eax, ebx
+	lea rbx, get_map_jump
+	add rbx, [rbx + rax * 8]
+	mov qword ptr [rdx].state.layer0_fetchmap, rbx
+
+	
 	movzx rax, [rdx].state.layer0_bitmapMode
 	test rax, rax
 	jnz bitmap
 
+	; get generic data fetch proc
 	movzx rax, byte ptr [rsi + L0_CONFIG]
-	and rax, 11110011b
+	and eax, 011b			;  mask the colour depth
 	movzx rbx, byte ptr [rsi + L0_TILEBASE]
-	and rbx, 011b
-	shl rbx, 2
-	or rax, rbx
-	lea rbx, get_tile_definition_jump
+	and ebx, 011b			; tile height / width
+	shl ebx, 2
+	or eax, ebx
+	lea rbx, get_tile_jump
 	add rbx, [rbx + rax * 8]
-	mov qword ptr [rdx].state.layer0_jmp, rbx
+	mov qword ptr [rdx].state.layer0_fetchtile, rbx
 	jmp done
+
+	; get renderer
+
+	;movzx rax, byte ptr [rsi + L0_CONFIG]
+	;and rax, 11110011b
+	;movzx rbx, byte ptr [rsi + L0_TILEBASE]
+	;and rbx, 011b
+	;shl rbx, 2
+	;or rax, rbx
+	;lea rbx, get_tile_definition_jump
+	;add rbx, [rbx + rax * 8]
+	;mov qword ptr [rdx].state.layer0_jmp, rbx
 
 bitmap:
 	movzx rax, byte ptr [rsi + L0_CONFIG]
@@ -143,9 +169,9 @@ bitmap:
 	and rbx, 01b
 	or rax, rbx
 
-	lea rbx, get_bitmap_definition_jump
+	lea rbx, get_bitmap_jump
 	add rbx, [rbx + rax * 8]
-	mov qword ptr [rdx].state.layer0_jmp, rbx
+	mov qword ptr [rdx].state.layer0_fetchtile, rbx
 
 done:
 endm
@@ -155,20 +181,45 @@ set_layer1_jump macro
 
 	mov rsi, [rdx].state.memory_ptr
 
+	; get generic map fetch proc
+	movzx rax, byte ptr [rsi + L1_CONFIG]
+	and rax, 0f0h			; map height / width
+	shr eax, 2
+	movzx rbx, byte ptr [rsi + L1_TILEBASE]
+	and ebx, 011b			; tile height / width
+	or eax, ebx
+	lea rbx, get_map_jump
+	add rbx, [rbx + rax * 8]
+	mov qword ptr [rdx].state.layer1_fetchmap, rbx
+
 	movzx rax, [rdx].state.layer1_bitmapMode
 	test rax, rax
 	jnz bitmap
 
+	; get generic data fetch proc
 	movzx rax, byte ptr [rsi + L1_CONFIG]
-	and rax, 11110011b
+	and eax, 011b
 	movzx rbx, byte ptr [rsi + L1_TILEBASE]
-	and rbx, 011b
-	shl rbx, 2
-	or rax, rbx
-	lea rbx, get_tile_definition_jump
-	add rbx, qword ptr [rbx + rax * 8]
-	mov qword ptr [rdx].state.layer1_jmp, rbx
+	and ebx, 011b
+	shl ebx, 2
+	or eax, ebx
+	lea rbx, get_tile_jump
+	add rbx, [rbx + rax * 8]
+	mov qword ptr [rdx].state.layer1_fetchtile, rbx
 	jmp done
+
+
+	; get renderer
+
+	;movzx rax, byte ptr [rsi + L1_CONFIG]
+	;and rax, 11110011b
+	;movzx rbx, byte ptr [rsi + L1_TILEBASE]
+	;and rbx, 011b
+	;shl rbx, 2
+	;or rax, rbx
+	;lea rbx, get_tile_definition_jump
+	;add rbx, qword ptr [rbx + rax * 8]
+	;mov qword ptr [rdx].state.layer1_jmp, rbx
 
 bitmap:
 	movzx rax, byte ptr [rsi + L1_CONFIG]
@@ -178,9 +229,9 @@ bitmap:
 	and rbx, 01b
 	or rax, rbx
 
-	lea rbx, get_bitmap_definition_jump
+	lea rbx, get_bitmap_jump
 	add rbx, qword ptr [rbx + rax * 8]
-	mov qword ptr [rdx].state.layer1_jmp, rbx
+	mov qword ptr [rdx].state.layer1_fetchtile, rbx
 
 done:
 endm
@@ -242,8 +293,6 @@ vera_init proc
 	; Set to be drawing, as we'll start at 0,0
 	;
 	mov byte ptr [rdx].state.drawing, 1
-	mov word ptr [rdx].state.layer0_next_render, 1
-	mov word ptr [rdx].state.layer1_next_render, 1
 	;mov dword ptr [rdx].state.buffer_render_position, 010000000000b
 	mov [rdx].state.frame_count, 0		; always start with 0 frames, as we use this for timing.
 
@@ -366,7 +415,7 @@ dc_done:
 	and al, 00001111b
 	lea rbx, layer0_render_jump
 	add rbx, qword ptr [rbx + rax * 8]
-	mov qword ptr [rdx].state.layer0_rtn, rbx
+	mov qword ptr [rdx].state.layer0_renderer, rbx
 
 	;mov word ptr [rdx].state.layer0_config, ax
 
@@ -428,7 +477,7 @@ dc_done:
 	and al, 00001111b
 	lea rbx, layer1_render_jump
 	add rbx, qword ptr [rbx + rax * 8]
-	mov qword ptr [rdx].state.layer1_rtn, rbx
+	mov qword ptr [rdx].state.layer1_renderer, rbx
 	;mov word ptr [rdx].state.layer1_config, ax
 
 	; Map Base Address
@@ -1108,7 +1157,7 @@ vera_update_l0config proc
 	and r13, 00001111b
 	lea rbx, layer0_render_jump
 	add rbx, qword ptr [rbx + r13 * 8]
-	mov qword ptr [rdx].state.layer0_rtn, rbx
+	mov qword ptr [rdx].state.layer0_renderer, rbx
 
 	;mov word ptr [rdx].state.layer0_config, r13w
 
@@ -1220,7 +1269,7 @@ vera_update_l1config proc
 	and r13, 00001111b
 	lea rbx, layer1_render_jump
 	add rbx, qword ptr [rbx + r13 * 8]
-	mov qword ptr [rdx].state.layer1_rtn, rbx
+	mov qword ptr [rdx].state.layer1_renderer, rbx
 
 	;mov word ptr [rdx].state.layer1_config, r13w
 

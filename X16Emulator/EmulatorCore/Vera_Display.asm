@@ -61,6 +61,20 @@ BUFFER_SPRITE_VALUE	equ BUFFER_SIZE * 2
 BUFFER_SPRITE_DEPTH	equ BUFFER_SIZE * 3
 BUFFER_SPRITE_COL	equ BUFFER_SIZE * 4
 
+STATE_WAIT_START		equ 0
+STATE_FETCH_MAP			equ 1
+STATE_FETCH_MAP_WAIT	equ 2
+STATE_FETCH_TILE		equ 3
+STATE_FETCH_TILE_WAIT	equ 4
+STATE_RENDER_TILE		equ 5
+STATE_FETCH_BITMAP		equ 6
+STATE_FETCH_BITMAP_WAIT equ 7
+STATE_RENDER_BITMAP		equ 8
+
+include Vera_Get_Map.asm
+include Vera_Get_Tile.asm
+include Vera_Get_Bitmap.asm
+
 ;
 ; Render the rest of the display, only gets called on vsync
 ;
@@ -109,11 +123,11 @@ change:
 	mov rsi, [rdx].state.display_buffer_ptr
 	mov rdi, [rdx].state.display_ptr
 	mov r9d, [rdx].state.display_position
-	mov r11w, [rdx].state.display_x
+	;mov r11w, [rdx].state.display_x
 	mov r15d, [rdx].state.buffer_render_position
 
 	; this also gets set at the end of the display loop
-	movzx r12, word ptr [rdx].state.display_y
+	;movzx r12, word ptr [rdx].state.display_y
 
 display_loop:
 	;
@@ -240,9 +254,10 @@ renderstep_read_from_buffer proc
 
 	add r15, 1
 
-	mov rax, r15
-	and rax, 0011111111111b	; dont consider the top bit
-	mov word ptr [rdx].state.display_x, ax
+	inc word ptr [rdx].state.display_x
+	;mov rax, r15
+	;and rax, 0011111111111b	; dont consider the top bit
+	;mov word ptr [rdx].state.display_x, ax
 
 	add r9, 1
 	jmp renders_end
@@ -256,9 +271,10 @@ renderstep_normal proc
 
 	add r15, 1
 
-	mov rax, r15
-	and rax, 0011111111111b	; dont consider the top bit
-	mov word ptr [rdx].state.display_x, ax
+	inc word ptr [rdx].state.display_x
+	;mov rax, r15
+	;and rax, 0011111111111b	; dont consider the top bit
+	;mov word ptr [rdx].state.display_x, ax
 
 	add r9, 1
 	jmp renders_end
@@ -276,9 +292,10 @@ renderstep_all_to_buffer proc
 
 	add r15, 1
 
-	mov rax, r15
-	and rax, 0011111111111b	; dont consider the top bit
-	mov word ptr [rdx].state.display_x, ax
+	inc word ptr [rdx].state.display_x
+	;mov rax, r15
+	;and rax, 0011111111111b	; dont consider the top bit
+	;mov word ptr [rdx].state.display_x, ax
 	
 	add r9, 1
 	jmp renders_end
@@ -301,9 +318,15 @@ renderstep_next_line proc
 	; next line, reset counters
 	xor r15, 0100000000000b	; flip top bit
 	and r15, 0100000000000b	; and clear count
-
+	
 	xor r11, r11
 	mov word ptr [rdx].state.display_x, r11w	; zero
+	mov dword ptr [rdx].state.layer0_x, r11d
+	mov dword ptr [rdx].state.layer1_x, r11d
+	mov dword ptr [rdx].state.layer0_tilecount, r11d
+	mov dword ptr [rdx].state.layer1_tilecount, r11d
+	mov dword ptr [rdx].state.layer0_tiledone, -1
+	mov dword ptr [rdx].state.layer1_tiledone, -1
 
 	; scale_x needs to have the high bit set as it is used to read out of the buffer
 	mov r11, r15
@@ -323,12 +346,6 @@ renderstep_next_line proc
 	mov [rdx].state.scale_y, r12d		
 
 no_y_inc_vstart:
-
-	mov word ptr [rdx].state.layer0_next_render, 1	; next pixel forces a draw
-	mov word ptr [rdx].state.layer1_next_render, 1
-	mov qword ptr [rdx].state.layer0_cur_tileaddress, -1
-	mov qword ptr [rdx].state.layer1_cur_tileaddress, -1
-
 	; reset sprite renderer
 	xor rax, rax										; SPRITE_SEARCHING is zero
 	mov dword ptr [rdx].state.sprite_render_mode, eax	; start searching
@@ -336,15 +353,30 @@ no_y_inc_vstart:
 	mov dword ptr [rdx].state.sprite_width, eax
 	mov dword ptr [rdx].state.sprite_wait, eax
 	mov dword ptr [rdx].state.vram_wait, eax
-	; clear sprite buffer
-
-	call clear_sprite_buffer
-
 	mov word ptr [rdx].state.display_x, ax
+	; clear sprite buffer
+	
+	call clear_sprite_buffer
 
 	add r9, 1
 
+	; set correct mode for layer
+	mov r13d, STATE_FETCH_MAP
+	mov r14d, STATE_FETCH_BITMAP
+
+	movzx rax, byte ptr [rdx].state.layer0_bitmapMode
+	test rax, rax
+	cmovnz r13d, r14d
+	mov [rdx].state.layer0_state, r13d
+
+	mov r13d, STATE_FETCH_MAP
+	movzx rax, byte ptr [rdx].state.layer1_bitmapMode
+	test rax, rax
+	cmovnz r13d, r14d
+	mov [rdx].state.layer1_state, r13d
+
 	jmp renders_end
+	
 renderstep_next_line endp
 
 
@@ -357,7 +389,13 @@ renderstep_next_frame proc
 
 	xor r11, r11
 	mov word ptr [rdx].state.display_x, r11w	; zero
-	
+	mov dword ptr [rdx].state.layer0_x, r11d
+	mov dword ptr [rdx].state.layer1_x, r11d
+	mov dword ptr [rdx].state.layer0_tilecount, r11d
+	mov dword ptr [rdx].state.layer1_tilecount, r11d
+	mov dword ptr [rdx].state.layer0_tiledone, -1
+	mov dword ptr [rdx].state.layer1_tiledone, -1
+
 	; Add line to scaled y
 	mov r12d, dword ptr [rdx].state.scale_y
 	mov eax, [rdx].state.dc_vscale
@@ -374,11 +412,6 @@ renderstep_next_frame proc
 	shl r11, 16				; adjust to the fixed point number
 	mov dword ptr [rdx].state.scale_x, r11d
 
-	mov word ptr [rdx].state.layer0_next_render, 1	; next pixel forces a draw
-	mov word ptr [rdx].state.layer1_next_render, 1
-	mov qword ptr [rdx].state.layer0_cur_tileaddress, -1
-	mov qword ptr [rdx].state.layer1_cur_tileaddress, -1
-
 	; reset sprite renderer
 	xor rax, rax										; SPRITE_SEARCHING is zero
 	mov dword ptr [rdx].state.sprite_render_mode, eax	; start searching
@@ -386,6 +419,21 @@ renderstep_next_frame proc
 	mov dword ptr [rdx].state.sprite_width, eax
 	mov dword ptr [rdx].state.sprite_wait, eax
 	mov dword ptr [rdx].state.vram_wait, eax
+	
+	mov r13d, STATE_FETCH_MAP
+	mov r14d, STATE_FETCH_BITMAP
+
+	movzx rax, byte ptr [rdx].state.layer0_bitmapMode
+	test rax, rax
+	cmovnz r13d, r14d
+	mov [rdx].state.layer0_state, r13d
+
+	mov r13d, STATE_FETCH_MAP
+	movzx rax, byte ptr [rdx].state.layer1_bitmapMode
+	test rax, rax
+	cmovnz r13d, r14d
+	mov [rdx].state.layer1_state, r13d
+
 	; clear sprite buffer
 
 	call clear_sprite_buffer
@@ -407,13 +455,18 @@ renderstep_reset_buffer proc
 
 	xor r11, r11
 	mov word ptr [rdx].state.display_x, r11w	; zero
-
+	mov dword ptr [rdx].state.layer0_x, r11d
+	mov dword ptr [rdx].state.layer1_x, r11d
+	mov dword ptr [rdx].state.layer0_tilecount, r11d
+	mov dword ptr [rdx].state.layer1_tilecount, r11d
+	mov dword ptr [rdx].state.layer0_tiledone, -1
+	mov dword ptr [rdx].state.layer1_tiledone, -1
 
 	xor r12, r12
 	mov dword ptr [rdx].state.scale_y, r12d				; reset scaled value 
 	;xor r15, r15										; reset buffer pointer
-	mov word ptr [rdx].state.layer0_next_render, 1		; next pixel forces a draw
-	mov word ptr [rdx].state.layer1_next_render, 1
+;	mov word ptr [rdx].state.layer0_next_render, 1		; next pixel forces a draw
+;	mov word ptr [rdx].state.layer1_next_render, 1
 
 	
 	xor r15, 0100000000000b	; flip top bit
@@ -433,6 +486,20 @@ renderstep_reset_buffer proc
 	mov dword ptr [rdx].state.sprite_wait, eax
 	mov dword ptr [rdx].state.vram_wait, eax
 	
+	mov r13d, STATE_FETCH_MAP
+	mov r14d, STATE_FETCH_BITMAP
+
+	movzx rax, byte ptr [rdx].state.layer0_bitmapMode
+	test rax, rax
+	cmovnz r13d, r14d
+	mov [rdx].state.layer0_state, r13d
+
+	mov r13d, STATE_FETCH_MAP
+	movzx rax, byte ptr [rdx].state.layer1_bitmapMode
+	test rax, rax
+	cmovnz r13d, r14d
+	mov [rdx].state.layer1_state, r13d
+
 	call clear_sprite_buffer
 
 	jmp renders_end
@@ -441,6 +508,7 @@ renderstep_reset_buffer endp
 
 render_from_buffer proc
 	movzx r12, word ptr [rdx].state.display_y
+	movzx r11, word ptr [rdx].state.display_x
 
 	movzx rax, word ptr [rdx].state.dc_vstart
 	cmp r12, rax
@@ -597,117 +665,6 @@ draw_end:
 	ret
 render_from_buffer endp
 
-render_layers_to_buffer proc
-;
-; RENDERING TO BUFFER
-;
-; Needs act x, scaled y + 1 line from VIDEO
-;
-	movzx r11, word ptr [rdx].state.display_x
-
-	; set r12 to scaled y 
-	mov r12d, dword ptr [rdx].state.scale_y
-	shr r12, 16							; adjust to actual value
-
-	;
-	; Render next lines
-	;
-
-	;
-	; Layer 0
-	;
-	movzx rax, word ptr [rdx].state.layer0_next_render
-	sub rax, 1
-	jnz layer0_skip
-
-	push r12
-	push r11
-
-	movzx rax, byte ptr [rdx].state.layer0_bitmapMode
-	test rax, rax
-	jnz bitmap_mode_l0
-
-	; use config to jump to the correct renderer.
-		
-	add r12w, word ptr [rdx].state.layer0_vscroll
-	add r11w, word ptr [rdx].state.layer0_hscroll
-	mov r13d, dword ptr [rdx].state.layer0_mapAddress
-	mov r14d, dword ptr [rdx].state.layer0_tileAddress
-	mov rbx, qword ptr [rdx].state.layer0_cur_tileaddress
-
-	mov rax, qword ptr [rdx].state.layer0_rtn
-	push rax	; return address, call the tile fetch and it returns to the correct renderer
-
-	mov rax, qword ptr [rdx].state.layer0_cur_tiledata
-
-	jmp qword ptr [rdx].state.layer0_jmp
-
-bitmap_mode_l0:
-
-	mov r14d, dword ptr [rdx].state.layer0_tileAddress
-
-	mov rax, qword ptr [rdx].state.layer0_rtn
-	push rax	; return address, call the tile fetch and it returns to the correct renderer
-
-	jmp qword ptr [rdx].state.layer0_jmp
-
-layer0_render_done::
-	pop r11
-	pop r12
-layer0_skip:
-
-	mov word ptr [rdx].state.layer0_next_render, ax
-
-	;
-	; Layer 1
-	;
-	movzx rax, word ptr [rdx].state.layer1_next_render
-	sub rax, 1
-	jnz layer1_skip
-	
-	push r12
-	push r11
-	
-	movzx rax, byte ptr [rdx].state.layer1_bitmapMode
-	test rax, rax
-	jnz bitmap_mode_l1
-
-	; use config to jump to the correct renderer.
-
-	add r12w, word ptr [rdx].state.layer1_vscroll
-	add r11w, word ptr [rdx].state.layer1_hscroll
-	mov r13d, dword ptr [rdx].state.layer1_mapAddress
-	mov r14d, dword ptr [rdx].state.layer1_tileAddress
-	mov rbx, qword ptr [rdx].state.layer1_cur_tileaddress
-
-	mov rax, qword ptr [rdx].state.layer1_rtn
-	push rax	; return address, call the tile fetch and it returns to the correct renderer
-
-	mov rax, qword ptr [rdx].state.layer1_cur_tiledata
-
-	jmp qword ptr [rdx].state.layer1_jmp
-
-bitmap_mode_l1:
-		
-	mov r14d, dword ptr [rdx].state.layer1_tileAddress
-
-	mov rax, qword ptr [rdx].state.layer1_rtn
-	push rax	; return address, call the tile fetch and it returns to the correct renderer
-
-	jmp qword ptr [rdx].state.layer1_jmp
-
-layer1_render_done::
-	pop r11
-	pop r12
-layer1_skip:
-
-
-	mov word ptr [rdx].state.layer1_next_render, ax
-
-	
-render_complete_visible:	; arrives here if the video wrote data	
-	ret
-render_layers_to_buffer endp
 
 render_sprites_to_buffer proc
 	;
@@ -1027,17 +984,6 @@ position_found:
 	ret
 endm
 
-
-mode_layer0_notsupported proc
-	mov ax, 8 ; count till next update requirement
-	jmp layer0_render_done
-mode_layer0_notsupported endp
-
-mode_layer1_notsupported proc
-	mov ax, 8 ; count till next update requirement
-	jmp layer1_render_done
-mode_layer1_notsupported endp
-
 layer0_render_jump:
 	layer0_1bpp_til_x qword layer0_1bpp_til_x_render - layer0_render_jump
 	layer0_2bpp_til_x qword layer0_2bpp_til_x_render - layer0_render_jump
@@ -1074,554 +1020,6 @@ layer1_render_jump:
 	layer1_4bpp_bit_t qword layer1_4bpp_bmp_render - layer1_render_jump
 	layer1_8bpp_bit_t qword layer1_8bpp_bmp_render - layer1_render_jump
 
-tile_definition_proc macro _map_height, _map_width, _tile_height, _tile_width, _colour_depth, _tile_definition_count
-tile_definition_&_tile_definition_count& proc
-	get_tile_definition _map_height, _map_width, _tile_height, _tile_width, _colour_depth
-tile_definition_&_tile_definition_count& endp
-endm
-
-bitmap_definition_proc macro _bitmap_width, _colour_depth, _bitmap_definition_count
-bitmap_definition_&_bitmap_definition_count& proc
-	get_bitmap_definition _bitmap_width, _colour_depth
-bitmap_definition_&_bitmap_definition_count& endp
-endm
-
-tile_definition_proc 0, 0, 0, 0, 0, 0
-tile_definition_proc 0, 0, 0, 0, 1, 1
-tile_definition_proc 0, 0, 0, 0, 2, 2
-tile_definition_proc 0, 0, 0, 0, 3, 3
-tile_definition_proc 0, 0, 0, 1, 0, 4
-tile_definition_proc 0, 0, 0, 1, 1, 5
-tile_definition_proc 0, 0, 0, 1, 2, 6
-tile_definition_proc 0, 0, 0, 1, 3, 7
-tile_definition_proc 0, 0, 1, 0, 0, 8
-tile_definition_proc 0, 0, 1, 0, 1, 9
-tile_definition_proc 0, 0, 1, 0, 2, 10
-tile_definition_proc 0, 0, 1, 0, 3, 11
-tile_definition_proc 0, 0, 1, 1, 0, 12
-tile_definition_proc 0, 0, 1, 1, 1, 13
-tile_definition_proc 0, 0, 1, 1, 2, 14
-tile_definition_proc 0, 0, 1, 1, 3, 15
-tile_definition_proc 0, 1, 0, 0, 0, 16
-tile_definition_proc 0, 1, 0, 0, 1, 17
-tile_definition_proc 0, 1, 0, 0, 2, 18
-tile_definition_proc 0, 1, 0, 0, 3, 19
-tile_definition_proc 0, 1, 0, 1, 0, 20
-tile_definition_proc 0, 1, 0, 1, 1, 21
-tile_definition_proc 0, 1, 0, 1, 2, 22
-tile_definition_proc 0, 1, 0, 1, 3, 23
-tile_definition_proc 0, 1, 1, 0, 0, 24
-tile_definition_proc 0, 1, 1, 0, 1, 25
-tile_definition_proc 0, 1, 1, 0, 2, 26
-tile_definition_proc 0, 1, 1, 0, 3, 27
-tile_definition_proc 0, 1, 1, 1, 0, 28
-tile_definition_proc 0, 1, 1, 1, 1, 29
-tile_definition_proc 0, 1, 1, 1, 2, 30
-tile_definition_proc 0, 1, 1, 1, 3, 31
-tile_definition_proc 0, 2, 0, 0, 0, 32
-tile_definition_proc 0, 2, 0, 0, 1, 33
-tile_definition_proc 0, 2, 0, 0, 2, 34
-tile_definition_proc 0, 2, 0, 0, 3, 35
-tile_definition_proc 0, 2, 0, 1, 0, 36
-tile_definition_proc 0, 2, 0, 1, 1, 37
-tile_definition_proc 0, 2, 0, 1, 2, 38
-tile_definition_proc 0, 2, 0, 1, 3, 39
-tile_definition_proc 0, 2, 1, 0, 0, 40
-tile_definition_proc 0, 2, 1, 0, 1, 41
-tile_definition_proc 0, 2, 1, 0, 2, 42
-tile_definition_proc 0, 2, 1, 0, 3, 43
-tile_definition_proc 0, 2, 1, 1, 0, 44
-tile_definition_proc 0, 2, 1, 1, 1, 45
-tile_definition_proc 0, 2, 1, 1, 2, 46
-tile_definition_proc 0, 2, 1, 1, 3, 47
-tile_definition_proc 0, 3, 0, 0, 0, 48
-tile_definition_proc 0, 3, 0, 0, 1, 49
-tile_definition_proc 0, 3, 0, 0, 2, 50
-tile_definition_proc 0, 3, 0, 0, 3, 51
-tile_definition_proc 0, 3, 0, 1, 0, 52
-tile_definition_proc 0, 3, 0, 1, 1, 53
-tile_definition_proc 0, 3, 0, 1, 2, 54
-tile_definition_proc 0, 3, 0, 1, 3, 55
-tile_definition_proc 0, 3, 1, 0, 0, 56
-tile_definition_proc 0, 3, 1, 0, 1, 57
-tile_definition_proc 0, 3, 1, 0, 2, 58
-tile_definition_proc 0, 3, 1, 0, 3, 59
-tile_definition_proc 0, 3, 1, 1, 0, 60
-tile_definition_proc 0, 3, 1, 1, 1, 61
-tile_definition_proc 0, 3, 1, 1, 2, 62
-tile_definition_proc 0, 3, 1, 1, 3, 63
-tile_definition_proc 1, 0, 0, 0, 0, 64
-tile_definition_proc 1, 0, 0, 0, 1, 65
-tile_definition_proc 1, 0, 0, 0, 2, 66
-tile_definition_proc 1, 0, 0, 0, 3, 67
-tile_definition_proc 1, 0, 0, 1, 0, 68
-tile_definition_proc 1, 0, 0, 1, 1, 69
-tile_definition_proc 1, 0, 0, 1, 2, 70
-tile_definition_proc 1, 0, 0, 1, 3, 71
-tile_definition_proc 1, 0, 1, 0, 0, 72
-tile_definition_proc 1, 0, 1, 0, 1, 73
-tile_definition_proc 1, 0, 1, 0, 2, 74
-tile_definition_proc 1, 0, 1, 0, 3, 75
-tile_definition_proc 1, 0, 1, 1, 0, 76
-tile_definition_proc 1, 0, 1, 1, 1, 77
-tile_definition_proc 1, 0, 1, 1, 2, 78
-tile_definition_proc 1, 0, 1, 1, 3, 79
-tile_definition_proc 1, 1, 0, 0, 0, 80
-tile_definition_proc 1, 1, 0, 0, 1, 81
-tile_definition_proc 1, 1, 0, 0, 2, 82
-tile_definition_proc 1, 1, 0, 0, 3, 83
-tile_definition_proc 1, 1, 0, 1, 0, 84
-tile_definition_proc 1, 1, 0, 1, 1, 85
-tile_definition_proc 1, 1, 0, 1, 2, 86
-tile_definition_proc 1, 1, 0, 1, 3, 87
-tile_definition_proc 1, 1, 1, 0, 0, 88
-tile_definition_proc 1, 1, 1, 0, 1, 89
-tile_definition_proc 1, 1, 1, 0, 2, 90
-tile_definition_proc 1, 1, 1, 0, 3, 91
-tile_definition_proc 1, 1, 1, 1, 0, 92
-tile_definition_proc 1, 1, 1, 1, 1, 93
-tile_definition_proc 1, 1, 1, 1, 2, 94
-tile_definition_proc 1, 1, 1, 1, 3, 95
-tile_definition_proc 1, 2, 0, 0, 0, 96
-tile_definition_proc 1, 2, 0, 0, 1, 97
-tile_definition_proc 1, 2, 0, 0, 2, 98
-tile_definition_proc 1, 2, 0, 0, 3, 99
-tile_definition_proc 1, 2, 0, 1, 0, 100
-tile_definition_proc 1, 2, 0, 1, 1, 101
-tile_definition_proc 1, 2, 0, 1, 2, 102
-tile_definition_proc 1, 2, 0, 1, 3, 103
-tile_definition_proc 1, 2, 1, 0, 0, 104
-tile_definition_proc 1, 2, 1, 0, 1, 105
-tile_definition_proc 1, 2, 1, 0, 2, 106
-tile_definition_proc 1, 2, 1, 0, 3, 107
-tile_definition_proc 1, 2, 1, 1, 0, 108
-tile_definition_proc 1, 2, 1, 1, 1, 109
-tile_definition_proc 1, 2, 1, 1, 2, 110
-tile_definition_proc 1, 2, 1, 1, 3, 111
-tile_definition_proc 1, 3, 0, 0, 0, 112
-tile_definition_proc 1, 3, 0, 0, 1, 113
-tile_definition_proc 1, 3, 0, 0, 2, 114
-tile_definition_proc 1, 3, 0, 0, 3, 115
-tile_definition_proc 1, 3, 0, 1, 0, 116
-tile_definition_proc 1, 3, 0, 1, 1, 117
-tile_definition_proc 1, 3, 0, 1, 2, 118
-tile_definition_proc 1, 3, 0, 1, 3, 119
-tile_definition_proc 1, 3, 1, 0, 0, 120
-tile_definition_proc 1, 3, 1, 0, 1, 121
-tile_definition_proc 1, 3, 1, 0, 2, 122
-tile_definition_proc 1, 3, 1, 0, 3, 123
-tile_definition_proc 1, 3, 1, 1, 0, 124
-tile_definition_proc 1, 3, 1, 1, 1, 125
-tile_definition_proc 1, 3, 1, 1, 2, 126
-tile_definition_proc 1, 3, 1, 1, 3, 127
-tile_definition_proc 2, 0, 0, 0, 0, 128
-tile_definition_proc 2, 0, 0, 0, 1, 129
-tile_definition_proc 2, 0, 0, 0, 2, 130
-tile_definition_proc 2, 0, 0, 0, 3, 131
-tile_definition_proc 2, 0, 0, 1, 0, 132
-tile_definition_proc 2, 0, 0, 1, 1, 133
-tile_definition_proc 2, 0, 0, 1, 2, 134
-tile_definition_proc 2, 0, 0, 1, 3, 135
-tile_definition_proc 2, 0, 1, 0, 0, 136
-tile_definition_proc 2, 0, 1, 0, 1, 137
-tile_definition_proc 2, 0, 1, 0, 2, 138
-tile_definition_proc 2, 0, 1, 0, 3, 139
-tile_definition_proc 2, 0, 1, 1, 0, 140
-tile_definition_proc 2, 0, 1, 1, 1, 141
-tile_definition_proc 2, 0, 1, 1, 2, 142
-tile_definition_proc 2, 0, 1, 1, 3, 143
-tile_definition_proc 2, 1, 0, 0, 0, 144
-tile_definition_proc 2, 1, 0, 0, 1, 145
-tile_definition_proc 2, 1, 0, 0, 2, 146
-tile_definition_proc 2, 1, 0, 0, 3, 147
-tile_definition_proc 2, 1, 0, 1, 0, 148
-tile_definition_proc 2, 1, 0, 1, 1, 149
-tile_definition_proc 2, 1, 0, 1, 2, 150
-tile_definition_proc 2, 1, 0, 1, 3, 151
-tile_definition_proc 2, 1, 1, 0, 0, 152
-tile_definition_proc 2, 1, 1, 0, 1, 153
-tile_definition_proc 2, 1, 1, 0, 2, 154
-tile_definition_proc 2, 1, 1, 0, 3, 155
-tile_definition_proc 2, 1, 1, 1, 0, 156
-tile_definition_proc 2, 1, 1, 1, 1, 157
-tile_definition_proc 2, 1, 1, 1, 2, 158
-tile_definition_proc 2, 1, 1, 1, 3, 159
-tile_definition_proc 2, 2, 0, 0, 0, 160
-tile_definition_proc 2, 2, 0, 0, 1, 161
-tile_definition_proc 2, 2, 0, 0, 2, 162
-tile_definition_proc 2, 2, 0, 0, 3, 163
-tile_definition_proc 2, 2, 0, 1, 0, 164
-tile_definition_proc 2, 2, 0, 1, 1, 165
-tile_definition_proc 2, 2, 0, 1, 2, 166
-tile_definition_proc 2, 2, 0, 1, 3, 167
-tile_definition_proc 2, 2, 1, 0, 0, 168
-tile_definition_proc 2, 2, 1, 0, 1, 169
-tile_definition_proc 2, 2, 1, 0, 2, 170
-tile_definition_proc 2, 2, 1, 0, 3, 171
-tile_definition_proc 2, 2, 1, 1, 0, 172
-tile_definition_proc 2, 2, 1, 1, 1, 173
-tile_definition_proc 2, 2, 1, 1, 2, 174
-tile_definition_proc 2, 2, 1, 1, 3, 175
-tile_definition_proc 2, 3, 0, 0, 0, 176
-tile_definition_proc 2, 3, 0, 0, 1, 177
-tile_definition_proc 2, 3, 0, 0, 2, 178
-tile_definition_proc 2, 3, 0, 0, 3, 179
-tile_definition_proc 2, 3, 0, 1, 0, 180
-tile_definition_proc 2, 3, 0, 1, 1, 181
-tile_definition_proc 2, 3, 0, 1, 2, 182
-tile_definition_proc 2, 3, 0, 1, 3, 183
-tile_definition_proc 2, 3, 1, 0, 0, 184
-tile_definition_proc 2, 3, 1, 0, 1, 185
-tile_definition_proc 2, 3, 1, 0, 2, 186
-tile_definition_proc 2, 3, 1, 0, 3, 187
-tile_definition_proc 2, 3, 1, 1, 0, 188
-tile_definition_proc 2, 3, 1, 1, 1, 189
-tile_definition_proc 2, 3, 1, 1, 2, 190
-tile_definition_proc 2, 3, 1, 1, 3, 191
-tile_definition_proc 3, 0, 0, 0, 0, 192
-tile_definition_proc 3, 0, 0, 0, 1, 193
-tile_definition_proc 3, 0, 0, 0, 2, 194
-tile_definition_proc 3, 0, 0, 0, 3, 195
-tile_definition_proc 3, 0, 0, 1, 0, 196
-tile_definition_proc 3, 0, 0, 1, 1, 197
-tile_definition_proc 3, 0, 0, 1, 2, 198
-tile_definition_proc 3, 0, 0, 1, 3, 199
-tile_definition_proc 3, 0, 1, 0, 0, 200
-tile_definition_proc 3, 0, 1, 0, 1, 201
-tile_definition_proc 3, 0, 1, 0, 2, 202
-tile_definition_proc 3, 0, 1, 0, 3, 203
-tile_definition_proc 3, 0, 1, 1, 0, 204
-tile_definition_proc 3, 0, 1, 1, 1, 205
-tile_definition_proc 3, 0, 1, 1, 2, 206
-tile_definition_proc 3, 0, 1, 1, 3, 207
-tile_definition_proc 3, 1, 0, 0, 0, 208
-tile_definition_proc 3, 1, 0, 0, 1, 209
-tile_definition_proc 3, 1, 0, 0, 2, 210
-tile_definition_proc 3, 1, 0, 0, 3, 211
-tile_definition_proc 3, 1, 0, 1, 0, 212
-tile_definition_proc 3, 1, 0, 1, 1, 213
-tile_definition_proc 3, 1, 0, 1, 2, 214
-tile_definition_proc 3, 1, 0, 1, 3, 215
-tile_definition_proc 3, 1, 1, 0, 0, 216
-tile_definition_proc 3, 1, 1, 0, 1, 217
-tile_definition_proc 3, 1, 1, 0, 2, 218
-tile_definition_proc 3, 1, 1, 0, 3, 219
-tile_definition_proc 3, 1, 1, 1, 0, 220
-tile_definition_proc 3, 1, 1, 1, 1, 221
-tile_definition_proc 3, 1, 1, 1, 2, 222
-tile_definition_proc 3, 1, 1, 1, 3, 223
-tile_definition_proc 3, 2, 0, 0, 0, 224
-tile_definition_proc 3, 2, 0, 0, 1, 225
-tile_definition_proc 3, 2, 0, 0, 2, 226
-tile_definition_proc 3, 2, 0, 0, 3, 227
-tile_definition_proc 3, 2, 0, 1, 0, 228
-tile_definition_proc 3, 2, 0, 1, 1, 229
-tile_definition_proc 3, 2, 0, 1, 2, 230
-tile_definition_proc 3, 2, 0, 1, 3, 231
-tile_definition_proc 3, 2, 1, 0, 0, 232
-tile_definition_proc 3, 2, 1, 0, 1, 233
-tile_definition_proc 3, 2, 1, 0, 2, 234
-tile_definition_proc 3, 2, 1, 0, 3, 235
-tile_definition_proc 3, 2, 1, 1, 0, 236
-tile_definition_proc 3, 2, 1, 1, 1, 237
-tile_definition_proc 3, 2, 1, 1, 2, 238
-tile_definition_proc 3, 2, 1, 1, 3, 239
-tile_definition_proc 3, 3, 0, 0, 0, 240
-tile_definition_proc 3, 3, 0, 0, 1, 241
-tile_definition_proc 3, 3, 0, 0, 2, 242
-tile_definition_proc 3, 3, 0, 0, 3, 243
-tile_definition_proc 3, 3, 0, 1, 0, 244
-tile_definition_proc 3, 3, 0, 1, 1, 245
-tile_definition_proc 3, 3, 0, 1, 2, 246
-tile_definition_proc 3, 3, 0, 1, 3, 247
-tile_definition_proc 3, 3, 1, 0, 0, 248
-tile_definition_proc 3, 3, 1, 0, 1, 249
-tile_definition_proc 3, 3, 1, 0, 2, 250
-tile_definition_proc 3, 3, 1, 0, 3, 251
-tile_definition_proc 3, 3, 1, 1, 0, 252
-tile_definition_proc 3, 3, 1, 1, 1, 253
-tile_definition_proc 3, 3, 1, 1, 2, 254
-tile_definition_proc 3, 3, 1, 1, 3, 255
-
-align 8
-get_tile_definition_jump:
-	qword tile_definition_0 - get_tile_definition_jump
-	qword tile_definition_1 - get_tile_definition_jump
-	qword tile_definition_2 - get_tile_definition_jump
-	qword tile_definition_3 - get_tile_definition_jump
-	qword tile_definition_4 - get_tile_definition_jump
-	qword tile_definition_5 - get_tile_definition_jump
-	qword tile_definition_6 - get_tile_definition_jump
-	qword tile_definition_7 - get_tile_definition_jump
-	qword tile_definition_8 - get_tile_definition_jump
-	qword tile_definition_9 - get_tile_definition_jump
-	qword tile_definition_10 - get_tile_definition_jump
-	qword tile_definition_11 - get_tile_definition_jump
-	qword tile_definition_12 - get_tile_definition_jump
-	qword tile_definition_13 - get_tile_definition_jump
-	qword tile_definition_14 - get_tile_definition_jump
-	qword tile_definition_15 - get_tile_definition_jump
-	qword tile_definition_16 - get_tile_definition_jump
-	qword tile_definition_17 - get_tile_definition_jump
-	qword tile_definition_18 - get_tile_definition_jump
-	qword tile_definition_19 - get_tile_definition_jump
-	qword tile_definition_20 - get_tile_definition_jump
-	qword tile_definition_21 - get_tile_definition_jump
-	qword tile_definition_22 - get_tile_definition_jump
-	qword tile_definition_23 - get_tile_definition_jump
-	qword tile_definition_24 - get_tile_definition_jump
-	qword tile_definition_25 - get_tile_definition_jump
-	qword tile_definition_26 - get_tile_definition_jump
-	qword tile_definition_27 - get_tile_definition_jump
-	qword tile_definition_28 - get_tile_definition_jump
-	qword tile_definition_29 - get_tile_definition_jump
-	qword tile_definition_30 - get_tile_definition_jump
-	qword tile_definition_31 - get_tile_definition_jump
-	qword tile_definition_32 - get_tile_definition_jump
-	qword tile_definition_33 - get_tile_definition_jump
-	qword tile_definition_34 - get_tile_definition_jump
-	qword tile_definition_35 - get_tile_definition_jump
-	qword tile_definition_36 - get_tile_definition_jump
-	qword tile_definition_37 - get_tile_definition_jump
-	qword tile_definition_38 - get_tile_definition_jump
-	qword tile_definition_39 - get_tile_definition_jump
-	qword tile_definition_40 - get_tile_definition_jump
-	qword tile_definition_41 - get_tile_definition_jump
-	qword tile_definition_42 - get_tile_definition_jump
-	qword tile_definition_43 - get_tile_definition_jump
-	qword tile_definition_44 - get_tile_definition_jump
-	qword tile_definition_45 - get_tile_definition_jump
-	qword tile_definition_46 - get_tile_definition_jump
-	qword tile_definition_47 - get_tile_definition_jump
-	qword tile_definition_48 - get_tile_definition_jump
-	qword tile_definition_49 - get_tile_definition_jump
-	qword tile_definition_50 - get_tile_definition_jump
-	qword tile_definition_51 - get_tile_definition_jump
-	qword tile_definition_52 - get_tile_definition_jump
-	qword tile_definition_53 - get_tile_definition_jump
-	qword tile_definition_54 - get_tile_definition_jump
-	qword tile_definition_55 - get_tile_definition_jump
-	qword tile_definition_56 - get_tile_definition_jump
-	qword tile_definition_57 - get_tile_definition_jump
-	qword tile_definition_58 - get_tile_definition_jump
-	qword tile_definition_59 - get_tile_definition_jump
-	qword tile_definition_60 - get_tile_definition_jump
-	qword tile_definition_61 - get_tile_definition_jump
-	qword tile_definition_62 - get_tile_definition_jump
-	qword tile_definition_63 - get_tile_definition_jump
-	qword tile_definition_64 - get_tile_definition_jump
-	qword tile_definition_65 - get_tile_definition_jump
-	qword tile_definition_66 - get_tile_definition_jump
-	qword tile_definition_67 - get_tile_definition_jump
-	qword tile_definition_68 - get_tile_definition_jump
-	qword tile_definition_69 - get_tile_definition_jump
-	qword tile_definition_70 - get_tile_definition_jump
-	qword tile_definition_71 - get_tile_definition_jump
-	qword tile_definition_72 - get_tile_definition_jump
-	qword tile_definition_73 - get_tile_definition_jump
-	qword tile_definition_74 - get_tile_definition_jump
-	qword tile_definition_75 - get_tile_definition_jump
-	qword tile_definition_76 - get_tile_definition_jump
-	qword tile_definition_77 - get_tile_definition_jump
-	qword tile_definition_78 - get_tile_definition_jump
-	qword tile_definition_79 - get_tile_definition_jump
-	qword tile_definition_80 - get_tile_definition_jump
-	qword tile_definition_81 - get_tile_definition_jump
-	qword tile_definition_82 - get_tile_definition_jump
-	qword tile_definition_83 - get_tile_definition_jump
-	qword tile_definition_84 - get_tile_definition_jump
-	qword tile_definition_85 - get_tile_definition_jump
-	qword tile_definition_86 - get_tile_definition_jump
-	qword tile_definition_87 - get_tile_definition_jump
-	qword tile_definition_88 - get_tile_definition_jump
-	qword tile_definition_89 - get_tile_definition_jump
-	qword tile_definition_90 - get_tile_definition_jump
-	qword tile_definition_91 - get_tile_definition_jump
-	qword tile_definition_92 - get_tile_definition_jump
-	qword tile_definition_93 - get_tile_definition_jump
-	qword tile_definition_94 - get_tile_definition_jump
-	qword tile_definition_95 - get_tile_definition_jump
-	qword tile_definition_96 - get_tile_definition_jump
-	qword tile_definition_97 - get_tile_definition_jump
-	qword tile_definition_98 - get_tile_definition_jump
-	qword tile_definition_99 - get_tile_definition_jump
-	qword tile_definition_100 - get_tile_definition_jump
-	qword tile_definition_101 - get_tile_definition_jump
-	qword tile_definition_102 - get_tile_definition_jump
-	qword tile_definition_103 - get_tile_definition_jump
-	qword tile_definition_104 - get_tile_definition_jump
-	qword tile_definition_105 - get_tile_definition_jump
-	qword tile_definition_106 - get_tile_definition_jump
-	qword tile_definition_107 - get_tile_definition_jump
-	qword tile_definition_108 - get_tile_definition_jump
-	qword tile_definition_109 - get_tile_definition_jump
-	qword tile_definition_110 - get_tile_definition_jump
-	qword tile_definition_111 - get_tile_definition_jump
-	qword tile_definition_112 - get_tile_definition_jump
-	qword tile_definition_113 - get_tile_definition_jump
-	qword tile_definition_114 - get_tile_definition_jump
-	qword tile_definition_115 - get_tile_definition_jump
-	qword tile_definition_116 - get_tile_definition_jump
-	qword tile_definition_117 - get_tile_definition_jump
-	qword tile_definition_118 - get_tile_definition_jump
-	qword tile_definition_119 - get_tile_definition_jump
-	qword tile_definition_120 - get_tile_definition_jump
-	qword tile_definition_121 - get_tile_definition_jump
-	qword tile_definition_122 - get_tile_definition_jump
-	qword tile_definition_123 - get_tile_definition_jump
-	qword tile_definition_124 - get_tile_definition_jump
-	qword tile_definition_125 - get_tile_definition_jump
-	qword tile_definition_126 - get_tile_definition_jump
-	qword tile_definition_127 - get_tile_definition_jump
-	qword tile_definition_128 - get_tile_definition_jump
-	qword tile_definition_129 - get_tile_definition_jump
-	qword tile_definition_130 - get_tile_definition_jump
-	qword tile_definition_131 - get_tile_definition_jump
-	qword tile_definition_132 - get_tile_definition_jump
-	qword tile_definition_133 - get_tile_definition_jump
-	qword tile_definition_134 - get_tile_definition_jump
-	qword tile_definition_135 - get_tile_definition_jump
-	qword tile_definition_136 - get_tile_definition_jump
-	qword tile_definition_137 - get_tile_definition_jump
-	qword tile_definition_138 - get_tile_definition_jump
-	qword tile_definition_139 - get_tile_definition_jump
-	qword tile_definition_140 - get_tile_definition_jump
-	qword tile_definition_141 - get_tile_definition_jump
-	qword tile_definition_142 - get_tile_definition_jump
-	qword tile_definition_143 - get_tile_definition_jump
-	qword tile_definition_144 - get_tile_definition_jump
-	qword tile_definition_145 - get_tile_definition_jump
-	qword tile_definition_146 - get_tile_definition_jump
-	qword tile_definition_147 - get_tile_definition_jump
-	qword tile_definition_148 - get_tile_definition_jump
-	qword tile_definition_149 - get_tile_definition_jump
-	qword tile_definition_150 - get_tile_definition_jump
-	qword tile_definition_151 - get_tile_definition_jump
-	qword tile_definition_152 - get_tile_definition_jump
-	qword tile_definition_153 - get_tile_definition_jump
-	qword tile_definition_154 - get_tile_definition_jump
-	qword tile_definition_155 - get_tile_definition_jump
-	qword tile_definition_156 - get_tile_definition_jump
-	qword tile_definition_157 - get_tile_definition_jump
-	qword tile_definition_158 - get_tile_definition_jump
-	qword tile_definition_159 - get_tile_definition_jump
-	qword tile_definition_160 - get_tile_definition_jump
-	qword tile_definition_161 - get_tile_definition_jump
-	qword tile_definition_162 - get_tile_definition_jump
-	qword tile_definition_163 - get_tile_definition_jump
-	qword tile_definition_164 - get_tile_definition_jump
-	qword tile_definition_165 - get_tile_definition_jump
-	qword tile_definition_166 - get_tile_definition_jump
-	qword tile_definition_167 - get_tile_definition_jump
-	qword tile_definition_168 - get_tile_definition_jump
-	qword tile_definition_169 - get_tile_definition_jump
-	qword tile_definition_170 - get_tile_definition_jump
-	qword tile_definition_171 - get_tile_definition_jump
-	qword tile_definition_172 - get_tile_definition_jump
-	qword tile_definition_173 - get_tile_definition_jump
-	qword tile_definition_174 - get_tile_definition_jump
-	qword tile_definition_175 - get_tile_definition_jump
-	qword tile_definition_176 - get_tile_definition_jump
-	qword tile_definition_177 - get_tile_definition_jump
-	qword tile_definition_178 - get_tile_definition_jump
-	qword tile_definition_179 - get_tile_definition_jump
-	qword tile_definition_180 - get_tile_definition_jump
-	qword tile_definition_181 - get_tile_definition_jump
-	qword tile_definition_182 - get_tile_definition_jump
-	qword tile_definition_183 - get_tile_definition_jump
-	qword tile_definition_184 - get_tile_definition_jump
-	qword tile_definition_185 - get_tile_definition_jump
-	qword tile_definition_186 - get_tile_definition_jump
-	qword tile_definition_187 - get_tile_definition_jump
-	qword tile_definition_188 - get_tile_definition_jump
-	qword tile_definition_189 - get_tile_definition_jump
-	qword tile_definition_190 - get_tile_definition_jump
-	qword tile_definition_191 - get_tile_definition_jump
-	qword tile_definition_192 - get_tile_definition_jump
-	qword tile_definition_193 - get_tile_definition_jump
-	qword tile_definition_194 - get_tile_definition_jump
-	qword tile_definition_195 - get_tile_definition_jump
-	qword tile_definition_196 - get_tile_definition_jump
-	qword tile_definition_197 - get_tile_definition_jump
-	qword tile_definition_198 - get_tile_definition_jump
-	qword tile_definition_199 - get_tile_definition_jump
-	qword tile_definition_200 - get_tile_definition_jump
-	qword tile_definition_201 - get_tile_definition_jump
-	qword tile_definition_202 - get_tile_definition_jump
-	qword tile_definition_203 - get_tile_definition_jump
-	qword tile_definition_204 - get_tile_definition_jump
-	qword tile_definition_205 - get_tile_definition_jump
-	qword tile_definition_206 - get_tile_definition_jump
-	qword tile_definition_207 - get_tile_definition_jump
-	qword tile_definition_208 - get_tile_definition_jump
-	qword tile_definition_209 - get_tile_definition_jump
-	qword tile_definition_210 - get_tile_definition_jump
-	qword tile_definition_211 - get_tile_definition_jump
-	qword tile_definition_212 - get_tile_definition_jump
-	qword tile_definition_213 - get_tile_definition_jump
-	qword tile_definition_214 - get_tile_definition_jump
-	qword tile_definition_215 - get_tile_definition_jump
-	qword tile_definition_216 - get_tile_definition_jump
-	qword tile_definition_217 - get_tile_definition_jump
-	qword tile_definition_218 - get_tile_definition_jump
-	qword tile_definition_219 - get_tile_definition_jump
-	qword tile_definition_220 - get_tile_definition_jump
-	qword tile_definition_221 - get_tile_definition_jump
-	qword tile_definition_222 - get_tile_definition_jump
-	qword tile_definition_223 - get_tile_definition_jump
-	qword tile_definition_224 - get_tile_definition_jump
-	qword tile_definition_225 - get_tile_definition_jump
-	qword tile_definition_226 - get_tile_definition_jump
-	qword tile_definition_227 - get_tile_definition_jump
-	qword tile_definition_228 - get_tile_definition_jump
-	qword tile_definition_229 - get_tile_definition_jump
-	qword tile_definition_230 - get_tile_definition_jump
-	qword tile_definition_231 - get_tile_definition_jump
-	qword tile_definition_232 - get_tile_definition_jump
-	qword tile_definition_233 - get_tile_definition_jump
-	qword tile_definition_234 - get_tile_definition_jump
-	qword tile_definition_235 - get_tile_definition_jump
-	qword tile_definition_236 - get_tile_definition_jump
-	qword tile_definition_237 - get_tile_definition_jump
-	qword tile_definition_238 - get_tile_definition_jump
-	qword tile_definition_239 - get_tile_definition_jump
-	qword tile_definition_240 - get_tile_definition_jump
-	qword tile_definition_241 - get_tile_definition_jump
-	qword tile_definition_242 - get_tile_definition_jump
-	qword tile_definition_243 - get_tile_definition_jump
-	qword tile_definition_244 - get_tile_definition_jump
-	qword tile_definition_245 - get_tile_definition_jump
-	qword tile_definition_246 - get_tile_definition_jump
-	qword tile_definition_247 - get_tile_definition_jump
-	qword tile_definition_248 - get_tile_definition_jump
-	qword tile_definition_249 - get_tile_definition_jump
-	qword tile_definition_250 - get_tile_definition_jump
-	qword tile_definition_251 - get_tile_definition_jump
-	qword tile_definition_252 - get_tile_definition_jump
-	qword tile_definition_253 - get_tile_definition_jump
-	qword tile_definition_254 - get_tile_definition_jump
-	qword tile_definition_255 - get_tile_definition_jump
-
-bitmap_definition_proc 0, 0, 0
-bitmap_definition_proc 1, 0, 1
-bitmap_definition_proc 0, 1, 2
-bitmap_definition_proc 1, 1, 3
-bitmap_definition_proc 0, 2, 4
-bitmap_definition_proc 1, 2, 5
-bitmap_definition_proc 0, 3, 6
-bitmap_definition_proc 1, 3, 7
-
-align 8
-get_bitmap_definition_jump:
-	qword bitmap_definition_0 - get_bitmap_definition_jump
-	qword bitmap_definition_1 - get_bitmap_definition_jump
-	qword bitmap_definition_2 - get_bitmap_definition_jump
-	qword bitmap_definition_3 - get_bitmap_definition_jump
-	qword bitmap_definition_4 - get_bitmap_definition_jump
-	qword bitmap_definition_5 - get_bitmap_definition_jump
-	qword bitmap_definition_6 - get_bitmap_definition_jump
-	qword bitmap_definition_7 - get_bitmap_definition_jump
-	
 
 clear_sprite_buffer proc
 
@@ -1910,7 +1308,7 @@ REPT 479
 		db 2
 	ENDM
 	REPT 158
-		db 4
+		db 3
 	ENDM
 	db 0
 	db 5
@@ -1944,7 +1342,7 @@ REPT 640
 	db 3
 ENDM
 REPT 158
-	db 4
+	db 3
 ENDM
 db 0
 db 6

@@ -1237,7 +1237,7 @@ public class Tiles_4Bpp
                     sta L0_MAPBASE
                     
                     lda #03
-                    sta L0_TILEBASE ; 8x16, tiles are at $00000
+                    sta L0_TILEBASE ; 16x16, tiles are at $00000
 
                     ; Tile definition
                     lda #$10
@@ -1550,7 +1550,7 @@ public class Tiles_4Bpp
                     sta DATA0
 
                     lda #$72
-                    sta L0_CONFIG ; 128x64 tiles, 4bpp
+                    sta L0_CONFIG ; 256x64 tiles, 4bpp
 
                     lda #$11
                     sta DC_VIDEO ; enable layer 0

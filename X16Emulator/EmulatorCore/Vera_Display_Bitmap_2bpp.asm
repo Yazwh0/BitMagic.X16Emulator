@@ -53,9 +53,9 @@ layer0_2bpp_bmp_render proc
 	writepixel_2bpp_bitmap 13, BUFFER_LAYER0
 	writepixel_2bpp_bitmap 12, BUFFER_LAYER0
 
-	mov rax, 16
+	mov eax, 16
 
-	jmp layer0_render_done
+	ret
 
 layer0_2bpp_bmp_render endp
 
@@ -88,8 +88,8 @@ layer1_2bpp_bmp_render proc
 	writepixel_2bpp_bitmap 13, BUFFER_LAYER1
 	writepixel_2bpp_bitmap 12, BUFFER_LAYER1
 
-	mov rax, 16
+	mov eax, 16
 
-	jmp layer1_render_done
+	ret
 
 layer1_2bpp_bmp_render endp

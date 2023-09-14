@@ -36,8 +36,6 @@ layer0_4bpp_til_x_render proc
 
 	; r15 is our buffer current position
 	; need to fill the buffer with the colour indexes for each pixel
-	mov qword ptr [rdx].state.layer0_cur_tileaddress, r8
-	mov qword ptr [rdx].state.layer0_cur_tiledata, rax
 	mov rsi, [rdx].state.display_buffer_ptr
 
 	test rax, 400h
@@ -72,8 +70,8 @@ pixel_jump_8:
 
 	xor r10, r14		; mask value
 	lea rax, [r10+1]	; add 1 to complete count
-	
-	jmp layer0_render_done
+
+	ret
 
 ; ----------------------------------------------------------------------------------
 flipped:
@@ -107,7 +105,7 @@ pixel_jump_8_f:
 	xor r10, r14		; mask value
 	lea rax, [r10+1]	; add 1 to complete count
 	
-	jmp layer0_render_done
+	ret
 
 layer0_4bpp_til_x_render endp
 
@@ -118,8 +116,8 @@ layer1_4bpp_til_x_render proc
 
 	; r15 is our buffer current position
 	; need to fill the buffer with the colour indexes for each pixel
-	mov qword ptr [rdx].state.layer1_cur_tileaddress, r8
-	mov qword ptr [rdx].state.layer1_cur_tiledata, rax
+	;mov qword ptr [rdx].state.layer1_cur_tileaddress, r8
+	;mov qword ptr [rdx].state.layer1_cur_tiledata, rax
 	mov rsi, [rdx].state.display_buffer_ptr
 
 	test rax, 400h
@@ -155,7 +153,7 @@ pixel_jump_8:
 	xor r10, r14		; mask value
 	lea rax, [r10+1]	; add 1 to complete count
 
-	jmp layer1_render_done
+	ret
 
 ; ----------------------------------------------------------------------------------
 flipped:
@@ -189,6 +187,6 @@ pixel_jump_8_f:
 	xor r10, r14		; mask value
 	lea rax, [r10+1]	; add 1 to complete count
 
-	jmp layer1_render_done
+	ret
 
 layer1_4bpp_til_x_render endp

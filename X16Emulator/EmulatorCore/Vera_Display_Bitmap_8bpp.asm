@@ -44,9 +44,9 @@ layer0_8bpp_bmp_render proc
 	writepixel_8bpp_bitmap 02, BUFFER_LAYER0
 	writepixel_8bpp_bitmap 03, BUFFER_LAYER0
 
-	mov rax, 4
+	mov eax, 4
 
-	jmp layer0_render_done
+	ret
 
 layer0_8bpp_bmp_render endp
 
@@ -64,8 +64,8 @@ layer1_8bpp_bmp_render proc
 	writepixel_8bpp_bitmap 02, BUFFER_LAYER1
 	writepixel_8bpp_bitmap 03, BUFFER_LAYER1
 
-	mov rax, 4
+	mov eax, 4
 
-	jmp layer1_render_done
+	ret
 
 layer1_8bpp_bmp_render endp

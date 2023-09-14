@@ -316,10 +316,12 @@ public class Emulator : IDisposable
         public ulong History_Pos = 0x00;
         public ulong Debug_Pos = 0x00;
 
-        public ulong Layer0_Jmp = 0;
-        public ulong Layer0_Rtn = 0;
-        public ulong Layer1_Jmp = 0;
-        public ulong Layer1_Rtn = 0;
+        public ulong Layer0_FetchMap = 0;
+        public ulong Layer0_FetchTile = 0;
+        public ulong Layer0_Renderer = 0;
+        public ulong Layer1_FetchMap = 0;
+        public ulong Layer1_FetchTile = 0;
+        public ulong Layer1_Renderer = 0;
 
         public ulong Sprite_Jmp = 0;
 
@@ -496,6 +498,26 @@ public class Emulator : IDisposable
         public uint Buffer_Output_Position = 0; // so there is 1 line between the render and output
         public uint Scale_x = 0;
         public uint Scale_y = 0;
+        public uint Layer0_x = 0;
+        public uint Layer1_x = 0;
+        public uint Layer0_State = 1; // todo: change back to zero to match hardware
+        public uint Layer1_State = 1; // todo: change back to zero to match hardware
+        public uint Layer0_TileData = 0;
+        public uint Layer1_TileData = 0;
+        public uint Layer0_MapData = 0;
+        public uint Layer1_MapData = 0;
+        public uint Layer0_TilePos = 0;
+        public uint Layer1_TilePos = 0;
+        public uint Layer0_Width = 0;
+        public uint Layer1_Width = 0;
+        public uint Layer0_Mask = 0;
+        public uint Layer1_Mask = 0;
+        public uint Layer0_TileCount = 0;
+        public uint Layer1_TileCount = 0;
+        public uint Layer0_Wait = 0;
+        public uint Layer1_Wait = 0;
+        public uint Layer0_TileDone = 0;
+        public uint Layer1_TileDone = 0;
         public ushort Beam_x = 0;
         public ushort Beam_y = 0;
         public byte DisplayDirty = 2;           // always draw the first render
@@ -514,13 +536,13 @@ public class Emulator : IDisposable
         public uint Sprite_Depth = 0;
         public uint Sprite_CollisionMask = 0;
 
-        public ushort Layer0_next_render = 0;
+        public ushort Unused_Layer0_next_render = 0;
         public ushort Layer0_Tile_HShift = 0;
         public ushort Layer0_Tile_VShift = 0;
         public ushort Layer0_Map_HShift = 0;
         public ushort Layer0_Map_VShift = 0;
 
-        public ushort Layer1_next_render = 0;
+        public ushort Unused_Layer1_next_render = 0;
         public ushort Layer1_Tile_HShift = 0;
         public ushort Layer1_Tile_VShift = 0;
         public ushort Layer1_Map_HShift = 0;

@@ -66,10 +66,13 @@ state struct
 	history_pos				qword ?
 	debug_pos				qword ?
 
-	layer0_jmp				qword ?
-	layer0_rtn				qword ?
-	layer1_jmp				qword ?
-	layer1_rtn				qword ?
+	layer0_fetchmap			qword ? 
+	layer0_fetchtile		qword ? 
+	layer0_renderer			qword ? ; renderer
+
+	layer1_fetchmap			qword ?
+	layer1_fetchtile		qword ?
+	layer1_renderer			qword ?
 
 	sprite_jmp				qword ?
 
@@ -245,6 +248,27 @@ state struct
 	buffer_output_position	dword ?
 	scale_x					dword ?
 	scale_y					dword ?
+	layer0_x				dword ?
+	layer1_x				dword ?
+	layer0_state			dword ?
+	layer1_state			dword ?
+	layer0_tiledata			dword ?
+	layer1_tiledata			dword ?
+	layer0_mapdata			dword ?
+	layer1_mapdata			dword ?
+	layer0_tilepos			dword ?
+	layer1_tilepos			dword ?
+	layer0_width			dword ?
+	layer1_width			dword ?
+	layer0_mask				dword ?
+	layer1_mask				dword ?
+	layer0_tilecount		dword ?
+	layer1_tilecount		dword ?
+	layer0_wait				dword ?
+	layer1_wait				dword ?
+	layer0_tiledone			dword ?
+	layer1_tiledone			dword ?
+
 	display_x				word ?
 	display_y				word ?
 
@@ -266,14 +290,14 @@ state struct
 
 	
 
-	layer0_next_render		word ?
+	unused_layer0_next_render		word ?
 	layer0_tile_hshift		word ?
 	layer0_tile_vshift		word ?
 	layer0_map_hshift		word ?
 	layer0_map_vshift		word ?
 	
 	; Layer 1
-	layer1_next_render		word ?
+	unused_layer1_next_render		word ?
 	layer1_tile_hshift		word ?
 	layer1_tile_vshift		word ?
 	layer1_map_hshift		word ?

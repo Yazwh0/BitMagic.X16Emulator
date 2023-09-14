@@ -54,9 +54,6 @@ sprites_render proc
 	mov ebx, dword ptr [rdx].state.sprite_width
 	mov rsi, qword ptr [rdx].state.display_buffer_ptr
 
-	; unnecessary as this is dec'd after this call
-	;mov dword ptr [rdx].state.vram_wait, 1		; vram_wait is zero
-
 	jmp qword ptr [rdx].state.sprite_jmp
 
 skip:
@@ -117,7 +114,7 @@ sprites_render_find proc
 	ret
 	
 not_on_line:
-	mov dword ptr [rdx].state.sprite_wait, 1 ; needs checking
+	;mov dword ptr [rdx].state.sprite_wait, 1 ; needs checking
 	ret
 
 all_done:
@@ -332,7 +329,7 @@ render_pixel_data macro mask, shift, pixeladd
 	test eax, eax			 ; off the screen to the left?
 	js dont_draw
 
-	and eax, 0011111111111b 
+	and eax, 0011111111111b  ; contrstain to a single line (as r13 the line buffer, which is double buffered)
 
 	cmp eax, VISIBLE_WIDTH-1 ; off the screen to the right or left?
 	ja dont_draw
@@ -695,6 +692,7 @@ sprite_definition_proc 1, 3, 3, 0, 1, 125
 sprite_definition_proc 1, 3, 3, 1, 0, 126
 sprite_definition_proc 1, 3, 3, 1, 1, 127
 
+align 8
 sprite_definition_jump:
 	qword sprite_definition_0 - sprite_definition_jump
 	qword sprite_definition_1 - sprite_definition_jump

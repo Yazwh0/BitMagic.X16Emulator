@@ -16,6 +16,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
+    <None Include="Vera_Render_Layers.asm">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -109,6 +112,15 @@
       <Filter>Source Files</Filter>
     </Text>
     <Text Include="Vera_Audio.asm">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="Vera_Get_Map.asm">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="Vera_Get_Tile.asm">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="Vera_Get_Bitmap.asm">
       <Filter>Source Files</Filter>
     </Text>
   </ItemGroup>

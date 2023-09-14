@@ -45,9 +45,9 @@ layer0_4bpp_bmp_render proc
 	writepixel_4bpp_bitmap 07, BUFFER_LAYER0
 	writepixel_4bpp_bitmap 06, BUFFER_LAYER0
 
-	mov rax, 8
+	mov eax, 8
 
-	jmp layer0_render_done
+	ret
 
 layer0_4bpp_bmp_render endp
 
@@ -72,8 +72,8 @@ layer1_4bpp_bmp_render proc
 	writepixel_4bpp_bitmap 07, BUFFER_LAYER1
 	writepixel_4bpp_bitmap 06, BUFFER_LAYER1
 
-	mov rax, 8
+	mov eax, 8
 
-	jmp layer1_render_done
+	ret
 
 layer1_4bpp_bmp_render endp

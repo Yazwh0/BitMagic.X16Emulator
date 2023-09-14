@@ -1046,7 +1046,7 @@ public class Bitmap_1Bpp
     }
 
     [TestMethod]
-    public async Task Box_Normal_PaletteOffsetLayer1()
+    public async Task Box_Normal_PaletteOffset_Layer1()
     {
         var emulator = new Emulator();
 
@@ -1058,7 +1058,7 @@ public class Bitmap_1Bpp
                         lda #02
                         sta DC_BORDER
 
-                        lda #$21        ; enable layer 0
+                        lda #$21        ; enable layer 1
                         sta DC_VIDEO
 
                         lda #$04        ; bitmap, 1bpp
@@ -1108,7 +1108,7 @@ public class Bitmap_1Bpp
                         stx DC_HSCALE
 
                         lda #$07
-                        sta L0_HSCROLL_H
+                        sta L1_HSCROLL_H
 
                         lda #01
                         sta IEN

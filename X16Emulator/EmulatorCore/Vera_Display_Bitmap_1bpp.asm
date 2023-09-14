@@ -67,9 +67,9 @@ layer0_1bpp_bmp_render proc
 	writepixel_1bpp_bitmap 25, BUFFER_LAYER0
 	writepixel_1bpp_bitmap 24, BUFFER_LAYER0
 
-	mov rax, 32
+	mov eax, 32
 
-	jmp layer0_render_done
+	ret
 
 layer0_1bpp_bmp_render endp
 
@@ -77,7 +77,7 @@ layer1_1bpp_bmp_render proc
 	; ebx contains the pixel data - 32bits worth
 	; r15 is the buffer position
 	mov rsi, [rdx].state.memory_ptr
-	movzx r11, byte ptr [rsi + L0_HSCROLL_H]		; get offset
+	movzx r11, byte ptr [rsi + L1_HSCROLL_H]		; get offset
 	shl r11, 4
 	add r11, 1
 
@@ -119,7 +119,8 @@ layer1_1bpp_bmp_render proc
 	writepixel_1bpp_bitmap 25, BUFFER_LAYER1
 	writepixel_1bpp_bitmap 24, BUFFER_LAYER1
 
-	mov rax, 32
-	jmp layer1_render_done
+	mov eax, 32
+
+	ret
 
 layer1_1bpp_bmp_render endp

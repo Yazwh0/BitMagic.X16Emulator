@@ -634,6 +634,7 @@ public class Emulator : IDisposable
     public bool Nmi { get => _state.Nmi != 0; set => _state.Nmi = (byte)(value ? 0x01 : 0x00); }
     public ulong HistoryPosition => _state.History_Pos / 16;
     public uint RomBankAct => _state.RomBank;
+    public uint RamBankAct => Memory[0];
 
     public bool Headless { get => _state.Headless != 0; set => _state.Headless = (byte)(value ? 0x01 : 0x00); }
     public bool RenderReady { get => _state.RenderReady != 0; set => _state.RenderReady = (byte)(value ? 0x01 : 0x00); }

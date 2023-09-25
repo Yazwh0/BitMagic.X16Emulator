@@ -60,6 +60,7 @@ public class Snapshot
     private bool _overflow;
     private bool _negative;
     private bool _carry;
+    private ulong _clock;
 
     internal Snapshot(Emulator emulator)
     {
@@ -80,6 +81,7 @@ public class Snapshot
         _overflow = _emulator.Overflow;
         _negative = _emulator.Negative;
         _carry = _emulator.Carry;
+        _clock = _emulator.Clock;
 
         for (var i = 0; i < Emulator.RamSize; i++)
         {
@@ -126,6 +128,10 @@ public class Snapshot
             toReturn.Add(new FlagChange() { Flag = CpuFlags.Negative, OriginalValue = _negative, NewValue = _emulator.Negative });
         if (_emulator.Carry != _carry)
             toReturn.Add(new FlagChange() { Flag = CpuFlags.Carry, OriginalValue = _carry, NewValue = _emulator.Carry });
+
+        if (_emulator.Clock != _clock)
+            toReturn.Add(new ValueChange() { Name = "Clock", OriginalValue = _clock, NewValue = _emulator.Clock });
+
 
         toReturn.AddRange(CompareMemory(MemoryAreas.Ram, 0, _mainRam, _emulator.Memory.ToArray()));
         toReturn.AddRange(CompareMemory(MemoryAreas.Vram, 0, _vram, _emulator.Vera.Vram.ToArray()));
@@ -241,6 +247,16 @@ public class RegisterChange : ISnapshotChange
 
     string ISnapshotChange.DisplayName => Register.ToString();
     string ISnapshotChange.OriginalValue => $"${OriginalValue:X2}";
+    string ISnapshotChange.NewValue => $"${NewValue:X2}";
+}
+
+public class ValueChange : ISnapshotChange
+{
+    public string Name { get; init; } = "";
+    public ulong OriginalValue { get; init; }
+    public ulong NewValue { get; init; }
+    string ISnapshotChange.DisplayName => Name;
+    string ISnapshotChange.OriginalValue => $"{OriginalValue}";
     string ISnapshotChange.NewValue => $"${NewValue:X2}";
 }
 

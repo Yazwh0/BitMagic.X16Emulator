@@ -17,7 +17,8 @@ public enum Registers
     A,
     X,
     Y,
-    SP
+    Sp,
+    Pc
 }
 
 public enum CpuFlags
@@ -101,9 +102,9 @@ public class Snapshot
         }
     }
 
-    public SnapshotResult Compare()
+    public SnapshotResultTest Compare()
     {
-        var toReturn = new SnapshotResult();
+        var toReturn = new SnapshotResultTest(_emulator);
 
         if (_emulator.A != _a)
             toReturn.Add(new RegisterChange() { Register = Registers.A, OriginalValue = _a, NewValue = _emulator.A });
@@ -112,7 +113,7 @@ public class Snapshot
         if (_emulator.Y != _y)
             toReturn.Add(new RegisterChange() { Register = Registers.Y, OriginalValue = _y, NewValue = _emulator.Y });
         if (_emulator.StackPointer != _sp)
-            toReturn.Add(new RegisterChange() { Register = Registers.SP, OriginalValue = (byte)(_sp & 0xff), NewValue = (byte)(_emulator.StackPointer & 0xff) });
+            toReturn.Add(new RegisterChange() { Register = Registers.Sp, OriginalValue = (byte)(_sp & 0xff), NewValue = (byte)(_emulator.StackPointer & 0xff) });
 
         if (_emulator.Zero != _zero)
             toReturn.Add(new FlagChange() { Flag = CpuFlags.Zero, OriginalValue = _zero, NewValue = _emulator.Zero });
@@ -230,6 +231,17 @@ public class SnapshotResult
     internal void AddRange(IEnumerable<ISnapshotChange> changes) => _changes.AddRange(changes);
 
     public List<ISnapshotChange> Changes => _changes;
+}
+
+public class SnapshotResultTest : SnapshotResult
+{
+    public List<Action> Tests { get; } = new();
+    public Emulator Emulator { get; }
+
+    public SnapshotResultTest(Emulator emulator)
+    {
+        Emulator = emulator;
+    }
 }
 
 public interface ISnapshotChange

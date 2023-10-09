@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using BitMagic.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -9,7 +10,7 @@ public static class X16TestHelper
 {
     public static async Task<Emulator> Emulate(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult =Emulator.EmulatorResult.DebugOpCode)
     {
-        var compiler = new Compiler.Compiler(code);
+        var compiler = new Compiler.Compiler(code, new NullLogger());
 
         emulator ??= new Emulator();
 
@@ -152,5 +153,24 @@ public static class X16TestHelper
                 }
             }
         }
+    }
+}
+
+public class NullLogger : IEmulatorLogger
+{
+    public void Log(string message)
+    {
+    }
+
+    public void LogError(string message)
+    {
+    }
+
+    public void LogError(string message, ISourceFile source, int lineNumber)
+    {
+    }
+
+    public void LogLine(string message)
+    {
     }
 }

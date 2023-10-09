@@ -1,13 +1,12 @@
 ﻿using BitMagic.X16Emulator.Snapshot;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Net;
+using TestAssert = Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text;
 
 namespace BitMagic.X16Emulator.TestHelper;
 
 public static class SnapshotExtensions
 {
-    public static SnapshotResult CanChange(this SnapshotResult snapshot, Registers register)
+    public static SnapshotResultTest CanChange(this SnapshotResultTest snapshot, Registers register)
     {
         snapshot.Changes.RemoveAll(i => i switch
         {
@@ -17,7 +16,8 @@ public static class SnapshotExtensions
 
         return snapshot;
     }
-    public static SnapshotResult CanChange(this SnapshotResult snapshot, CpuFlags flag)
+
+    public static SnapshotResultTest CanChange(this SnapshotResultTest snapshot, CpuFlags flag)
     {
         snapshot.Changes.RemoveAll(i => i switch
         {
@@ -28,7 +28,7 @@ public static class SnapshotExtensions
         return snapshot;
     }
 
-    public static SnapshotResult CanChange(this SnapshotResult snapshot, MemoryAreas memoryArea, int address)
+    public static SnapshotResultTest CanChange(this SnapshotResultTest snapshot, MemoryAreas memoryArea, int address)
     {
         // remove all specific changes
         snapshot.Changes.RemoveAll(i => i switch
@@ -66,7 +66,7 @@ public static class SnapshotExtensions
         return snapshot;
     }
 
-    public static SnapshotResult CanChange(this SnapshotResult snapshot, MemoryAreas memoryArea, int startAddress, int endAddress)
+    public static SnapshotResultTest CanChange(this SnapshotResultTest snapshot, MemoryAreas memoryArea, int startAddress, int endAddress)
     {
         // remove all specific changes
         snapshot.Changes.RemoveAll(i => i switch
@@ -108,8 +108,59 @@ public static class SnapshotExtensions
         return snapshot;
     }
 
-    public static SnapshotResult AssertNoChanges(this SnapshotResult snapshot)
+    public static SnapshotResultTest Is(this SnapshotResultTest snapshot, Registers register, byte value)
     {
+        var v = (int)value;
+        var r = register;
+        snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(v, GetValue(register, snapshot.Emulator), $"Register {r} is not ${v:X2}, actually ${GetValue(register, snapshot.Emulator):X2}."));
+
+        return snapshot.CanChange(register);
+    }
+
+    public static SnapshotResultTest Is(this SnapshotResultTest snapshot, Registers register, int value)
+    {
+        var v = value;
+        var r = register;
+        snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(v, GetValue(register, snapshot.Emulator), $"Register {r} is not ${v:X2}, actually ${GetValue(register, snapshot.Emulator):X2}."));
+
+        return snapshot.CanChange(register);
+    }
+
+    public static SnapshotResultTest Is(this SnapshotResultTest snapshot, CpuFlags cpuFlag, bool value)
+    {
+        var v = value;
+        var r = cpuFlag;
+        snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(v, GetValue(cpuFlag, snapshot.Emulator), $"CpuFlag {r} is not {v}"));
+
+        return snapshot.CanChange(cpuFlag);
+    }
+
+    private static int GetValue(Registers register, Emulator emulator) => register switch 
+    {
+        Registers.A => emulator.A,
+        Registers.X => emulator.X,
+        Registers.Y => emulator.Y,
+        Registers.Sp => emulator.StackPointer,
+        Registers.Pc => emulator.Pc,
+        _ => throw new Exception("Unhandled Register")
+    };
+
+    private static bool GetValue(CpuFlags cpuFlags, Emulator emulator) => cpuFlags switch
+    {
+        CpuFlags.Carry => emulator.Carry,
+        CpuFlags.Zero => emulator.Zero,
+        CpuFlags.InterruptDisable => emulator.InterruptDisable,
+        CpuFlags.Decimal => emulator.Decimal,
+        CpuFlags.Break => emulator.BreakFlag,
+        CpuFlags.Overflow => emulator.Overflow,
+        CpuFlags.Negative => emulator.Negative,
+        _ => throw new Exception("Unhandled CPU Flag")
+    };
+
+    public static void AssertNoChanges(this SnapshotResultTest snapshot)
+    {
+        snapshot.Changes.RemoveAll(i => i.DisplayName == "Clock");
+
         if (snapshot.Changes.Count > 0)
         {
             var sb = new StringBuilder();
@@ -123,9 +174,20 @@ public static class SnapshotExtensions
                 sb.AppendLine($"Now: {change.NewValue}");
             }
 
-            Assert.Fail(sb.ToString());
+            TestAssert.Assert.Fail(sb.ToString());
         }
 
-        return snapshot;
+        foreach(var i in snapshot.Tests)
+        {
+            i();
+        }
+    }
+
+    public static void Assert(this SnapshotResultTest snapshot)
+    {
+        foreach (var i in snapshot.Tests)
+        {
+            i();
+        }
     }
 }

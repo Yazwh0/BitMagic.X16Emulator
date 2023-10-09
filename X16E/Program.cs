@@ -154,7 +154,7 @@ static class Program
             {
                 Console.WriteLine($"Compiling '{options.CodeFilename}'.");
                 var code = await File.ReadAllTextAsync(options.CodeFilename);
-                var compiler = new Compiler(code);
+                var compiler = new Compiler(code, new ConsoleLogger());
                 try
                 {
                     var compileResult = await compiler.Compile();

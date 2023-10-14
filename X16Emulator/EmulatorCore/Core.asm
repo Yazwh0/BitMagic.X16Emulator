@@ -89,6 +89,9 @@ write_state_obj macro
     mov byte ptr [rdx].state.flags_negative, al	
 
     call via_write_state
+
+    ; needs to copy current memory back to banked data
+    call preserve_current_rambank
 endm
 
 read_state_obj macro
@@ -3422,7 +3425,6 @@ x00_brk proc
     jmp next_opcode
 
 stop_emulation:
-    call preserve_current_rambank
     write_state_obj
     mov rax, 03h
 
@@ -3441,7 +3443,6 @@ xDB_stp proc
 
     add r14, 3	; Clock
     
-    call preserve_current_rambank
     call vera_render_display
 
     ; return stp was hit.
@@ -3458,7 +3459,6 @@ xDB_stp endp
 noinstruction PROC
 
     ; return error	
-    call preserve_current_rambank
     write_state_obj
     mov rax, 01h
 

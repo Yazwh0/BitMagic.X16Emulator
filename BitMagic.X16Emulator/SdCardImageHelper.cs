@@ -1,4 +1,4 @@
-﻿using DiscUtils.Streams;
+﻿using BitMagic.DiscUtils.Streams;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Zip;
 

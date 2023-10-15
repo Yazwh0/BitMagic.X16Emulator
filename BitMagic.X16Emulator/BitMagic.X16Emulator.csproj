@@ -16,10 +16,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\BitMagic.Libraries\BitMagic.Common\BitMagic.Common.csproj" />
-    <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Core\DiscUtils.Core.csproj" />
-    <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Vdi\DiscUtils.Vdi.csproj" />
-    <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Vhd\DiscUtils.Vhd.csproj" />
-    <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Fat\DiscUtils.Fat.csproj" />
+    <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Core\BitMagic.DiscUtils.Core.csproj" />
+    <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Vdi\BitMagic.DiscUtils.Vdi.csproj" />
+    <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Vhd\BitMagic.DiscUtils.Vhd.csproj" />
+    <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Fat\BitMagic.DiscUtils.Fat.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(Configuration)' != 'Release' ">
@@ -28,7 +28,7 @@
 
   <ItemGroup>
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
-    <PackageReference Include="Silk.NET.Input" Version="2.16.0" />
+    <PackageReference Include="Silk.NET.Input" Version="2.17.1" />
   </ItemGroup>
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">

@@ -3,6 +3,9 @@ using BitMagic.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using BitMagic.TemplateEngine.Compiler;
+using BitMagic.TemplateEngine.X16;
+using BitMagic.Compiler;
 
 namespace BitMagic.X16Emulator.TestHelper;
 
@@ -10,7 +13,22 @@ public static class X16TestHelper
 {
     public static async Task<Emulator> Emulate(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult =Emulator.EmulatorResult.DebugOpCode)
     {
-        var compiler = new Compiler.Compiler(code, new NullLogger());
+
+        if (string.IsNullOrWhiteSpace(code))
+            throw new Exception("No code to compile");
+
+        var project = new Project();
+
+        project.Code = new StaticTextFile(code, "unittest.bmasm");
+
+        var engine = CsasmEngine.CreateEngine();
+
+        var templateResult = await engine.ProcessFile(project.Code, "unittest.bmasm", new TemplateOptions(), new NullLogger());
+
+        templateResult.Parent = project.Code;
+        project.Code = templateResult;
+
+        var compiler = new Compiler.Compiler(project, new NullLogger()); // code, new NullLogger());
 
         emulator ??= new Emulator();
 

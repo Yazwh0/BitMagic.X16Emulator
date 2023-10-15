@@ -5,7 +5,7 @@ using BitMagic.X16Emulator;
 using BitMagic.X16Emulator.Display;
 using BitMagic.X16Emulator.Serializer;
 using CommandLine;
-using DiscUtils.Fat;
+using BitMagic.DiscUtils.Fat;
 using System.Diagnostics;
 using System.Text;
 using System.Transactions;

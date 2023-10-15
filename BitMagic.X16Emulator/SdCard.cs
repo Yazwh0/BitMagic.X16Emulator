@@ -1,8 +1,8 @@
-﻿using DiscUtils.Fat;
-//using DiscUtils.Raw;
-using DiscUtils.Vhd;
-using DiscUtils;
-using DiscUtils.Partitions;
+﻿using BitMagic.DiscUtils.Fat;
+//using BitMagic.DiscUtils.Raw;
+using BitMagic.DiscUtils.Vhd;
+using BitMagic.DiscUtils;
+using BitMagic.DiscUtils.Partitions;
 
 namespace BitMagic.X16Emulator;
 

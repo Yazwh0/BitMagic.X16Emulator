@@ -14,7 +14,7 @@
   <PropertyGroup>
     <Version>6</Version>
     <FileVersion>6</FileVersion>
-    <PackageLicenseExpression>GNU General Public License v3.0 or later</PackageLicenseExpression>
+    <license>AGPL-3.0-or-later</license>
   </PropertyGroup>
   
   <ItemGroup>
@@ -32,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+  <ProjectReference Include="..\..\BitMagic.Libraries\BitMagic.Common\BitMagic.Common.csproj" />
   <ProjectReference Include="..\..\BitMagic.X16Compiler\BitMagic.Compiler\BitMagic.Compiler.csproj" />
   <ProjectReference Include="..\..\BitMagic.X16Compiler\BitMagic.Decompiler\BitMagic.Decompiler.csproj" />
   <ProjectReference Include="..\BitMagic.X16Emulator.Display\BitMagic.X16Emulator.Display.csproj" />

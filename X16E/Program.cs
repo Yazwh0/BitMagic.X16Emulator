@@ -5,11 +5,7 @@ using BitMagic.X16Emulator;
 using BitMagic.X16Emulator.Display;
 using BitMagic.X16Emulator.Serializer;
 using CommandLine;
-using BitMagic.DiscUtils.Fat;
-using System.Diagnostics;
 using System.Text;
-using System.Transactions;
-using static BitMagic.Decompiler.Addressing;
 using Thread = System.Threading.Thread;
 
 namespace X16E;

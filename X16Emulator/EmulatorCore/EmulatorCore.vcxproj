@@ -100,6 +100,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -292,7 +293,7 @@
       <Command>copy /b Core.asm +,,</Command>
       <Outputs>_temp.txt</Outputs>
       <VerifyInputsAndOutputsExist>false</VerifyInputsAndOutputsExist>
-    </Text>	
+    </Text>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

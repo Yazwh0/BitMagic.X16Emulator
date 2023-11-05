@@ -83,10 +83,10 @@ public class Emulator : IDisposable
 #endif
 #if RELEASE
 #if OS_WINDOWS
-    [DllImport(@".\EmulatorCore\EmulatorCore.dll")]
+    [DllImport(@"EmulatorCore.dll")]
 #endif
 #if OS_LINUX
-    [DllImport(@"./EmulatorCore/EmulatorCore.so")]
+    [DllImport(@"EmulatorCore.so")]
 #endif
 #endif
     private static extern int fnEmulatorCode(ref CpuState state);

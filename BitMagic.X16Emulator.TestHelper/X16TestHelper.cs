@@ -1,11 +1,10 @@
 ﻿using System.Diagnostics;
 using BitMagic.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using BitMagic.TemplateEngine.Compiler;
 using BitMagic.TemplateEngine.X16;
 using BitMagic.Compiler;
+using BitMagic.Compiler.Files;
 
 namespace BitMagic.X16Emulator.TestHelper;
 
@@ -21,12 +20,12 @@ public static class X16TestHelper
 
         project.Code = new StaticTextFile(code, "unittest.bmasm");
 
-        var engine = CsasmEngine.CreateEngine();
+        //var engine = CsasmEngine.CreateEngine();
 
-        var templateResult = await engine.ProcessFile(project.Code, "unittest.bmasm", new TemplateOptions(), new NullLogger());
+        //var templateResult = await engine.ProcessFile(project.Code, "unittest.bmasm", new TemplateOptions(), new NullLogger());
 
-        templateResult.Parent = project.Code;
-        project.Code = templateResult;
+        //templateResult.Parent = project.Code;
+        //project.Code = templateResult;
 
         var compiler = new Compiler.Compiler(project, new NullLogger()); // code, new NullLogger());
 

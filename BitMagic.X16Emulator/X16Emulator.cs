@@ -773,11 +773,11 @@ public class Emulator : IDisposable
         _state = new CpuState();
         SetPointers();
 
-        var memory_span = new Span<byte>((void*)_memory_ptr, RamSize);
+        var memory_span = new Span<byte>((void*)_memory_ptr_rounded, RamSize);
         for (var i = 0; i < RamSize; i++)
             memory_span[i] = 0;
 
-        var ram_span = new Span<byte>((void*)_ram_ptr, BankedRamSize);
+        var ram_span = new Span<byte>((void*)_ram_ptr_rounded, BankedRamSize);
         for (var i = 0; i < BankedRamSize; i++)
             ram_span[i] = 0;
 
@@ -785,7 +785,7 @@ public class Emulator : IDisposable
         for (var i = 0; i < VramSize; i++)
             vram_span[i] = 0;
 
-        var rom_span = new Span<byte>((void*)_rom_ptr, RomSize);
+        var rom_span = new Span<byte>((void*)_rom_ptr_rounded, RomSize);
         for (var i = 0; i < RomSize; i++)
             rom_span[i] = 0;
 
@@ -872,6 +872,28 @@ public class Emulator : IDisposable
         }
 
         SmcBuffer = new SmcBuffer(this);
+    }
+
+    public unsafe void FillMemory(byte memoryFillValue)
+    {
+        var memory_span = new Span<byte>((void*)_memory_ptr_rounded, RamSize);
+        for (var i = 2; i < RamSize; i++) // 2 as we dont change the RAM\ROM bank
+        {
+            if (i < 0x9f00 || (i >= 0xa000 && i < 0xc000) ) // dont change IO area or ROM data
+                memory_span[i] = memoryFillValue;
+        }
+
+        var ram_span = new Span<byte>((void*)_ram_ptr_rounded, BankedRamSize);
+        for (var i = 0; i < BankedRamSize; i++)
+        {
+            ram_span[i] = memoryFillValue;
+        }
+
+        var vram_span = new Span<byte>((void*)_vram_ptr, VramSize);
+        for (var i = 0; i < VramSize; i++)
+        {
+            vram_span[i] = memoryFillValue;
+        }
     }
 
     private void SetPointers() => _state.SetPointers(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,

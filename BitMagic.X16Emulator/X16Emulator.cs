@@ -877,7 +877,7 @@ public class Emulator : IDisposable
     public unsafe void FillMemory(byte memoryFillValue)
     {
         var memory_span = new Span<byte>((void*)_memory_ptr_rounded, RamSize);
-        for (var i = 2; i < RamSize; i++) // 2 as we dont change the RAM\ROM bank
+        for (var i = 2; i < RamSize; i++) // 2 as we dont change the RAM\ROM bank, as these are used on startup to set the rom bank, a slight difference to hardware.
         {
             if (i < 0x9f00 || (i >= 0xa000 && i < 0xc000) ) // dont change IO area or ROM data
                 memory_span[i] = memoryFillValue;

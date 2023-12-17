@@ -11,7 +11,7 @@
       "commandLineArgsHardwareTester": "--rom C:\\Dev\\x16_hardware_tester.rom",
       "commandLineArgsxxxx": "--rom C:\\Documents\\Source\\x16-rom\\build\\x16\\rom.bin -d c:\\dev\\MegaMan",
       "commandLineArgspcm": "--rom C:\\Documents\\Source\\x16-rom\\build\\x16\\rom.bin -d C:\\Dev\\x1060 --dump-folder c:\\dev --prg c:\\dev\\pcmtest.prg",
-      "commandLineArgs": "--rom C:\\dev\\X16emu\\r44\\rom.bin -d C:\\Dev\\x1060",
+      "commandLineArgs": "--rom C:\\dev\\X16emu\\r46\\rom.bin --sdcard c:\\dev\\democard\\demo.vhd",
       "commandLineArgsWrite": "--rom C:\\Documents\\Source\\x16-rom\\build\\x16\\rom.bin -d C:\\Dev\\Xixit --sdcard-write c:\\Dev\\xixit.vhd.zip --sdcard-overwrite",
       "commandLineArgsx": "--rom C:\\Documents\\Source\\x16-rom\\build\\x16\\rom.bin -d C:\\Dev\\sdcard --sdcard-size 32 --sdcard-write c:\\Dev\\christmas.bin --sdcard-overwrite --warp",
       "commandLineArgsxx": "--rom C:\\Documents\\Source\\x16-rom\\build\\x16\\rom.bin --sdcard c:\\dev\\card.bin --warp",

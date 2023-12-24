@@ -19,7 +19,7 @@ public static class X16TestHelper
         var project = new Project();
         var engine = CsasmEngine.CreateEngine();
 
-        project.Code = new StaticTextFile(code, "unittest.bmasm");
+        project.Code = new StaticTextFile(code, Path.Combine(Directory.GetCurrentDirectory(), "unittest.bmasm"));
 
         var templateResult = await engine.ProcessFile(project.Code, "unittest.bmasm", new TemplateOptions(), new NullLogger());
 

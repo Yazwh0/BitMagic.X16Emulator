@@ -69,7 +69,7 @@ public class Snapshot
         Snap();
     }
 
-    private void Snap()
+    public void Snap()
     {
         _a = _emulator.A;
         _x = _emulator.X;

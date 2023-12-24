@@ -21,7 +21,7 @@ public class Templating
                     stp
                 }
                 ");
-
+        
         snapshot.Compare()
             .Is(Registers.A, 0x01)
             .IgnoreVera()

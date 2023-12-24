@@ -288,8 +288,8 @@ public class MemoryRangeChange : ISnapshotChange
     public MemoryAreas MemoryArea { get; init; }
     public int Start { get; init; }
     public int End { get; init; }
-    public byte[] OriginalValues { get; init; }
-    public byte[] NewValues { get; init; }
+    public byte[] OriginalValues { get; init; } = Array.Empty<byte>();
+    public byte[] NewValues { get; init; } = Array.Empty<byte>();
 
     string ISnapshotChange.DisplayName => $"{MemoryArea} Range ${Start:X4} -> ${End:X4} ({End - Start + 1} bytes)";
     string ISnapshotChange.OriginalValue => ArrayToString(OriginalValues);

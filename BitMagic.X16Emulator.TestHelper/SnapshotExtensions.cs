@@ -75,9 +75,12 @@ public static class SnapshotExtensions
             _ => false
         });
 
+        // look for overlapping ranges
         var ranges = snapshot.Changes.Where(i => i switch
         {
-            MemoryRangeChange change => (startAddress >= change.Start || endAddress <= change.End) && change.MemoryArea == memoryArea,
+            MemoryRangeChange change =>  Math.Max(endAddress, change.End) - Math.Min(startAddress, change.Start)
+                < (change.End - change.Start) + (endAddress - startAddress)
+                && change.MemoryArea == memoryArea,
             _ => false
         }).Cast<MemoryRangeChange>().ToArray();
 
@@ -107,6 +110,10 @@ public static class SnapshotExtensions
 
         return snapshot;
     }
+
+    public static SnapshotResultTest IgnoreVia(this SnapshotResultTest snapshot) => snapshot.CanChange(MemoryAreas.Ram, 0x9f00, 0x9f0f);
+
+    public static SnapshotResultTest IgnoreVera(this SnapshotResultTest snapshot) => snapshot.CanChange(MemoryAreas.Ram, 0x9f20, 0x9f3f);
 
     public static SnapshotResultTest Is(this SnapshotResultTest snapshot, Registers register, byte value)
     {
@@ -157,7 +164,7 @@ public static class SnapshotExtensions
         _ => throw new Exception("Unhandled CPU Flag")
     };
 
-    public static void AssertNoChanges(this SnapshotResultTest snapshot)
+    public static void AssertNoOtherChanges(this SnapshotResultTest snapshot)
     {
         snapshot.Changes.RemoveAll(i => i.DisplayName == "Clock");
 

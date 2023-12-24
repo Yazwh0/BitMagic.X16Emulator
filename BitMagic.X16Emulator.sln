@@ -42,6 +42,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_SolutionItems", "_SolutionItems", "{5645BC95-F572-4A58-9358-D9A4703650F5}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		..\Directory.Build.props = ..\Directory.Build.props
 		LICENSE = LICENSE
 	EndProjectSection
 EndProject

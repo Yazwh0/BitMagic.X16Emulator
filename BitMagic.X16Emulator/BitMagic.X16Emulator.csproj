@@ -14,6 +14,26 @@
     <None Remove="~%24state_object.xlsx" />
   </ItemGroup>
 
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <Content Include="..\X16Emulator\EmulatorCore\x64\$(Configuration)\EmulatorCore.dll" Link="EmulatorCore.dll">
+      <CopyToOutput>true</CopyToOutput>
+      <PackageFlatten>false</PackageFlatten>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+  </ItemGroup>
+  
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <Content Include="..\X16Emulator\EmulatorCore\x64\$(Configuration)\EmulatorCore.so" Link="EmulatorCore.so">
+      <CopyToOutput>true</CopyToOutput>
+      <PackageFlatten>false</PackageFlatten>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+  </ItemGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\..\BitMagic.Libraries\BitMagic.Common\BitMagic.Common.csproj" />
     <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Core\BitMagic.DiscUtils.Core.csproj" />
@@ -34,9 +54,11 @@
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
     <DefineConstants>OS_WINDOWS</DefineConstants>
   </PropertyGroup>
+  
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
     <DefineConstants>OS_LINUX</DefineConstants>
   </PropertyGroup>
+  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <Optimize>False</Optimize>
   </PropertyGroup>

@@ -5,14 +5,32 @@ using BitMagic.TemplateEngine.Compiler;
 using BitMagic.TemplateEngine.X16;
 using BitMagic.Compiler;
 using BitMagic.Compiler.Files;
+using BitMagic.X16Emulator.Snapshot;
 
 namespace BitMagic.X16Emulator.TestHelper;
 
 public static class X16TestHelper
 {
-    public static async Task<Emulator> Emulate(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult =Emulator.EmulatorResult.DebugOpCode)
-    {
+    public static async Task<Emulator> EmulateTemplate(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
+        => (await EmulateTemplateChanges(code, emulator, dontChangeEmulatorOptions, expectedResult)).Emulator;
 
+    public static async Task<(Emulator Emulator, BitMagic.X16Emulator.Snapshot.Snapshot Snapshot)> EmulateTemplateChanges(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
+    {
+        var project = new Project();
+        var engine = CsasmEngine.CreateEngine();
+
+        project.Code = new StaticTextFile(code, "unittest.bmasm");
+
+        var templateResult = await engine.ProcessFile(project.Code, "unittest.bmasm", new TemplateOptions(), new NullLogger());
+
+        //templateResult.Parent = project.Code;
+        project.Code = templateResult;
+
+        return await Emulate(project, emulator, dontChangeEmulatorOptions, expectedResult);
+    }
+
+    public static async Task<Emulator> Emulate(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
+    {
         if (string.IsNullOrWhiteSpace(code))
             throw new Exception("No code to compile");
 
@@ -27,6 +45,11 @@ public static class X16TestHelper
         //templateResult.Parent = project.Code;
         //project.Code = templateResult;
 
+        return (await Emulate(project, emulator, dontChangeEmulatorOptions, expectedResult)).Emulator;
+    }
+
+    private static async Task<(Emulator Emulator, BitMagic.X16Emulator.Snapshot.Snapshot Snapshot)> Emulate(Project project, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
+    {
         var compiler = new Compiler.Compiler(project, new NullLogger()); // code, new NullLogger());
 
         emulator ??= new Emulator();
@@ -45,6 +68,8 @@ public static class X16TestHelper
             emulator.Memory[address++] = prg[i];
 
         emulator.Pc = 0x810;
+
+        var snapshot = emulator.Snapshot();
 
         var stopWatch = new Stopwatch();
 
@@ -76,7 +101,7 @@ public static class X16TestHelper
         Console.Write(emulator.Zero ? "Z" : " ");
         Console.Write(emulator.Carry ? "C]" : " ]");
         Console.WriteLine();
-        Console.WriteLine($"Speed:\t{emulator.Clock / ts.TotalSeconds / 1000000.0 :0.00}Mhz");
+        Console.WriteLine($"Speed:\t{emulator.Clock / ts.TotalSeconds / 1000000.0:0.00}Mhz");
         Console.WriteLine();
         Console.WriteLine($"D0 Adr:\t${emulator.Vera.Data0_Address:X5} (step ${emulator.Vera.Data0_Step:X2})");
         Console.WriteLine($"D1 Adr:\t${emulator.Vera.Data1_Address:X5} (step ${emulator.Vera.Data1_Step:X2})");
@@ -87,13 +112,13 @@ public static class X16TestHelper
         if (emulateResult != expectedResult)
             Assert.Fail($"Emulate Result is not from a {expectedResult}. Actual: {emulateResult}");
 
-        return emulator;
+        return (emulator, snapshot);
     }
 
     public static void AssertState(this Emulator emulator, byte? A = null, byte? X = null, byte? Y = null, ushort? Pc = null, ulong? Clock = null, uint? stackPointer = null)
     {
         if (A != null)
-            Assert.AreEqual(A, emulator.A, $"A doesn't match: ${emulator.A:X2}");   
+            Assert.AreEqual(A, emulator.A, $"A doesn't match: ${emulator.A:X2}");
 
         if (X != null)
             Assert.AreEqual(X, emulator.X, $"X doesn't match: ${emulator.X:X2}");

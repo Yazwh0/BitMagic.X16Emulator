@@ -29,7 +29,7 @@ public class TestHelper
     }
 
     [TestMethod]
-    public async Task RamBankRangeChanges()
+    public async Task RamBankRangeChanges_RangeChange()
     {
         var (emulator, snapshot) = await X16TestHelper.EmulateChanges(@"
                 .machine CommanderX16R40
@@ -64,7 +64,114 @@ public class TestHelper
         Assert.AreEqual(0x02 * 0x2000 + 0x8, range.End);
 
         snapshot.Compare()
-            .CanChange(X16Emulator.Snapshot.MemoryAreas.BankedRam, 0x02a001, 0x02a008)
+            .CanChange(MemoryAreas.BankedRam, 0x02a001, 0x02a008)
+            .IgnoreVera().IgnoreVia().AssertNoOtherChanges();
+    }
+
+    [TestMethod]
+    public async Task RamBankRangeChanges_ValueChange()
+    {
+        var (emulator, snapshot) = await X16TestHelper.EmulateChanges(@"
+                .machine CommanderX16R40
+                .org $810
+                lda #2
+                sta RAM_BANK
+                stp
+
+                sta $a001
+                sta $a002
+                sta $a003
+                sta $a004
+                sta $a005
+                sta $a006
+                sta $a007
+                sta $a008
+                stp");
+
+        snapshot.Snap();
+
+        emulator.Emulate();
+
+        snapshot.Compare()
+            .CanChange(MemoryAreas.BankedRam, 0x02a001)
+            .CanChange(MemoryAreas.BankedRam, 0x02a002)
+            .CanChange(MemoryAreas.BankedRam, 0x02a003)
+            .CanChange(MemoryAreas.BankedRam, 0x02a004)
+            .CanChange(MemoryAreas.BankedRam, 0x02a005)
+            .CanChange(MemoryAreas.BankedRam, 0x02a006)
+            .CanChange(MemoryAreas.BankedRam, 0x02a007)
+            .CanChange(MemoryAreas.BankedRam, 0x02a008)
+            .IgnoreVera().IgnoreVia().AssertNoOtherChanges();
+    }
+
+    [TestMethod]
+    public async Task RamBankRangeChanges_ValueChangeMissing()
+    {
+        var (emulator, snapshot) = await X16TestHelper.EmulateChanges(@"
+                .machine CommanderX16R40
+                .org $810
+                lda #2
+                sta RAM_BANK
+                stp
+
+                sta $a001
+                sta $a002
+                sta $a003
+                sta $a004
+                sta $a005
+                sta $a006
+                sta $a007
+                sta $a008
+                stp");
+
+        snapshot.Snap();
+
+        emulator.Emulate();
+
+        bool exception = false;
+        try
+        {
+            snapshot.Compare()
+                .CanChange(MemoryAreas.BankedRam, 0x02a001)
+                .CanChange(MemoryAreas.BankedRam, 0x02a002)
+                .CanChange(MemoryAreas.BankedRam, 0x02a003)
+                .CanChange(MemoryAreas.BankedRam, 0x02a004)
+                .CanChange(MemoryAreas.BankedRam, 0x02a006)
+                .CanChange(MemoryAreas.BankedRam, 0x02a007)
+                .CanChange(MemoryAreas.BankedRam, 0x02a008)
+                .IgnoreVera().IgnoreVia().AssertNoOtherChanges();
+        } 
+        catch(AssertFailedException)
+        {
+            exception = true;
+        }
+
+        Assert.IsTrue(exception);
+    }
+
+    [TestMethod]
+    public async Task RamBankRangeChanges_ValueChangeHole()
+    {
+        var (emulator, snapshot) = await X16TestHelper.EmulateChanges(@"
+                .machine CommanderX16R40
+                .org $810
+                lda #2
+                sta RAM_BANK
+                stp
+
+                sta $a001
+                sta $a002
+                sta $a004
+                stp");
+
+        snapshot.Snap();
+
+        emulator.Emulate();
+
+        snapshot.Compare()
+            .CanChange(MemoryAreas.BankedRam, 0x02a001)
+            .CanChange(MemoryAreas.BankedRam, 0x02a002)
+            .CanChange(MemoryAreas.BankedRam, 0x02a004)
             .IgnoreVera().IgnoreVia().AssertNoOtherChanges();
     }
 

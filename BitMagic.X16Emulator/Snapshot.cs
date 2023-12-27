@@ -229,7 +229,7 @@ public class Snapshot
             {
                 for (var i = index; i <= newIndex; i++)
                 {
-                    if (ignoredChanges == null || !ignoredChanges.Contains(i))
+                    if ((ignoredChanges == null || !ignoredChanges.Contains(i)) && originalValues[i] != newValues[i])
                         yield return new MemoryChange() { MemoryArea = memoryArea, Address = baseAddress + i, OriginalValue = originalValues[i], NewValue = newValues[i] };
                 }
             }

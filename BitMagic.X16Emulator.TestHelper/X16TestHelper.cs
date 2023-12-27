@@ -14,7 +14,10 @@ public static class X16TestHelper
     public static async Task<Emulator> EmulateTemplate(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
         => (await EmulateTemplateChanges(code, emulator, dontChangeEmulatorOptions, expectedResult)).Emulator;
 
-    public static async Task<(Emulator Emulator, BitMagic.X16Emulator.Snapshot.Snapshot Snapshot)> EmulateTemplateChanges(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
+    public static async Task<Emulator> Emulate(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
+        => (await EmulateChanges(code, emulator, dontChangeEmulatorOptions, expectedResult)).Emulator;
+
+    public static async Task<(Emulator Emulator, Snapshot.Snapshot Snapshot)> EmulateTemplateChanges(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
     {
         var project = new Project();
         var engine = CsasmEngine.CreateEngine();
@@ -29,7 +32,7 @@ public static class X16TestHelper
         return await Emulate(project, emulator, dontChangeEmulatorOptions, expectedResult);
     }
 
-    public static async Task<Emulator> Emulate(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
+    public static Task<(Emulator Emulator, Snapshot.Snapshot Snapshot)> EmulateChanges(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
     {
         if (string.IsNullOrWhiteSpace(code))
             throw new Exception("No code to compile");
@@ -45,10 +48,10 @@ public static class X16TestHelper
         //templateResult.Parent = project.Code;
         //project.Code = templateResult;
 
-        return (await Emulate(project, emulator, dontChangeEmulatorOptions, expectedResult)).Emulator;
+        return Emulate(project, emulator, dontChangeEmulatorOptions, expectedResult);
     }
 
-    private static async Task<(Emulator Emulator, BitMagic.X16Emulator.Snapshot.Snapshot Snapshot)> Emulate(Project project, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
+    private static async Task<(Emulator Emulator, Snapshot.Snapshot Snapshot)> Emulate(Project project, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
     {
         var compiler = new Compiler.Compiler(project, new NullLogger()); // code, new NullLogger());
 

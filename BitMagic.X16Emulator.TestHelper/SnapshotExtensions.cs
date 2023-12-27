@@ -1,6 +1,8 @@
 ﻿using BitMagic.X16Emulator.Snapshot;
 using TestAssert = Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text;
+using BitMagic.Common.Address;
+using System.Net;
 
 namespace BitMagic.X16Emulator.TestHelper;
 
@@ -30,6 +32,11 @@ public static class SnapshotExtensions
 
     public static SnapshotResultTest CanChange(this SnapshotResultTest snapshot, MemoryAreas memoryArea, int address)
     {
+        if (memoryArea == MemoryAreas.BankedRam)
+        {
+            address = ((address & 0xff0000) >> 16) * 0x2000 + (address & 0x1fff); // convert from debugger address to address in array
+        }
+
         // remove all specific changes
         snapshot.Changes.RemoveAll(i => i switch
         {
@@ -68,6 +75,12 @@ public static class SnapshotExtensions
 
     public static SnapshotResultTest CanChange(this SnapshotResultTest snapshot, MemoryAreas memoryArea, int startAddress, int endAddress)
     {
+        if (memoryArea == MemoryAreas.BankedRam)
+        {
+            startAddress = ((startAddress & 0xff0000) >> 16) * 0x2000 + (startAddress & 0x1fff); // convert from debugger address to address in array
+            endAddress = ((endAddress & 0xff0000) >> 16) * 0x2000 + (endAddress & 0x1fff); // convert from debugger address to address in array
+        }
+
         // remove all specific changes
         snapshot.Changes.RemoveAll(i => i switch
         {
@@ -103,7 +116,6 @@ public static class SnapshotExtensions
             if (rightPos > 0)
                 newChanges.AddRange(Snapshot.Snapshot.CompareMemory(
                     range.MemoryArea, endAddress + 1, range.OriginalValues[^rightPos..], range.NewValues[^rightPos..]));
-
         }
 
         snapshot.Changes.AddRange(newChanges);
@@ -114,6 +126,17 @@ public static class SnapshotExtensions
     public static SnapshotResultTest IgnoreVia(this SnapshotResultTest snapshot) => snapshot.CanChange(MemoryAreas.Ram, 0x9f00, 0x9f0f);
 
     public static SnapshotResultTest IgnoreVera(this SnapshotResultTest snapshot) => snapshot.CanChange(MemoryAreas.Ram, 0x9f20, 0x9f3f);
+
+    public static SnapshotResultTest IgnoreStackHistory(this SnapshotResultTest snapshot) => snapshot.CanChange(MemoryAreas.Ram, 0x100, snapshot.Emulator.StackPointer);
+
+    public static SnapshotResultTest IgnoreNumericCpuFlags(this SnapshotResultTest snapshot)
+    {
+        snapshot.CanChange(CpuFlags.Overflow);
+        snapshot.CanChange(CpuFlags.Zero);
+        snapshot.CanChange(CpuFlags.Negative);
+
+        return snapshot;
+    }
 
     public static SnapshotResultTest Is(this SnapshotResultTest snapshot, Registers register, byte value)
     {
@@ -142,6 +165,20 @@ public static class SnapshotExtensions
         return snapshot.CanChange(cpuFlag);
     }
 
+    public static SnapshotResultTest Is(this SnapshotResultTest snapshot, MemoryAreas memoryArea, int address, int value)
+    {
+        var v = value;
+        var a = address;
+        var r = memoryArea;
+
+        if (r == MemoryAreas.BankedRam)
+            snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(v, GetValue(r, a, snapshot.Emulator), $"Memory 0x{(address & 0xff0000) >> 16 :X2}:{address & 0xffff:X4} is not {v}"));
+        else
+            snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(v, GetValue(r, a, snapshot.Emulator), $"Memory 0x{a:X4} is not {v}"));
+
+        return snapshot.CanChange(memoryArea, address);
+    }
+
     private static int GetValue(Registers register, Emulator emulator) => register switch 
     {
         Registers.A => emulator.A,
@@ -164,9 +201,19 @@ public static class SnapshotExtensions
         _ => throw new Exception("Unhandled CPU Flag")
     };
 
+    public static int GetValue(MemoryAreas memoryArea, int address, Emulator emulator) => memoryArea switch
+    {
+        MemoryAreas.Ram => emulator.Memory[address],
+        MemoryAreas.BankedRam => emulator.RamBank[((address & 0xff0000) >> 16) * 0x2000 + (address & 0x1fff)],
+        MemoryAreas.Vram => emulator.Vera.Vram[address],
+        MemoryAreas.NVram => emulator.RtcNvram[address],
+        _ => throw new Exception("Unhandled Memory Area")
+    };
+
     public static void AssertNoOtherChanges(this SnapshotResultTest snapshot)
     {
         snapshot.Changes.RemoveAll(i => i.DisplayName == "Clock");
+        snapshot.CanChange(MemoryAreas.Ram, 0xa000, 0xc000 - 1); // banked ram will show as well, so lets remove one.
 
         if (snapshot.Changes.Count > 0)
         {

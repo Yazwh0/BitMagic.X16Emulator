@@ -1,8 +1,4 @@
-﻿
-using ICSharpCode.SharpZipLib.Core;
-using System.Security.Principal;
-
-namespace BitMagic.X16Emulator.Snapshot;
+﻿namespace BitMagic.X16Emulator.Snapshot;
 
 public static class SnapshotExtensions
 {
@@ -167,59 +163,78 @@ public class Snapshot
                 continue;
             }
 
-            var newIndex = index + 1;
+            var newIndex = index;
             var done = false;
             while (!done)
             {
-                if (newIndex >= originalValues.Length)
-                    break;
-
-                if (originalValues[newIndex] == newValues[newIndex])
+                if (newIndex + 1 >= originalValues.Length)
                 {
-                    for (var i = 0; i < UnchangedSpanSize; i++)
+                    newIndex = originalValues.Length - 1;
+                    break;
+                }
+
+                // look forward UnchangeSpanSize ahead and then backward for a missmatch.
+                bool missmatch = false;
+                for (var i = Math.Min(UnchangedSpanSize, originalValues.Length - newIndex - 1); i > 0; i--)
+                {
+                    if (originalValues[newIndex + i] != newValues[newIndex + i])
                     {
-                        if (newIndex + 1 >= originalValues.Length)
-                        {
-                            newIndex += i;
-                            done = true;
-                            break;
-                        }
-
-                        if (originalValues[newIndex + i] != newValues[newIndex + i])
-                        {
-                            newIndex += i;
-                            break;
-                        }
-
-                        done = true;
+                        newIndex += i;
+                        missmatch = true;
+                        break;
                     }
                 }
-                else
-                {
-                    newIndex++;
-                }
+
+                if (!missmatch)
+                    done = true;
+
+
+                //if (originalValues[newIndex] == newValues[newIndex])
+                //{
+                //    for (var i = 0; i < UnchangedSpanSize; i++)
+                //    {
+                //        if (newIndex + 1 >= originalValues.Length)
+                //        {
+                //            newIndex += i;
+                //            done = true;
+                //            break;
+                //        }
+
+                //        if (originalValues[newIndex + i] != newValues[newIndex + i])
+                //        {
+                //            newIndex += i;
+                //            break;
+                //        }
+
+                //        done = true;
+                //    }
+                //}
+                //else
+                //{
+                //    newIndex++;
+                //}
             }
 
-            if (newIndex - index > MinRangeSize)
+            if (newIndex - index > MinRangeSize - 1)
             {
-                yield return new MemoryRangeChange() { 
-                    MemoryArea = memoryArea, 
-                    Start = baseAddress + index, 
-                    End = baseAddress + newIndex - 1, 
-                    OriginalValues = originalValues[index..newIndex],
-                    NewValues = newValues[index..newIndex]
+                yield return new MemoryRangeChange() {
+                    MemoryArea = memoryArea,
+                    Start = baseAddress + index,
+                    End = baseAddress + newIndex,
+                    OriginalValues = originalValues[index..(newIndex+1)],
+                    NewValues = newValues[index..(newIndex+1)]
                 };
             }
             else
             {
-                for (var i = index; i < newIndex; i++)
+                for (var i = index; i <= newIndex; i++)
                 {
                     if (ignoredChanges == null || !ignoredChanges.Contains(i))
                         yield return new MemoryChange() { MemoryArea = memoryArea, Address = baseAddress + i, OriginalValue = originalValues[i], NewValue = newValues[i] };
                 }
             }
 
-            index = newIndex;
+            index = newIndex + 1;
         }
     }
 }
@@ -291,7 +306,12 @@ public class MemoryRangeChange : ISnapshotChange
     public byte[] OriginalValues { get; init; } = Array.Empty<byte>();
     public byte[] NewValues { get; init; } = Array.Empty<byte>();
 
-    string ISnapshotChange.DisplayName => $"{MemoryArea} Range ${Start:X4} -> ${End:X4} ({End - Start + 1} bytes)";
+    string ISnapshotChange.DisplayName => MemoryArea switch
+    {
+        MemoryAreas.BankedRam => $"{MemoryArea} Range ${BankedAddressFunctions.GetBankedRamDisplayString(Start)} -> ${BankedAddressFunctions.GetBankedRamDisplayString(End)} ({End - Start + 1} bytes)",
+        _ => $"{MemoryArea} Range ${Start:X4} -> ${End:X4} ({End - Start + 1} bytes)"
+    };
+
     string ISnapshotChange.OriginalValue => ArrayToString(OriginalValues);
     string ISnapshotChange.NewValue => ArrayToString(NewValues);
 
@@ -306,7 +326,18 @@ public class MemoryChange : ISnapshotChange
     public byte OriginalValue { get; init; }
     public byte NewValue { get; init; }
 
-    string ISnapshotChange.DisplayName => $"{MemoryArea} ${Address:X4}";
+    string ISnapshotChange.DisplayName => MemoryArea switch
+    {
+        MemoryAreas.BankedRam => $"{MemoryArea} ${BankedAddressFunctions.GetBankedRamDisplayString(Address)}",
+        _ => $"{MemoryArea} ${Address:X4}"
+    };
+
     string ISnapshotChange.OriginalValue => $"${OriginalValue:X2}";
     string ISnapshotChange.NewValue => $"${NewValue:X2}";
+}
+
+public static class BankedAddressFunctions
+{
+    public static string GetBankedRamDisplayString(int address) =>
+        $"{(address & 0x1fe000) >> 13:X2}:{(address & 0x1fff) + 0xa000:X4}";
 }

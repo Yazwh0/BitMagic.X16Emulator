@@ -122,6 +122,7 @@ public class Emulator : IDisposable
         public byte Layer0_MapWidth { get => _emulator._state.Layer0_MapWidth; set => _emulator._state.Layer0_MapWidth = value; }
         public bool Layer0_BitMapMode { get => _emulator._state.Layer0_BitMapMode != 0; set => _emulator._state.Layer0_BitMapMode = (value ? (byte)1 : (byte)0); }
         public byte Layer0_ColourDepth { get => _emulator._state.Layer0_ColourDepth; set => _emulator._state.Layer0_ColourDepth = value; }
+        public bool Layer0_T256C { get => _emulator._state.Layer0_T256C == 1; set => _emulator._state.Layer0_T256C = (value ? (uint)1 : (uint)0); }
         public UInt32 Layer0_MapAddress { get => _emulator._state.Layer0_MapAddress; set => _emulator._state.Layer0_MapAddress = value; }
         public UInt32 Layer0_TileAddress { get => _emulator._state.Layer0_TileAddress; set => _emulator._state.Layer0_TileAddress = value; }
         public byte Layer0_TileHeight { get => _emulator._state.Layer0_TileHeight; set => _emulator._state.Layer0_TileHeight = value; }
@@ -133,6 +134,7 @@ public class Emulator : IDisposable
         public byte Layer1_MapWidth { get => _emulator._state.Layer1_MapWidth; set => _emulator._state.Layer1_MapWidth = value; }
         public bool Layer1_BitMapMode { get => _emulator._state.Layer1_BitMapMode != 0; set => _emulator._state.Layer1_BitMapMode = (value ? (byte)1 : (byte)0); }
         public byte Layer1_ColourDepth { get => _emulator._state.Layer1_ColourDepth; set => _emulator._state.Layer1_ColourDepth = value; }
+        public bool Layer1_T256C { get => _emulator._state.Layer1_T256C == 1; set => _emulator._state.Layer1_T256C = (value ? (uint)1 : (uint)0); }
         public UInt32 Layer1_MapAddress { get => _emulator._state.Layer1_MapAddress; set => _emulator._state.Layer1_MapAddress = value; }
         public UInt32 Layer1_TileAddress { get => _emulator._state.Layer1_TileAddress; set => _emulator._state.Layer1_TileAddress = value; }
         public byte Layer1_TileHeight { get => _emulator._state.Layer1_TileHeight; set => _emulator._state.Layer1_TileHeight = value; }
@@ -455,6 +457,7 @@ public class Emulator : IDisposable
         // layer 0
         public uint Layer0_MapAddress = 0;
         public uint Layer0_TileAddress = 0;
+        public uint Layer0_T256C = 0;
         public ushort Layer0_HScroll = 0;
         public ushort Layer0_VScroll = 0;
         public byte Layer0_MapHeight = 0;
@@ -470,6 +473,7 @@ public class Emulator : IDisposable
         // layer 1
         public uint Layer1_MapAddress = 0;
         public uint Layer1_TileAddress = 0;
+        public uint Layer1_T256C = 0;
         public ushort Layer1_HScroll = 0;
         public ushort Layer1_VScroll = 0;
         public byte Layer1_MapHeight = 0;

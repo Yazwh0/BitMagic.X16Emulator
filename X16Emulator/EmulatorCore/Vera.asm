@@ -410,6 +410,9 @@ dc_done:
 	mov bl, byte ptr [rdx].state.layer0_colourDepth
 	and rbx, 00000011b
 	or al, bl
+	mov ebx, dword ptr [rdx].state.layer1_t256c
+	shl ebx, 3
+	or al, bl
 
 	mov byte ptr [rsi+L0_CONFIG], al
 	and al, 00001111b
@@ -471,6 +474,9 @@ dc_done:
 	or al, bl
 	mov bl, byte ptr [rdx].state.layer1_colourDepth
 	and rbx, 00000011b
+	or al, bl
+	mov ebx, dword ptr [rdx].state.layer1_t256c
+	shl ebx, 3
 	or al, bl
 
 	mov byte ptr [rsi+L1_CONFIG], al
@@ -1137,6 +1143,11 @@ vera_update_l0config proc
 	and rax, 00000100b
 	shr rax, 2
 	mov byte ptr [rdx].state.layer0_bitmapMode, al
+	
+	mov rax, r13
+	and rax, 00001000b
+	shr rax, 3
+	mov dword ptr [rdx].state.layer0_t256c, eax
 
 	mov rax, r13
 	and rax, 00110000b
@@ -1250,6 +1261,11 @@ vera_update_l1config proc
 	and rax, 00000100b
 	shr rax, 2
 	mov byte ptr [rdx].state.layer1_bitmapMode, al
+
+	mov rax, r13
+	and rax, 00001000b
+	shr rax, 3
+	mov dword ptr [rdx].state.layer1_t256c, eax
 
 	mov rax, r13
 	and rax, 00110000b

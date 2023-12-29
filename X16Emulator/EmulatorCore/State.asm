@@ -207,6 +207,7 @@ state struct
 
 	layer0_mapAddress		dword ?
 	layer0_tileAddress		dword ?
+	layer0_t256c			dword ?
 	layer0_hscroll			word ?
 	layer0_vscroll			word ?
 	layer0_mapHeight		byte ?
@@ -221,6 +222,7 @@ state struct
 
 	layer1_mapAddress		dword ?
 	layer1_tileAddress		dword ?
+	layer1_t256c			dword ?
 	layer1_hscroll			word ?
 	layer1_vscroll			word ?
 	layer1_mapHeight		byte ?

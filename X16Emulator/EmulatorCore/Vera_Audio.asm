@@ -135,7 +135,13 @@ local donothing, render_done, right, done, no_noise_change
 	jmp done
 
 	render_done:
-	sub ecx, 32
+
+	; sign extend if 0x20 is set
+	xor ecx, 20h
+	xor edi, edi
+	test ecx, 20h
+	cmove edi, dword ptr psg_mask
+	or ecx, edi
 
 	imul ecx, [rsi].psg_voice.volume		; apply volume
 	test ebx, 1
@@ -221,7 +227,7 @@ pcm_8bit_mono:
 	shl r12d, 8								; convert to 16bit space
 	mov ecx, [rdx].state.pcm_volume
 	imul r12d, [rdx].state.pcm_volume		; apply volume
-	shr r12d, 7								; only conisder top bits
+	shr r12d, 6								; only conisder top bits
 	mov [rdx].state.pcm_value_l, r12d
 	mov [rdx].state.pcm_value_r, r12d
 	mov r13, r12	
@@ -250,7 +256,7 @@ pcm_8bit_stereo:
 
 	shl r12d, 8								; convert to 16bit space
 	imul r12d, [rdx].state.pcm_volume		; apply volume
-	shr r12d, 7								; only conisder top bits
+	shr r12d, 6								; only conisder top bits
 	mov [rdx].state.pcm_value_l, r12d
 
 	mov r13, r12							; if fifo is empty, then we use previous read
@@ -264,7 +270,7 @@ pcm_8bit_stereo:
 
 	shl r13d, 8								; convert to 16bit space
 	imul r13d, [rdx].state.pcm_volume		; apply volume
-	shr r13d, 7								; only conisder top bits
+	shr r13d, 6								; only conisder top bits
 
 pcm_8bit_stereo_r_done:
 	mov [rdx].state.pcm_value_r, r13d
@@ -325,7 +331,7 @@ pcm_16bit_mono_setval:
 
 	movsx r12, r12w
 	imul r12d, [rdx].state.pcm_volume		; apply volume
-	shr r12d, 8								; only conisder top bits
+	shr r12d, 6								; only conisder top bits
 	mov [rdx].state.pcm_value_l, r12d
 	mov [rdx].state.pcm_value_r, r12d
 	mov r13, r12	
@@ -397,10 +403,10 @@ pcm_16bit_stereo_missing3:
 pcm_16bit_stereo_setval:
 
 	imul r12d, [rdx].state.pcm_volume		; apply volume
-	shr r12d, 7								; only conisder top bits
+	shr r12d, 6								; only conisder top bits
 	mov [rdx].state.pcm_value_l, r12d
 	imul r13d, [rdx].state.pcm_volume		; apply volume
-	shr r13d, 7								; only conisder top bits
+	shr r13d, 6								; only conisder top bits
 	mov [rdx].state.pcm_value_r, r13d
 
 	; check if now empty and set flag if so
@@ -600,6 +606,10 @@ psg_jump_table:
 psg_update_registers endp
 
 align 8
+psg_mask:
+	dword 0ffffffc0h
+
+align 8
 psg_jump:
 	qword 	psg_0_pulse		- psg_jump
 	qword 	psg_0_sawtooth	- psg_jump
@@ -666,8 +676,26 @@ psg_jump:
 	qword 	psg_15_triangle	- psg_jump
 	qword 	psg_15_noise	- psg_jump
 
-
 pcm_volume:
+	dword 0
+	dword 1
+	dword 2
+	dword 3
+	dword 4
+	dword 5
+	dword 6
+	dword 8
+	dword 11
+	dword 14
+	dword 18
+	dword 23
+	dword 30
+	dword 38
+	dword 49
+	dword 64
+
+
+pcm_volume_old:
 	dword 0
 	dword 2
 	dword 4

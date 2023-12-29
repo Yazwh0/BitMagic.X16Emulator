@@ -712,7 +712,7 @@ include Vera_Display_Bitmap_2bpp.asm
 include Vera_Display_Bitmap_4bpp.asm
 include Vera_Display_Bitmap_8bpp.asm
 
-; macro to find the current bitmap definition, returns data in ax. 
+; macro to find the current bitmap definition, returns data in bx. 
 ; width 0: 320, 1: 640
 ; expects:
 ; r14: current layer tile address

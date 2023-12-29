@@ -137,11 +137,12 @@ local donothing, render_done, right, done, no_noise_change
 	render_done:
 
 	; sign extend if 0x20 is set
-	xor ecx, 20h
-	xor edi, edi
-	test ecx, 20h
-	cmove edi, dword ptr psg_mask
-	or ecx, edi
+	;xor ecx, 20h
+	;xor edi, edi
+	;test ecx, 20h
+	;cmove edi, dword ptr psg_mask
+	;or ecx, edi
+	sub ecx, 32
 
 	imul ecx, [rsi].psg_voice.volume		; apply volume
 	test ebx, 1

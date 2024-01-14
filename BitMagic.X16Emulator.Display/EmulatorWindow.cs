@@ -42,6 +42,7 @@ public static class EmulatorWindow
     private static Vector2 _lastMousePosition;
     private static IGamepad[]? _joysticks;
 
+    private static IMouse? _mouse = null;
     private static int _mouseX = 0;
     private static int _mouseY = 0;
     private static Timer? _mouseTimer = null;
@@ -266,6 +267,7 @@ public static class EmulatorWindow
         var input = _window.CreateInput();
         input.Mice[0].Cursor.CursorMode = CursorMode.Raw;
         _hasMouse = true;
+        _mouse = arg1;
         _mouseTimer = new Timer(CheckMouseMove, null, 20, 20);
         _mouseX = 0;
         _mouseX = 1;
@@ -317,7 +319,7 @@ public static class EmulatorWindow
         if (_mouseX == 0 && _mouseY == 0)
             return;
 
-        _emulator.SmcBuffer.PushMouse(_mouseX, _mouseY, SmcBuffer.MouseButtons.None);
+        _emulator.SmcBuffer.PushMouse(_mouseX, _mouseY, _mouse != null ? GetButtons(_mouse) : SmcBuffer.MouseButtons.None);
         _mouseX = 0;
         _mouseY = 0;
     }

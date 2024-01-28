@@ -27,6 +27,7 @@ include Smc.asm
 include Spi.asm
 include Rtc.asm
 include Joypad.asm
+include Ym.asm
 
 EXIT_NOTSUPPORTED equ -1
 EXIT_NORMAL equ 0
@@ -384,13 +385,23 @@ opcode_done::
     pushf
     mov rax, [rdx].state.clock_audionext    ; rax is a parameter to vera_render_audio
     cmp r14, rax
-    jl no_audio
+    jl no_vera_audio
 
     push rsi
     call vera_render_audio
     pop rsi
 
-    no_audio:
+    no_vera_audio:
+
+    mov rax, [rdx].state.clock_ymnext
+    cmp r14, rax
+    jl no_ym_audio
+
+    call ym_render_audio
+    mov eax, [rdx].state.ym_interrupt
+    or [rdx].state.interrupt, al
+    
+    no_ym_audio:
     popf
     ; ----------------------- AUDIO DONE
 

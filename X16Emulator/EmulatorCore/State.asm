@@ -18,6 +18,17 @@ state struct
 	; functions
 	get_ticks				qword ?
 	sleep					qword ?
+	step_ym					qword ?
+	write_registers_ym		qword ?
+	ym_timer0				dword ?
+	ym_timer1				dword ?
+	ym_busy_timer			dword ?
+	ym_interrupt			dword ?
+	ym_address				dword ?
+	ym_data					dword ?
+	ym_left					dword ?
+	ym_right				dword ?
+	; C part ends
 
 	wrapper_flags			qword ?
 	
@@ -42,7 +53,6 @@ state struct
 	pcm_ptr					qword ?
 	audiooutput_ptr			qword ?
 
-
 	current_bank_address	qword ?
 
 	; Vera
@@ -59,6 +69,7 @@ state struct
 	clock_previous			qword ?
 	clock					qword ?
 	clock_audionext			qword ?
+	clock_ymnext			qword ?
 	last_cpulineclock		qword ?
 	vera_clock				qword ?
 	cpu_posy				qword ?
@@ -167,6 +178,8 @@ state struct
 
 	psg_noise_signal		dword ?
 	psg_noise				dword ?
+
+	ym_cpu_partial			dword ?
 
 	rom_bank				dword ?
 

@@ -268,9 +268,20 @@ public class Emulator : IDisposable
     [StructLayout(LayoutKind.Sequential)]
     public struct CpuState
     {
-        // functions
-        public ulong GetTicks = 0;
-        public ulong Sleep = 0;
+        // C wrapper
+        public ulong GetTicks = 0;              // function
+        public ulong Sleep = 0;                 // function
+        public ulong Step_Ym = 0;               // function
+        public ulong WriteRegister_Ym = 0;      // function
+        public uint Ym_Timer0 = 0;
+        public uint Ym_Timer1 = 0;
+        public uint Ym_BusyTimer = 0;
+        public uint Ym_Interrupt = 0;
+        public uint Ym_Address = 0;
+        public uint Ym_Data = 0;
+        public int Ym_Left = 0;
+        public int Ym_Right = 0;
+        // end of C wrapper
 
         public ulong WrapperFlags = 0;  // used by the linux wrapper to see if these calls have had their handlers injected.
 
@@ -311,6 +322,7 @@ public class Emulator : IDisposable
         public ulong Clock_Previous = 0x00;
         public ulong Clock = 0x00;
         public ulong Clock_AudioNext = 0;
+        public ulong Clock_YmNext = 0;
         public ulong Last_CpuLineClock = 0x00;
         public ulong VeraClock = 0x00;
         public ulong Cpu_YPos = 0x00;
@@ -417,6 +429,8 @@ public class Emulator : IDisposable
 
         public uint PsgNoiseSignal = 1;
         public uint PsgNoise = 0;
+
+        public uint YmCpuPartial = 0;
 
         public uint RomBank = 0;
 

@@ -22,15 +22,29 @@
 
 //extern EMULATORCODE_API int nEmulatorCode;
 
+#ifndef STATE_DEF
+#define STATE_DEF
+
 extern "C" 
 {
 	struct state 
 	{
 		__int64 (* get_ticks) ();
 		void (* sleep) (__int64);
+		void (* step_ym)();
+		void (* write_register_ym)();
+		uint32_t ym_timer0;
+		uint32_t ym_timer1;
+		uint32_t ym_busy_timer;
+		uint32_t ym_interrupt;
+		uint32_t ym_address;
+		uint32_t ym_data;
+		int32_t ym_left;
+		int32_t ym_right;
 
+		__int64 wrapper_flags; // used by linux wrapper
 
-		//int8_t* memory_ptr;
+		int8_t* memory;
 		//int8_t* rom_ptr;
 		//int8_t* rambank_ptr;
 		//int8_t* vram_ptr;
@@ -101,3 +115,4 @@ extern "C"
 
 	EMULATORCODE_API int fnEmulatorCode(state* state);
 }
+#endif

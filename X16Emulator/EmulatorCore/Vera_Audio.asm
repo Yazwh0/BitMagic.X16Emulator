@@ -103,6 +103,7 @@ local donothing, render_done, right, done, no_noise_change
 	psg_&voicenumber&_sawtooth::
 	mov ecx, eax
 	shr ecx, 11
+	xor ecx, [rsi].psg_voice.widthx
 
 	jmp render_done
 
@@ -114,6 +115,7 @@ local donothing, render_done, right, done, no_noise_change
 	xor ecx, edi
 	and ecx, 0ffffh			; mask of top bit
 	shr ecx, 10
+	xor ecx, [rsi].psg_voice.widthx
 
 	jmp render_done
 
@@ -123,6 +125,10 @@ local donothing, render_done, right, done, no_noise_change
 	jz no_noise_change
 	mov ecx, [rdx].state.psg_noise
 	mov [rsi].psg_voice.noise, ecx			; store for next sample
+	mov edi, [rsi].psg_voice.widthx
+	xor edi, 03fh
+	and ecx, edi
+
 	jmp render_done
 
 	no_noise_change:
@@ -479,6 +485,13 @@ vera_step_psg:
 
 ; every render we write to the buffer
 vera_write_audiodata:
+
+	; pull in YM data and mix in
+	mov ecx, [rdx].state.ym_left
+	add r12w, cx
+	mov ecx, [rdx].state.ym_right
+	add r13w, cx
+
 	mov rsi, [rdx].state.audiooutput_ptr
 	mov eax, [rdx].state.audio_write
 	mov word ptr [rsi + rax * 4], r12w							; left

@@ -623,6 +623,7 @@ depth_jump_table:
 	dq depth_3 - depth_jump_table
 
 depth_0:
+sprites_not_enabled:										; rax will be zero, so no write
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L1], eax
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L2], eax
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L3], eax
@@ -646,7 +647,6 @@ sprite_render_done:
 	;pop r13
 	;pop r14
 
-sprites_not_enabled:
 
 	;
 	; All done

@@ -302,7 +302,7 @@ pcm_16bit_mono:
 	je no_data
 
 	mov rsi, [rdx].state.pcm_ptr
-	movsx r12, byte ptr [rsi + rax]			; first byte is the low part
+	movzx r12, byte ptr [rsi + rax]			; first byte is the low part
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
@@ -310,7 +310,7 @@ pcm_16bit_mono:
 	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
 	je pcm_16bit_mono_noval
 	
-	movzx rbx, byte ptr [rsi + rax]			; second byte is the high part
+	movsx rbx, byte ptr [rsi + rax]			; second byte is the high part
 	shl ebx, 8
 	or r12d, ebx
 
@@ -352,7 +352,7 @@ pcm_16bit_stereo:
 	je no_data
 
 	mov rsi, [rdx].state.pcm_ptr
-	movsx r12, byte ptr [rsi + rax]
+	movzx r12, byte ptr [rsi + rax]
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
@@ -360,7 +360,7 @@ pcm_16bit_stereo:
 	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
 	je pcm_16bit_stereo_missing1
 	
-	movzx rbx, byte ptr [rsi + rax]
+	movsx rbx, byte ptr [rsi + rax]
 	shl ebx, 8
 	or r12d, ebx
 

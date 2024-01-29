@@ -225,13 +225,14 @@ pcm_8bit_mono:
 	je no_data
 
 	mov rsi, [rdx].state.pcm_ptr
-	movzx r12, byte ptr [rsi + rax]
+	movsx r12, byte ptr [rsi + rax]
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
 	mov [rdx].state.pcm_bufferread, eax
 
 	shl r12d, 8								; convert to 16bit space
+
 	mov ecx, [rdx].state.pcm_volume
 	imul r12d, [rdx].state.pcm_volume		; apply volume
 	shr r12d, 6								; only conisder top bits
@@ -256,7 +257,7 @@ pcm_8bit_stereo:
 	je no_data
 
 	mov rsi, [rdx].state.pcm_ptr
-	movzx r12, byte ptr [rsi + rax]
+	movsx r12, byte ptr [rsi + rax]
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
@@ -301,7 +302,7 @@ pcm_16bit_mono:
 	je no_data
 
 	mov rsi, [rdx].state.pcm_ptr
-	movzx r12, byte ptr [rsi + rax]			; first byte is the low part
+	movsx r12, byte ptr [rsi + rax]			; first byte is the low part
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
@@ -351,7 +352,7 @@ pcm_16bit_stereo:
 	je no_data
 
 	mov rsi, [rdx].state.pcm_ptr
-	movzx r12, byte ptr [rsi + rax]
+	movsx r12, byte ptr [rsi + rax]
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK

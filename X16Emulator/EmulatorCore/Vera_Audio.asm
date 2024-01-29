@@ -235,7 +235,7 @@ pcm_8bit_mono:
 
 	mov ecx, [rdx].state.pcm_volume
 	imul r12d, [rdx].state.pcm_volume		; apply volume
-	shr r12d, 6								; only conisder top bits
+	sar r12d, 6								; only conisder top bits
 	mov [rdx].state.pcm_value_l, r12d
 	mov [rdx].state.pcm_value_r, r12d
 	mov r13, r12	
@@ -264,7 +264,7 @@ pcm_8bit_stereo:
 
 	shl r12d, 8								; convert to 16bit space
 	imul r12d, [rdx].state.pcm_volume		; apply volume
-	shr r12d, 6								; only conisder top bits
+	sar r12d, 6								; only conisder top bits
 	mov [rdx].state.pcm_value_l, r12d
 
 	mov r13, r12							; if fifo is empty, then we use previous read
@@ -278,7 +278,7 @@ pcm_8bit_stereo:
 
 	shl r13d, 8								; convert to 16bit space
 	imul r13d, [rdx].state.pcm_volume		; apply volume
-	shr r13d, 6								; only conisder top bits
+	sar r13d, 6								; only conisder top bits
 
 pcm_8bit_stereo_r_done:
 	mov [rdx].state.pcm_value_r, r13d
@@ -339,7 +339,7 @@ pcm_16bit_mono_setval:
 
 	movsx r12, r12w
 	imul r12d, [rdx].state.pcm_volume		; apply volume
-	shr r12d, 6								; only conisder top bits
+	sar r12d, 6								; only conisder top bits
 	mov [rdx].state.pcm_value_l, r12d
 	mov [rdx].state.pcm_value_r, r12d
 	mov r13, r12	
@@ -411,10 +411,10 @@ pcm_16bit_stereo_missing3:
 pcm_16bit_stereo_setval:
 
 	imul r12d, [rdx].state.pcm_volume		; apply volume
-	shr r12d, 6								; only conisder top bits
+	sar r12d, 6								; only conisder top bits
 	mov [rdx].state.pcm_value_l, r12d
 	imul r13d, [rdx].state.pcm_volume		; apply volume
-	shr r13d, 6								; only conisder top bits
+	sar r13d, 6								; only conisder top bits
 	mov [rdx].state.pcm_value_r, r13d
 
 	; check if now empty and set flag if so

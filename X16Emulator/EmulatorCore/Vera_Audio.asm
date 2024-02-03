@@ -416,18 +416,30 @@ vera_step_psg_init:
 vera_step_psg:
 	; AFLOW
 	mov eax, [rdx].state.pcm_bufferwrite
-	sub eax, [rdx].state.pcm_bufferread
-	and eax, 0fffh
+	mov ebx, [rdx].state.pcm_bufferread
+
+	; need to sign extend these from 12bit to 16bit.
+	shl eax, 4
+	shl ebx, 4
+	sar ax, 4
+	sar bx, 4
+
+	sub ax, bx
+
+	;and eax, 0fffh
 
 	xor ebx, ebx
 	mov rcx, 01000b					; AFLOW flag
-	cmp eax, 0400h
-	cmova ecx, ebx					; clear if greater
+	and ax, 0c00h
+	cmovnz ecx, ebx					; clear if greater
 	movzx rbx, byte ptr [rsi+ISR]
 	and ebx, 011110111b				; clear
 	or ebx, ecx						; set if neccesary
 	mov byte ptr [rsi+ISR], bl		; write
-	shr ecx, 4
+
+	movzx rbx, byte ptr[rsi+IEN]
+	and ecx, ebx
+	shr ecx, 3
 	or byte ptr [rdx].state.interrupt, cl
 
 	; now process the PSG voices

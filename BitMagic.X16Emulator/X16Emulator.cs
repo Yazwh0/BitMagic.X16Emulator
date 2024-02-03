@@ -432,7 +432,7 @@ public class Emulator : IDisposable
 
         public uint YmCpuPartial = 0;
 
-        public uint ViaInterrupt = 0;
+        public uint Via_Interrupt = 0;
 
         public uint RomBank = 0;
 

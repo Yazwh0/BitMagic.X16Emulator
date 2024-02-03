@@ -181,6 +181,8 @@ state struct
 
 	ym_cpu_partial			dword ?
 
+	via_interrupt			dword ?
+
 	rom_bank				dword ?
 
 	register_pc				word ?

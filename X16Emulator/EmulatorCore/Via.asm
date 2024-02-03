@@ -90,8 +90,8 @@ via_write_state endp
 ; use rcx to keep track of if nmi is set
 via_step proc	
 	xor rbx, rbx
-	movzx rcx, byte ptr [rdx].state.nmi
-	mov byte ptr [rdx].state.nmi_previous, cl
+	;movzx rcx, byte ptr [rdx].state.nmi
+	;mov byte ptr [rdx].state.nmi_previous, cl
 	movzx rdi, byte ptr [rsi + V_IFR]
 
 	mov r13, qword ptr [rdx].state.clock_previous
@@ -165,11 +165,13 @@ via_step proc
 
 	timer2_alldone:
 
-	mov cl, byte ptr[rsi + V_IER]
+	movzx ecx, byte ptr[rsi + V_IER]
 	and cl, 7fh
 	and cl, dil
 	setnz cl							; change to 1 if non zero
-	mov byte ptr [rdx].state.nmi, cl	; set nmi
+	;mov byte ptr [rdx].state.nmi, cl	; set nmi
+	mov [rdx].state.via_interrupt, ecx
+	or [rdx].state.interrupt, cl		; set interrupt but dont clobber
 
 	and dil, 7fh		; mask of irq bits
 	mov rax, 80h
@@ -177,7 +179,7 @@ via_step proc
 	cmovz rax, rbx
 	or dil, al
 
-	mov byte ptr [rsi + V_IFR], dil		; mask on interrupt bit if nmi is high
+	mov byte ptr [rsi + V_IFR], dil		; mask on interrupt bit if irq is high
 	
 	ret
 via_step endp

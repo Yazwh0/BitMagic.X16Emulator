@@ -269,7 +269,7 @@ pcm_8bit_stereo:
 
 	mov r13, r12							; if fifo is empty, then we use previous read
 	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je pcm_8bit_stereo_r_done
+	je no_data
 
 	movzx r13, byte ptr [rsi + rax]
 
@@ -308,7 +308,7 @@ pcm_16bit_mono:
 	and eax, VERA_BUFFER_MASK
 
 	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je pcm_16bit_mono_noval
+	je no_data
 	
 	movsx rbx, byte ptr [rsi + rax]			; second byte is the high part
 	shl ebx, 8
@@ -316,14 +316,6 @@ pcm_16bit_mono:
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
-
-	jmp pcm_16bit_mono_setval
-
-pcm_16bit_mono_noval:
-	; r12 has the first low byte set, need to put the same in the high byte
-	mov r13, r12
-	shl r13d, 8
-	or r12d, r13d
 
 pcm_16bit_mono_setval:
 	mov [rdx].state.pcm_bufferread, eax
@@ -358,7 +350,7 @@ pcm_16bit_stereo:
 	and eax, VERA_BUFFER_MASK
 	
 	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je pcm_16bit_stereo_missing1
+	je no_data
 	
 	movsx rbx, byte ptr [rsi + rax]
 	shl ebx, 8
@@ -368,7 +360,7 @@ pcm_16bit_stereo:
 	and eax, VERA_BUFFER_MASK
 		
 	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je pcm_16bit_stereo_missing2
+	je no_data
 
 	movzx r13, byte ptr [rsi + rax]
 	
@@ -376,7 +368,7 @@ pcm_16bit_stereo:
 	and eax, VERA_BUFFER_MASK
 		
 	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je pcm_16bit_stereo_missing3
+	je no_data
 
 	movzx rbx, byte ptr [rsi + rax]
 	shl ebx, 8
@@ -387,26 +379,6 @@ pcm_16bit_stereo:
 
 	jmp pcm_16bit_stereo_setval
 
-; only read in one byte - r12 only has bottom byte
-pcm_16bit_stereo_missing1: 
-	mov r13d, r12d
-	shl r13d, 8
-	or r12d, r13d
-	mov r13d, r12d
-	jmp pcm_16bit_stereo_setval
-
-; only read in two bytes - r12 is good
-pcm_16bit_stereo_missing2:
-	mov r13, r12
-	jmp pcm_16bit_stereo_setval
-
-; only read in three bytes - r12 is good, r13 only has bottom byte
-pcm_16bit_stereo_missing3:
-	mov ebx, r13d
-	shl ebx, 8
-	or r13d, ebx
-
-	jmp pcm_16bit_stereo_setval
 
 pcm_16bit_stereo_setval:
 

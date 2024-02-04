@@ -20,6 +20,7 @@ state struct
 	sleep					qword ?
 	step_ym					qword ?
 	write_registers_ym		qword ?
+
 	ym_timer0				dword ?
 	ym_timer1				dword ?
 	ym_busy_timer			dword ?

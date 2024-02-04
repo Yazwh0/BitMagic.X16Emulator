@@ -6,7 +6,7 @@
 #define YM_WRAPPER
 
 
-class ym_wrapper : public ymfm::ymfm_interface
+class ym_wrapper : private ymfm::ymfm_interface
 {
 private:
 	ymfm::ym2151 _ym_emulator;

@@ -39,6 +39,7 @@ int32_t fnEmulatorCode(void* state)
 
     if (!_initialised)
     {
+        _ym = new ym_wrapper(actState);
         actState->GetTicks = &getTicks;
         actState->Sleep = &sleepWrapper;
         actState->step_ym = &step_ym;

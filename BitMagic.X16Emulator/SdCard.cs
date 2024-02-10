@@ -3,6 +3,7 @@
 using BitMagic.DiscUtils.Vhd;
 using BitMagic.DiscUtils;
 using BitMagic.DiscUtils.Partitions;
+using BitMagic.Common;
 
 namespace BitMagic.X16Emulator;
 
@@ -22,9 +23,12 @@ public unsafe class SdCard : IDisposable
     internal object Lock = new object();
     internal List<string> FileUpdates = new List<string>();
 
-    public SdCard(ulong size)
+    private readonly IEmulatorLogger _logger;
+
+    public SdCard(ulong size, IEmulatorLogger logger)
     {
-        Console.WriteLine($"Creating new {size}MB SD Card.");
+        _logger = logger;
+        _logger.LogLine($"Creating new {size}MB SD Card.");
         InitNewCard(size * 1024 * 1024 + 512); // add VHD header
 
         if (_data is null)
@@ -36,15 +40,16 @@ public unsafe class SdCard : IDisposable
         FileSystem = FatFileSystem.FormatPartition(disk, 0, "BITMAGIC!", true);
     }
 
-    public SdCard(string sdcardFilename)
+    public SdCard(string sdcardFilename, IEmulatorLogger logger)
     {
-        Console.Write($"Loading SD Card from '{sdcardFilename}'");
+        _logger = logger;
+        _logger.Log($"Loading SD Card from '{sdcardFilename}'");
         using var fileStream = new FileStream(sdcardFilename, FileMode.Open, FileAccess.Read);
         var (data, requiresVhd) = SdCardImageHelper.ReadFile(sdcardFilename, fileStream);
 
         if (requiresVhd)
         {
-            Console.WriteLine(" adding VHD header.");
+            _logger.LogLine(" adding VHD header.");
             InitNewCard((ulong)data.Length + 512); // add VHD header
 
             if (_data is null)
@@ -61,7 +66,7 @@ public unsafe class SdCard : IDisposable
         }
         else
         {
-            Console.WriteLine(".");
+            _logger.LogLine(".");
             InitNewCard(data);
 
             if (_data is null)
@@ -104,7 +109,7 @@ public unsafe class SdCard : IDisposable
         _watching = false;
     }
 
-    private static void WatchSdCard(SdCard card)
+    private void WatchSdCard(SdCard card)
     {
         Dictionary<string, long> previousEntries = card.FileSystem.Root.GetFiles().ToDictionary(i => i.Name, i => i.Length);
         List<DiscFileInfo> files = new List<DiscFileInfo>();
@@ -132,14 +137,14 @@ public unsafe class SdCard : IDisposable
                         if (previous != file.Length) // todo change to a proper check
                         {
                             // amend!
-                            Console.WriteLine($"[X16] >> [PC] Amend: '{file.Name}'");
+                            _logger.LogLine($"[X16] >> [PC] Amend: '{file.Name}'");
                             writeFile = true;
                         }
                     }
                     else
                     {
                         // new file!
-                        Console.Write($"[X16] >> [PC] New: '{file.Name}'...");
+                        _logger.Log($"[X16] >> [PC] New: '{file.Name}'...");
                         writeFile = true;
                     }
 
@@ -156,7 +161,7 @@ public unsafe class SdCard : IDisposable
                         datastream.Close();
                         fs.Close();
 
-                        Console.WriteLine(" Done.");
+                        _logger.LogLine(" Done.");
                     }
                     files.Add(file);
                 }
@@ -211,7 +216,7 @@ public unsafe class SdCard : IDisposable
     // Copies a directory and starts a watcher
     public void SetHomeDirectory(string directory, bool hostFsToSdCardSync)
     {
-        Console.WriteLine($"Setting home directory to '{directory}'.");
+        _logger.LogLine($"Setting home directory to '{directory}'.");
         _homeFolder = directory;
 
         AddDirectoryFiles(directory);
@@ -231,7 +236,7 @@ public unsafe class SdCard : IDisposable
     private void _watcher_Error(object sender, ErrorEventArgs e)
     {
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine(e.ToString());
+        _logger.LogLine(e.ToString());
         Console.ResetColor();
     }
 
@@ -249,7 +254,7 @@ public unsafe class SdCard : IDisposable
 
     public void AddDirectory(string directory)
     {
-        Console.WriteLine($"Adding files from '{directory}':");
+        _logger.LogLine($"Adding files from '{directory}':");
         AddDirectoryFiles(directory);
     }
 
@@ -284,7 +289,7 @@ public unsafe class SdCard : IDisposable
         lock (Lock)
         {
             var actName = FixFilename(filename);
-            Console.WriteLine($"[PC] >> [16] Creating : {actName}");
+            _logger.LogLine($"[PC] >> [16] Creating : {actName}");
 
             using var file = FileSystem.OpenFile(actName, FileMode.CreateNew, FileAccess.Write);
             file.Write(data);
@@ -300,11 +305,11 @@ public unsafe class SdCard : IDisposable
             var actName = FixFilename(filename);
             if (FileUpdates.Contains(actName))
             {
-                Console.WriteLine($"[PC] >> [16] Skipping : {actName}");
+                _logger.LogLine($"[PC] >> [16] Skipping : {actName}");
                 return;
             }
 
-            Console.Write($"[PC] >> [16] Adding: '{filename}'");
+            _logger.Log($"[PC] >> [16] Adding: '{filename}'");
             byte[] source;
             try
             {
@@ -312,15 +317,15 @@ public unsafe class SdCard : IDisposable
             }
             catch (IOException e)
             {
-                Console.WriteLine(" Error.");
-                Console.WriteLine($"Error opening file, ({e.Message}) trying again in 1s.");
+                _logger.LogLine(" Error.");
+                _logger.LogLine($"Error opening file, ({e.Message}) trying again in 1s.");
                 Thread.Sleep(1000);
 
-                Console.Write($"[PC] >> [16] Adding: '{filename}'");
+                _logger.Log($"[PC] >> [16] Adding: '{filename}'");
                 source = File.ReadAllBytes(filename);
             }
 
-            Console.Write($" -> '{actName}'...");
+            _logger.Log($" -> '{actName}'...");
 
             if (FileSystem.FileExists(actName))
             {
@@ -333,7 +338,7 @@ public unsafe class SdCard : IDisposable
 
             FileSystem.UpdateFsInfoFreeSpace();
 
-            Console.WriteLine(" Done.");
+            _logger.LogLine(" Done.");
         }
     }
 
@@ -344,22 +349,22 @@ public unsafe class SdCard : IDisposable
             var actName = FixFilename(filename);
             if (FileUpdates.Contains(actName))
             {
-                Console.WriteLine($"[PC] >> [16] Skipping : {actName}");
+                _logger.LogLine($"[PC] >> [16] Skipping : {actName}");
                 return;
             }
 
-            Console.Write($"[PC] >> [16] Deleteing: '{filename}' -> '{actName}'... ");
+            _logger.Log($"[PC] >> [16] Deleteing: '{filename}' -> '{actName}'... ");
 
             if (FileSystem.FileExists(actName))
             {
                 FileSystem.DeleteFile(actName);
                 FileSystem.UpdateFsInfoFreeSpace();
 
-                Console.WriteLine(" Done.");
+                _logger.LogLine(" Done.");
             }
             else
             {
-                Console.WriteLine(" Does not exist.");
+                _logger.LogLine(" Does not exist.");
             }
         }
     }
@@ -368,13 +373,13 @@ public unsafe class SdCard : IDisposable
     {
         if (!File.Exists(filename) || canOverwrite)
         {
-            Console.Write($"Writing '{filename}'...");
+            _logger.Log($"Writing '{filename}'...");
             SdCardImageHelper.WriteFile(filename, _data);
-            Console.WriteLine(" Done.");
+            _logger.LogLine(" Done.");
             return;
         }
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine($"SD Card image already exists '{filename}'. Nothing saved.");
+        _logger.LogLine($"SD Card image already exists '{filename}'. Nothing saved.");
         Console.ResetColor();
     }
 

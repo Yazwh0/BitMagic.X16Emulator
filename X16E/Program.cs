@@ -297,9 +297,9 @@ static class Program
         else
             emulator.FrameControl = FrameControl.Synced;
 
-        emulator.Brk_Causes_Stop = true;
+        emulator.Brk_Causes_Stop = false;
 
-        SdCard sdCard = string.IsNullOrEmpty(options.SdCardFileName) ? new SdCard(options.SdCardSize) : new SdCard(options.SdCardFileName);
+        SdCard sdCard = string.IsNullOrEmpty(options.SdCardFileName) ? new SdCard(options.SdCardSize, new ConsoleLogger()) : new SdCard(options.SdCardFileName , new ConsoleLogger());
 
         emulator.LoadSdCard(sdCard);
 

@@ -3388,10 +3388,6 @@ xCB_wai endp
 ;
 
 x00_brk proc
-    mov eax, dword ptr [rdx].state.brk_causes_stop
-    test eax, eax
-    jnz stop_emulation
-
     ; store stack info for debugging
     mov rcx, r11
     sub rcx, 1
@@ -3429,11 +3425,13 @@ x00_brk proc
     call copy_rombank0_to_memory
 
     mov rdi, [rdx].state.rom_ptr
-    mov r11w, word ptr [rdi + 03ffah] ; get address at $fffa of current rom
+    mov r11w, word ptr [rdi + 03ffeh] ; get address at $fffe of current rom
 
     add r14, 7							; Clock 
 
-    jmp next_opcode
+    mov eax, dword ptr [rdx].state.brk_causes_stop
+    test eax, eax
+    jz next_opcode
 
 stop_emulation:
     write_state_obj

@@ -185,18 +185,27 @@ asm_func proc state_ptr:QWORD
 
     pop rdx
     
-    ; get base ticks to compare against, only do this on the iniital start.
-    mov eax, [rdx].state.initial_startup
-    test eax, eax
-    jz not_initial
-
     push rdx
     push rcx
     call qword ptr [rdx].state.get_ticks
     pop rcx
     pop rdx
+
+    ; get base ticks to compare against, only do this on the iniital start.
+    mov ebx, [rdx].state.initial_startup
+    test ebx, ebx
+    jz set_adjustment
+
     mov [rdx].state.base_ticks, rax
-not_initial:
+
+    jmp clock_done
+
+set_adjustment:
+    ; set the time adjustment that is applied to the getticks to account for debugging time
+    sub rax, [rdx].state.clock_pause
+    add [rdx].state.base_ticks, rax     ; increase base ticks by the time we were paused.
+
+clock_done:
 
     call vera_init
     call via_init
@@ -230,11 +239,85 @@ skip_stepping:
     jl cpu_running
     jg exit_loop
 
+    ; if we're in a wait loop and holding for a control pulse, then we do this seperatly as we need to
+    ; adjust the time base
+    pushf
+    push rsi
+    push r15
+    push r14
+    push r13
+    push r12
+    push r11
+    push r10
+    push r9
+    push r8
+
+    push rdx
+    push rcx
+    call qword ptr [rdx].state.get_ticks
+    pop rcx
+    pop rdx
+
+    mov [rdx].state.clock_pause, rax
+
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+    pop r12
+    pop r13
+    pop r14
+    pop r15
+    pop rsi
+    popf
+
+wait_loop:
+    ; check for control
+    mov eax, dword ptr [rdx].state.control
+    cmp eax, 1
+    ; 0: run
+    ; 1: wait
+    ; 2: finished
+    jl wait_complete
+    jg exit_loop
+
     pause
 
     clflushopt [rdx].state.control
 
-    jmp skip_stepping	; spin while waiting for control
+    jmp wait_loop	; spin while waiting for control
+
+wait_complete:
+    pushf
+    push rsi
+    push r15
+    push r14
+    push r13
+    push r12
+    push r11
+    push r10
+    push r9
+    push r8
+
+    push rdx
+    push rcx
+    call qword ptr [rdx].state.get_ticks
+    pop rcx
+    pop rdx
+
+    sub rax, [rdx].state.clock_pause
+    add [rdx].state.base_ticks, rax     ; increase base ticks by the time we were paused.
+
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+    pop r12
+    pop r13
+    pop r14
+    pop r15
+    pop rsi
+    popf
 
 cpu_running:
     mov qword ptr [rdx].state.clock_previous, r14	; need prev clock so we know the delta
@@ -583,6 +666,14 @@ exit_loop:
     
     ; return all ok
     write_state_obj
+
+    push rdx
+    ; dont need to save CPU registers, as they are now stored
+    call qword ptr [rdx].state.get_ticks    ; ticks to rax
+    pop rdx
+
+    mov [rdx].state.clock_pause, rax
+
     mov eax, [rdx].state.exit_code
 
     restore_registers
@@ -599,6 +690,14 @@ step_exit:
     clflushopt [rdx].state.render_ready
 
     write_state_obj
+
+    push rdx
+    ; dont need to save CPU registers, as they are now stored
+    call qword ptr [rdx].state.get_ticks    ; ticks to rax
+    pop rdx
+
+    mov [rdx].state.clock_pause, rax
+
     mov rax, EXIT_STEPPING    ; stepping
 
     restore_registers
@@ -611,6 +710,14 @@ breakpoint_exit:
     clflushopt [rdx].state.render_ready
 
     write_state_obj
+
+    push rdx
+    ; dont need to save CPU registers, as they are now stored
+    call qword ptr [rdx].state.get_ticks    ; ticks to rax
+    pop rdx
+
+    mov [rdx].state.clock_pause, rax
+
     mov rax, EXIT_BREAKPOINT    ; breakpoint
 
     restore_registers
@@ -3435,9 +3542,17 @@ x00_brk proc
 
 stop_emulation:
     write_state_obj
-    mov rax, 03h
+    
+    push rdx
+    ; dont need to save CPU registers, as they are now stored
+    call qword ptr [rdx].state.get_ticks    ; ticks to rax
+    pop rdx
+
+    mov [rdx].state.clock_pause, rax
 
     restore_registers
+
+    mov rax, 03h
 
     leave
     ret
@@ -3456,9 +3571,17 @@ xDB_stp proc
 
     ; return stp was hit.
     write_state_obj
-    mov rax, 02h
+
+    push rdx
+    ; dont need to save CPU registers, as they are now stored
+    call qword ptr [rdx].state.get_ticks    ; ticks to rax
+    pop rdx
+
+    mov [rdx].state.clock_pause, rax
 
     restore_registers
+
+    mov rax, 02h
 
     leave
     ret
@@ -3469,9 +3592,17 @@ noinstruction PROC
 
     ; return error	
     write_state_obj
-    mov rax, 01h
+
+    push rdx
+    ; dont need to save CPU registers, as they are now stored
+    call qword ptr [rdx].state.get_ticks    ; ticks to rax
+    pop rdx
+
+    mov [rdx].state.clock_pause, rax
 
     restore_registers
+
+    mov rax, 01h
 
     leave
     ret

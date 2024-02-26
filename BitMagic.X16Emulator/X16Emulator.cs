@@ -321,6 +321,7 @@ public class Emulator : IDisposable
 
         public ulong Clock_Previous = 0x00;
         public ulong Clock = 0x00;
+        public ulong Clock_Pause = 0x00;
         public ulong Clock_AudioNext = 0;
         public ulong Clock_YmNext = 0;
         public ulong Last_CpuLineClock = 0x00;

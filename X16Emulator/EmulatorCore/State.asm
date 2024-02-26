@@ -69,6 +69,7 @@ state struct
 
 	clock_previous			qword ?
 	clock					qword ?
+	clock_pause				qword ?
 	clock_audionext			qword ?
 	clock_ymnext			qword ?
 	last_cpulineclock		qword ?

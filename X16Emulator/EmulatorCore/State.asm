@@ -187,6 +187,21 @@ state struct
 
 	rom_bank				dword ?
 
+	; VERA FX
+	fx_addr_mode			dword ?
+
+	fx_cache				dword ?
+	fx_cache_fill			dword ?
+	fx_cache_write			dword ?
+	fx_cache_index			dword ?
+	fx_4bit_mode			dword ?
+	fx_transparancy			dword ?
+	fx_one_byte_cycling		dword ?
+	fx_2byte_cache_incr		dword ?
+	fx_cache_fill_shift		dword ?
+
+	; End FX
+
 	register_pc				word ?
 	stackpointer			word ?
 

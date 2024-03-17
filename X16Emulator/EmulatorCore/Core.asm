@@ -509,9 +509,14 @@ opcode_done::
 
 check_line_type:
     ; set high bit in DC_Video for odd\even line, just flip per line.
+    mov cl, byte ptr [rsi+CTRL]
+    and cl, 7eh
+    jnz not_dc_sel0
+
     mov cl, byte ptr [rsi+DC_VIDEO]
     xor cl, 10000000b
     mov byte ptr [rsi+DC_VIDEO], cl
+not_dc_sel0:
 
     mov [rdx].state.cpu_posy, rbx
     cmp rbx, VBLANK

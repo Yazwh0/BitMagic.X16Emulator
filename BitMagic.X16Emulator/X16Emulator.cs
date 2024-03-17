@@ -197,6 +197,28 @@ public class Emulator : IDisposable
         public unsafe Span<PsgVoice> PsgVoices => new Span<PsgVoice>((void*)_emulator._state.PsgPtr, 16);
     }
 
+    public class VeraFxState
+    {
+        private readonly Emulator _emulator;
+
+        public VeraFxState(Emulator emulator)
+        {
+            _emulator = emulator;
+        }
+
+        public uint AddrMode { get => _emulator._state.FxAddrMode; set => _emulator._state.FxAddrMode = value; }
+        public bool Fx4BitMode { get => _emulator._state.Fx4BitMode != 0; set => _emulator._state.Fx4BitMode = value ? 1u : 0u; }
+        public bool CacheWrite { get => _emulator._state.FxCacheWrite != 0; set => _emulator._state.FxCacheWrite = value ? 1u : 0u; }
+        public bool Cachefill { get => _emulator._state.FxCacheFill != 0; set => _emulator._state.FxCacheFill = value ? 1u : 0u; }
+        public bool TransparantWrites { get => _emulator._state.FxTransparancy != 0; set => _emulator._state.FxTransparancy = value ? 1u : 0u; }
+        public bool OneByteCycling { get => _emulator._state.FxOneByteCycling != 0; set => _emulator._state.FxOneByteCycling = value ? 1u : 0u; }
+        public bool TwoByteCacheIncr { get => _emulator._state.Fx2ByteCacheIncr != 0; set => _emulator._state.Fx2ByteCacheIncr = value ? 1u : 0u; }
+        public uint Cache { get => _emulator._state.FxCache; set => _emulator._state.FxCache = value; }
+
+        public byte CacheIndex { get => (byte)_emulator._state.FxCacheIndex; set => _emulator._state.FxCacheIndex = (byte)(value & 0b111); }
+        public int CacheShift { get => (int)_emulator._state.FxCacheFillShift; set => _emulator._state.FxCacheFillShift = (uint)value; }
+    }
+
     public class ViaState
     {
         private readonly Emulator _emulator;
@@ -436,6 +458,21 @@ public class Emulator : IDisposable
         public uint Via_Interrupt = 0;
 
         public uint RomBank = 0;
+
+        // FX
+        public uint FxAddrMode = 0;
+
+        public uint FxCache = 0;
+        public uint FxCacheFill = 0;
+        public uint FxCacheWrite = 0;
+        public uint FxCacheIndex = 0;
+        public uint Fx4BitMode = 0;
+        public uint FxTransparancy = 0;
+        public uint FxOneByteCycling = 0;
+        public uint Fx2ByteCacheIncr = 0;
+        public uint FxCacheFillShift = 0;
+
+        // End FX
 
         public ushort Pc = 0;
         public ushort StackPointer = 0x1fd; // apparently
@@ -680,6 +717,7 @@ public class Emulator : IDisposable
     public I2cState I2c => new I2cState(this);
     public SmcState Smc => new SmcState(this);
     public VeraAudioState VeraAudio => new VeraAudioState(this);
+    public VeraFxState VeraFx => new VeraFxState(this);
 
     public uint Keyboard_ReadPosition => _state.Keyboard_ReadPosition;
     public uint Keyboard_WritePosition { get => _state.Keyboard_WritePosition; set => _state.Keyboard_WritePosition = value; }

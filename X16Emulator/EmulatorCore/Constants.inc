@@ -68,3 +68,17 @@ AUDIO_RATE		equ 9F3Ch
 AUDIO_DATA		equ 9F3Dh
 SPI_DATA		equ 9F3Eh
 SPI_CTRL		equ 9F3Fh
+
+; DCSEL 2
+DC_FX_CTRL		equ 9f29h
+
+
+; DC Selection
+DC_VER0			equ 9F29h
+DC_VER1			equ 9F2Ah
+DC_VER2			equ 9F2Bh
+DC_VER3			equ 9F2Ch
+
+VERA_VERSION_L	equ 0ffh
+VERA_VERSION_M	equ 0ffh
+VERA_VERSION_H	equ 0ffh

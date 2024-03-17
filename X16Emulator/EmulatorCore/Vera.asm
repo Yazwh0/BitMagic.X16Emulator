@@ -669,12 +669,270 @@ skip:
 	pop rsi
 endm
 
+vera_write_dataport macro
+local cannot_cache_write, cache_write, fx_4bit_pixels, no_transparancy, done
+	movzx r13, byte ptr [rsi+rbx]			; get value that has been written
+
+	cmp rdi, 01f9c0h
+	jge cannot_cache_write
+
+	test [rdx].state.fx_cache_write, 1
+	jnz cache_write
+cannot_cache_write:
+
+	mov byte ptr [rax+rdi], r13b			; store in vram
+	vera_dataupdate_stuctures
+	jmp done
+
+cache_write:
+	push rdi
+	and rdi, 1fffch							; cache writes are 4 byte alligned
+
+	test [rdx].state.fx_transparancy, 1
+	jz no_transparancy
+
+	mov r12d, [rdx].state.fx_cache			; get the cache value
+
+	push rsi
+	push r8
+
+	xor ecx, ecx							; we'll use ecx for the mask
+	xor r8d, r8d							; resuling mask
+
+	test [rdx].state.fx_4bit_mode, 1
+	jnz fx_4bit_pixels
+
+	; check for transparent pixels
+	mov r13d, 0ffh
+	test r12d, r13d
+	cmovnz r8d, r13d
+
+	shl r13d, 8								; now $ff00
+	test r12d, r13d							; check cache byte vs mask
+	cmovnz ecx, r13d						; if it has a value, its not zero to set exc to mask
+	or r8d, ecx								; or on the result to the total
+
+	xor ecx, ecx
+
+	shl r13d, 8								; now $ff0000
+	test r12d, r13d
+	cmovnz ecx, r13d
+	or r8d, ecx
+
+	xor ecx, ecx
+
+	shl r13d, 8								; now $ff000000
+	test r12d, r13d
+	cmovnz ecx, r13d
+	or r8d, ecx								; r8d now contains the full mask of actual values
+
+	xor r8d, 0ffffffffh						; invert as we apply this tot he current vaule
+
+	mov esi, [rax+rdi]						; current value
+	and esi, r8d							; remove non-zero items
+	or r12d, esi							; or in the values from memory
+
+	pop r8
+	pop rsi
+
+	mov [rax+rdi], r12d						; update vram
+
+	pop rdi
+	jmp done
+
+fx_4bit_pixels:
+
+	; check for transparent pixels
+	mov r13d, 0fh
+	test r12d, r13d
+	cmovnz r8d, r13d
+
+	shl r13d, 4								; now $f0
+	test r12d, r13d							; check cache byte vs mask
+	cmovnz ecx, r13d						; if it has a value, its not zero to set exc to mask
+	or r8d, ecx								; or on the result to the total
+
+	xor ecx, ecx
+
+	shl r13d, 4								; now $f00
+	test r12d, r13d
+	cmovnz ecx, r13d
+	or r8d, ecx
+
+	xor ecx, ecx
+
+	shl r13d, 4								; now $f000
+	test r12d, r13d
+	cmovnz ecx, r13d
+	or r8d, ecx
+
+	xor ecx, ecx
+
+	shl r13d, 4								; now $f-0000
+	test r12d, r13d
+	cmovnz ecx, r13d
+	or r8d, ecx
+
+	xor ecx, ecx
+
+	shl r13d, 4								; now $f0-0000
+	test r12d, r13d
+	cmovnz ecx, r13d
+	or r8d, ecx
+
+	xor ecx, ecx
+
+	shl r13d, 4								; now $f00-0000
+	test r12d, r13d
+	cmovnz ecx, r13d
+	or r8d, ecx
+
+	xor ecx, ecx
+
+	shl r13d, 4								; now $f000-0000
+	test r12d, r13d
+	cmovnz ecx, r13d
+	or r8d, ecx								; r8d now contains the full mask of actual values
+
+	xor r8d, 0ffffffffh						; invert as we apply this tot he current vaule
+
+	mov esi, [rax+rdi]						; current value
+	and esi, r8d							; remove non-zero items
+	or r12d, esi							; or in the values from memory
+
+	pop r8
+	pop rsi
+
+	mov [rax+rdi], r12d						; update vram
+
+	pop rdi
+	jmp done
+
+no_transparancy:
+	push r8
+
+	lea r12, data_cache_mask
+	mov r13, [r12 + r13 * 4]
+
+	mov r12d, [rdx].state.fx_cache			; get the cache value and AND the mask
+	and r12d, r13d
+
+	xor r13d, 0ffffffffh					; invert to use against value in ram
+	mov r8d, [rax+rdi]						; get current value
+	and r8d, r13d							; mask
+
+	or r12d, r8d							; and combine the two masked variables
+
+	mov [rax+rdi], r12d						; update vram
+
+	pop r8
+	pop rdi
+
+done:
+endm
+
+vera_read_dataport_cache macro
+local done, fx_4bit_pixels, fx_2_byte, cache_done
+		; if cache fill is enabled need to add the current data 0 value to the cache
+		test [rdx].state.fx_cache_fill, 1
+		jz done
+
+		movzx r13, byte ptr [rsi+rbx]
+
+		push rax
+
+		mov r12d, [rdx].state.fx_cache_fill_shift
+
+		test [rdx].state.fx_4bit_mode, 1
+		jnz fx_4bit_pixels
+
+		mov eax, 0ffh
+		shlx eax, eax, r12d						; mask
+		shlx r13d, r13d, r12d					; value
+		xor eax, 0ffffffffh
+
+		test [rdx].state.fx_2byte_cache_incr, 1
+		jnz fx_2_byte
+
+		; store shift while its in r12
+		add r12d, 8
+		and r12d, 01fh
+		mov [rdx].state.fx_cache_fill_shift, r12d
+
+		mov r12d, [rdx].state.fx_cache
+		and r12d, eax							; mask out
+		or r12d, r13d							; add value
+		mov [rdx].state.fx_cache, r12d
+
+		; update cache index
+		mov r12d, [rdx].state.fx_cache_index
+		add r12d, 2
+		and r12d, 0111b
+		mov [rdx].state.fx_cache_index, r12d
+
+		jmp cache_done
+
+	fx_2_byte:
+		; if two byte increment is one, we just need to flip bottom index, rather than inc
+
+		; store shift while its in r12
+		xor r12d, 8
+		mov [rdx].state.fx_cache_fill_shift, r12d
+
+		mov r12d, [rdx].state.fx_cache
+		and r12d, eax							; mask out
+		or r12d, r13d							; add value
+		mov [rdx].state.fx_cache, r12d
+
+		; update cache index
+		mov r12d, [rdx].state.fx_cache_index
+		xor r12d, 2
+		mov [rdx].state.fx_cache_index, r12d
+
+		jmp cache_done
+
+	fx_4bit_pixels:
+
+		mov eax, 00fh							
+		and r13d, 0f0h							; isolate bottom 4 bits and move into position
+		shr r13d, 4
+		xor r12d, 4								; adjust for endieness of 4 bit data
+
+		shlx eax, eax, r12d						; mask
+		shlx r13d, r13d, r12d					; value
+		xor eax, 0ffffffffh
+
+		; store shift while its in r12
+		xor r12d, 4								; revert to store
+		add r12d, 4
+		and r12d, 01fh
+		mov [rdx].state.fx_cache_fill_shift, r12d
+
+		mov r12d, [rdx].state.fx_cache
+		and r12d, eax							; mask out
+		or r12d, r13d							; add value
+		mov [rdx].state.fx_cache, r12d
+
+		; update cache index
+		mov r12d, [rdx].state.fx_cache_index
+		inc r12d
+		and r12d, 0111b
+		mov [rdx].state.fx_cache_index, r12d
+
+	cache_done:
+		pop rax
+
+	done:
+endm
+
+
 ; rbx			address
 ; [rsi+rbx]		output location in main memory
 ; 
 ; should only be called if data0\data1 is read\written.
 
 vera_dataaccess_body macro doublestep, write_value
+	local cache_write_0, done_0, no_transparancy_0, fx_4bit_pixels_0, cache_write_1, done_1, no_transparancy_1 ,cache_done
 
 	mov rax, [rdx].state.vram_ptr				; get value from vram
 	push rsi
@@ -686,10 +944,11 @@ vera_dataaccess_body macro doublestep, write_value
 	mov rdi, [rdx].state.data0_address
 
 	if write_value eq 1 and doublestep eq 0
-		;call vera_render_display
-		mov r13b, byte ptr [rsi+rbx]			; get value that has been written
-		mov byte ptr [rax+rdi], r13b			; store in vram
-		vera_dataupdate_stuctures
+		vera_write_dataport
+	endif
+
+	if write_value eq 0
+		vera_read_dataport_cache
 	endif
 
 	add rdi, [rdx].state.data0_step
@@ -697,10 +956,7 @@ vera_dataaccess_body macro doublestep, write_value
 
 	if doublestep eq 1
 		if write_value eq 1
-			;call vera_render_display
-			mov r13b, byte ptr [rsi+rbx]			; get value that has been written
-			mov byte ptr [rax+rdi], r13b			; store in vram
-			vera_dataupdate_stuctures
+			vera_write_dataport
 		endif
 
 		add rdi, [rdx].state.data0_step			; perform second step
@@ -710,7 +966,7 @@ vera_dataaccess_body macro doublestep, write_value
 	mov [rdx].state.data0_address, rdi
 
 	mov r13b, byte ptr [rax+rdi]
-	mov [rsi+rbx], r13b						; store in ram
+	mov [rsi+rbx], r13b							; store in ram
 
 	xor r13, r13								; clear r13b, as we use this to detect if we need to call vera
 
@@ -742,10 +998,11 @@ step_data1:
 	mov rdi, [rdx].state.data1_address
 
 	if write_value eq 1 and doublestep eq 0
-		;call vera_render_display
-		mov r13b, byte ptr [rsi+rbx]			; get value that has been written
-		mov byte ptr [rax+rdi], r13b			; store in vram
-		vera_dataupdate_stuctures
+		vera_write_dataport
+	endif
+
+	if write_value eq 0
+		vera_read_dataport_cache
 	endif
 
 	add rdi, [rdx].state.data1_step
@@ -753,10 +1010,7 @@ step_data1:
 
 	if doublestep eq 1
 		if write_value eq 1
-			;call vera_render_display
-			mov r13b, byte ptr [rsi+rbx]		; get value that has been written
-			mov byte ptr [rax+rdi], r13b		; store in vram
-			vera_dataupdate_stuctures
+			vera_write_dataport
 		endif
 
 		add rdi, [rdx].state.data1_step
@@ -801,7 +1055,7 @@ endm
 ;
 
 vera_afterread proc
-	;dec r13
+	;dec r13%
 	vera_dataaccess_body 0, 0
 vera_afterread endp
 
@@ -924,8 +1178,9 @@ vera_update_addrh endp
 vera_update_ctrl proc
 	; todo: Handle reset
 	mov r13b, byte ptr [rsi+rbx]						; value that has been written
-	and r13b, 00000011b
+	and r13b, 01111111b									; reset if write only
 	mov byte ptr [rsi+rbx], r13b
+	push r13
 
 	; Addrsel
 	xor r12, r12
@@ -941,14 +1196,17 @@ set_addr:
 	vera_setaddress_1
 
 addr_done:
+	pop r13
 
-	xor rax, rax
+	shr r13d, 1
 
-	bt r13w, 1
-	jc set_dcsel
+	mov byte ptr [rdx].state.dcsel, r13b
 
-	mov byte ptr [rdx].state.dcsel, 0
-	
+	lea rax, dc_sel_table
+	add rax, [rax + r13 * 8]
+	jmp rax
+
+dc_sel0:
 	xor r12, r12
 	mov al, byte ptr [rdx].state.sprite_enable
 	shl rax, 6
@@ -977,6 +1235,7 @@ addr_done:
 	mov byte ptr [rsi+DC_BORDER], al
 
 	ret
+dc_sel1:
 set_dcsel:
 	mov byte ptr [rdx].state.dcsel, 1
 
@@ -997,6 +1256,123 @@ set_dcsel:
 	mov byte ptr [rsi+DC_VSTOP], al
 
 	ret
+
+dc_sel2:
+
+	mov eax, [rdx].state.fx_addr_mode
+
+	mov ebx, [rdx].state.fx_4bit_mode
+	shl ebx, 2
+	or eax, ebx
+	
+	mov ebx, [rdx].state.fx_one_byte_cycling
+	shl ebx, 4
+	or eax, ebx
+
+	mov ebx, [rdx].state.fx_cache_fill
+	shl ebx, 5
+	or eax, ebx
+
+	mov ebx, [rdx].state.fx_cache_write
+	shl ebx, 6
+	or eax, ebx
+
+	mov ebx, [rdx].state.fx_transparancy
+	shl ebx, 7
+	or eax, ebx
+
+
+	mov byte ptr [rsi+DC_FX_CTRL], al
+	
+	mov byte ptr [rsi+DC_VER1], VERA_VERSION_L
+	mov byte ptr [rsi+DC_VER2], VERA_VERSION_M
+	mov byte ptr [rsi+DC_VER3], VERA_VERSION_H
+
+	ret
+
+version:
+not_supported:
+	; default is the version
+
+	mov byte ptr [rsi+DC_VER0], 056h
+	mov byte ptr [rsi+DC_VER1], VERA_VERSION_L
+	mov byte ptr [rsi+DC_VER2], VERA_VERSION_M
+	mov byte ptr [rsi+DC_VER3], VERA_VERSION_H
+
+	ret
+
+dc_sel_table:
+	qword dc_sel0 - dc_sel_table
+	qword dc_sel1 - dc_sel_table
+	qword dc_sel2 - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword version - dc_sel_table
 vera_update_ctrl endp
 
 vera_update_ien proc
@@ -1054,11 +1430,20 @@ vera_update_irqline_l endp
 
 ; DC_VIDEO
 vera_update_9f29 proc
-	movzx r13, byte ptr [rsi+rbx]
-	movzx rax, byte ptr [rdx].state.dcsel
-	cmp byte ptr [rdx].state.dcsel, 0
-	jnz dcsel_set
 
+	movzx r13, byte ptr [rdx].state.dcsel
+	lea rax, dc_sel_table
+	add rax, [rax + r13 * 8]
+	jmp rax
+
+
+	;movzx r13, byte ptr [rsi+rbx]
+	;movzx rax, byte ptr [rdx].state.dcsel
+	;cmp byte ptr [rdx].state.dcsel, 0
+	;jnz dcsel_set
+
+dc_sel0:
+	movzx r13, byte ptr [rsi+rbx]
 	and r13, 01111111b
 	mov byte ptr [rsi+rbx], r13b
 
@@ -1081,50 +1466,518 @@ vera_update_9f29 proc
 	mov dword ptr [rdx].state.video_output, r13d
 
 	ret
-dcsel_set:
+dc_sel1:
+	movzx r13, byte ptr [rsi+rbx]
 	shl r13, 2
 	mov word ptr [rdx].state.dc_hstart, r13w
 
 	ret
+
+dc_sel2:	
+
+	movzx r13, byte ptr [rsi+rbx]
+
+	mov eax, r13d
+	and eax, 011b
+	mov [rdx].state.fx_addr_mode, eax
+
+	mov eax, r13d
+	and eax, 010000b
+	shr eax, 4
+	mov [rdx].state.fx_one_byte_cycling, eax
+
+	mov eax, r13d
+	and eax, 0100000b
+	shr eax, 5
+	mov [rdx].state.fx_cache_fill, eax
+
+	mov eax, r13d
+	and eax, 01000000b
+	shr eax, 6
+	mov [rdx].state.fx_cache_write, eax	
+
+	mov eax, r13d
+	and eax, 010000000b
+	shr eax, 7
+	mov [rdx].state.fx_transparancy, eax	
+
+	; out of order, so we can process the index
+	mov eax, r13d
+	and eax, 0100b
+	shr eax, 2
+	mov [rdx].state.fx_4bit_mode, eax
+	
+	; set cache index if based on 4bit mode
+	test eax, 1
+	jnz dc_sel2_4bit
+
+dc_sel2_8bit:
+	mov eax, [rdx].state.fx_cache_index
+	shr eax, 1
+	shl eax, 3
+	mov [rdx].state.fx_cache_fill_shift, eax
+
+	ret
+
+dc_sel2_4bit:
+	mov eax, [rdx].state.fx_cache_index
+	shl eax, 2
+	mov [rdx].state.fx_cache_fill_shift, eax
+
+	ret
+
+dc_sel6:
+	movzx r13, byte ptr [rsi+rbx]
+	mov eax, [rdx].state.fx_cache
+	and eax, 0ffffff00h
+	or eax, r13d
+	mov [rdx].state.fx_cache, eax
+		
+	mov byte ptr [rsi+rbx], r12b
+	ret
+
+dc_notsupported:
+	mov byte ptr [rsi+rbx], r12b
+	ret
+
+dc_sel_table:
+	qword dc_sel0 - dc_sel_table
+	qword dc_sel1 - dc_sel_table
+	qword dc_sel2 - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_sel6 - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
 vera_update_9f29 endp
 
 vera_update_9f2a proc
-	movzx r13, byte ptr [rsi+rbx]
-	cmp byte ptr [rdx].state.dcsel, 0
-	jnz dcsel_set
+	movzx r13, byte ptr [rdx].state.dcsel
+	lea rax, dc_sel_table
+	add rax, [rax + r13 * 8]
+	jmp rax
 
+	;movzx r13, byte ptr [rsi+rbx]
+	;cmp byte ptr [rdx].state.dcsel, 0
+	;jnz dcsel_set
+
+dc_sel0:
+	movzx r13, byte ptr [rsi+rbx]
 	shl r13, 9
 	mov dword ptr [rdx].state.dc_hscale, r13d
 	ret
 dcsel_set:
+dc_sel1:
+	movzx r13, byte ptr [rsi+rbx]
 	shl r13, 2
 	mov word ptr [rdx].state.dc_hstop, r13w
 	ret
+
+dc_sel6:
+	movzx r13, byte ptr [rsi+rbx]
+	mov eax, [rdx].state.fx_cache
+	and eax, 0ffff00ffh
+	shl r13, 8
+	or eax, r13d
+	mov [rdx].state.fx_cache, eax
+		
+	mov byte ptr [rsi+rbx], r12b
+	ret
+
+dc_notsupported:
+	mov byte ptr [rsi+rbx], r12b
+	ret
+
+dc_sel_table:
+	qword dc_sel0 - dc_sel_table
+	qword dc_sel1 - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_sel6 - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
 vera_update_9f2a endp
 
 vera_update_9f2b proc
+	movzx r13, byte ptr [rdx].state.dcsel
+	lea rax, dc_sel_table
+	add rax, [rax + r13 * 8]
+	jmp rax
+
+	;movzx r13, byte ptr [rsi+rbx]
+	;cmp byte ptr [rdx].state.dcsel, 0
+	;jnz dcsel_set
+
+dc_sel0:
 	movzx r13, byte ptr [rsi+rbx]
-	cmp byte ptr [rdx].state.dcsel, 0
-	jnz dcsel_set
 	shl r13, 9
 	mov dword ptr [rdx].state.dc_vscale, r13d
 	ret
-dcsel_set:
+dc_sel1:
+	movzx r13, byte ptr [rsi+rbx]
 	shl r13, 1
 	mov word ptr [rdx].state.dc_vstart, r13w
 	ret
+
+dc_sel6:
+	movzx r13, byte ptr [rsi+rbx]
+	mov eax, [rdx].state.fx_cache
+	and eax, 0ff00ffffh
+	shl r13, 16
+	or eax, r13d
+	mov [rdx].state.fx_cache, eax
+		
+	mov byte ptr [rsi+rbx], r12b
+	ret
+
+dc_notsupported:
+	mov byte ptr [rsi+rbx], r12b
+	ret
+
+dc_sel_table:
+	qword dc_sel0 - dc_sel_table
+	qword dc_sel1 - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_sel6 - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+
 vera_update_9f2b endp
 
 vera_update_9f2c proc
+	movzx r13, byte ptr [rdx].state.dcsel
+	lea rax, dc_sel_table
+	add rax, [rax + r13 * 8]
+	jmp rax
+
+	;movzx r13, byte ptr [rsi+rbx]
+	;cmp byte ptr [rdx].state.dcsel, 0
+	;jnz dcsel_set
+
+dc_sel0:
 	movzx r13, byte ptr [rsi+rbx]
-	cmp byte ptr [rdx].state.dcsel, 0
-	jnz dcsel_set
 	mov byte ptr [rdx].state.dc_border, r13b
 	ret
-dcsel_set:
+
+dc_sel1:
+	movzx r13, byte ptr [rsi+rbx]
 	shl r13, 1
 	mov word ptr [rdx].state.dc_vstop, r13w
 	ret
+
+dc_sel2:
+	movzx r13, byte ptr [rsi+rbx]
+	mov byte ptr [rsi+rbx], r12b	; write only
+
+	mov eax, r13d
+	and eax, 1
+	mov [rdx].state.fx_2byte_cache_incr, eax
+
+	mov eax, r13d
+	shr eax, 1
+	and eax, 0111b
+	mov [rdx].state.fx_cache_index, eax
+
+	test [rdx].state.fx_4bit_mode, 1
+	jnz dc_sel2_4bit
+
+dc_sel2_8bit:
+	shr eax, 1						; ignore nibble bit
+	shl eax, 3						; * 8
+	mov [rdx].state.fx_cache_fill_shift, eax
+
+	ret
+
+dc_sel2_4bit:
+	shl eax, 2						; * 4
+	mov [rdx].state.fx_cache_fill_shift, eax
+
+	ret
+
+dc_sel6:
+	movzx r13, byte ptr [rsi+rbx]
+	mov byte ptr [rsi+rbx], r12b	; write only
+
+	mov eax, [rdx].state.fx_cache
+	and eax, 000ffffffh
+	shl r13, 24
+	or eax, r13d
+	mov [rdx].state.fx_cache, eax
+		
+	ret
+
+dc_notsupported:
+	mov byte ptr [rsi+rbx], r12b
+	ret
+
+dc_sel_table:
+	qword dc_sel0 - dc_sel_table
+	qword dc_sel1 - dc_sel_table
+	qword dc_sel2 - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_sel6 - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+	qword dc_notsupported - dc_sel_table
+
 vera_update_9f2c endp
 
 ;
@@ -1509,5 +2362,264 @@ vera_tile_shift_table:
 	dw 3, 4
 vera_map_shift_table:
 	dw 5, 6, 7, 8
+
+align 8
+data_cache_mask:
+	dword 0ffffffffh
+	dword 0fffffff0h
+	dword 0ffffff0fh
+	dword 0ffffff00h
+	dword 0fffff0ffh
+	dword 0fffff0f0h
+	dword 0fffff00fh
+	dword 0fffff000h
+	dword 0ffff0fffh
+	dword 0ffff0ff0h
+	dword 0ffff0f0fh
+	dword 0ffff0f00h
+	dword 0ffff00ffh
+	dword 0ffff00f0h
+	dword 0ffff000fh
+	dword 0ffff0000h
+	dword 0fff0ffffh
+	dword 0fff0fff0h
+	dword 0fff0ff0fh
+	dword 0fff0ff00h
+	dword 0fff0f0ffh
+	dword 0fff0f0f0h
+	dword 0fff0f00fh
+	dword 0fff0f000h
+	dword 0fff00fffh
+	dword 0fff00ff0h
+	dword 0fff00f0fh
+	dword 0fff00f00h
+	dword 0fff000ffh
+	dword 0fff000f0h
+	dword 0fff0000fh
+	dword 0fff00000h
+	dword 0ff0fffffh
+	dword 0ff0ffff0h
+	dword 0ff0fff0fh
+	dword 0ff0fff00h
+	dword 0ff0ff0ffh
+	dword 0ff0ff0f0h
+	dword 0ff0ff00fh
+	dword 0ff0ff000h
+	dword 0ff0f0fffh
+	dword 0ff0f0ff0h
+	dword 0ff0f0f0fh
+	dword 0ff0f0f00h
+	dword 0ff0f00ffh
+	dword 0ff0f00f0h
+	dword 0ff0f000fh
+	dword 0ff0f0000h
+	dword 0ff00ffffh
+	dword 0ff00fff0h
+	dword 0ff00ff0fh
+	dword 0ff00ff00h
+	dword 0ff00f0ffh
+	dword 0ff00f0f0h
+	dword 0ff00f00fh
+	dword 0ff00f000h
+	dword 0ff000fffh
+	dword 0ff000ff0h
+	dword 0ff000f0fh
+	dword 0ff000f00h
+	dword 0ff0000ffh
+	dword 0ff0000f0h
+	dword 0ff00000fh
+	dword 0ff000000h
+	dword 0f0ffffffh
+	dword 0f0fffff0h
+	dword 0f0ffff0fh
+	dword 0f0ffff00h
+	dword 0f0fff0ffh
+	dword 0f0fff0f0h
+	dword 0f0fff00fh
+	dword 0f0fff000h
+	dword 0f0ff0fffh
+	dword 0f0ff0ff0h
+	dword 0f0ff0f0fh
+	dword 0f0ff0f00h
+	dword 0f0ff00ffh
+	dword 0f0ff00f0h
+	dword 0f0ff000fh
+	dword 0f0ff0000h
+	dword 0f0f0ffffh
+	dword 0f0f0fff0h
+	dword 0f0f0ff0fh
+	dword 0f0f0ff00h
+	dword 0f0f0f0ffh
+	dword 0f0f0f0f0h
+	dword 0f0f0f00fh
+	dword 0f0f0f000h
+	dword 0f0f00fffh
+	dword 0f0f00ff0h
+	dword 0f0f00f0fh
+	dword 0f0f00f00h
+	dword 0f0f000ffh
+	dword 0f0f000f0h
+	dword 0f0f0000fh
+	dword 0f0f00000h
+	dword 0f00fffffh
+	dword 0f00ffff0h
+	dword 0f00fff0fh
+	dword 0f00fff00h
+	dword 0f00ff0ffh
+	dword 0f00ff0f0h
+	dword 0f00ff00fh
+	dword 0f00ff000h
+	dword 0f00f0fffh
+	dword 0f00f0ff0h
+	dword 0f00f0f0fh
+	dword 0f00f0f00h
+	dword 0f00f00ffh
+	dword 0f00f00f0h
+	dword 0f00f000fh
+	dword 0f00f0000h
+	dword 0f000ffffh
+	dword 0f000fff0h
+	dword 0f000ff0fh
+	dword 0f000ff00h
+	dword 0f000f0ffh
+	dword 0f000f0f0h
+	dword 0f000f00fh
+	dword 0f000f000h
+	dword 0f0000fffh
+	dword 0f0000ff0h
+	dword 0f0000f0fh
+	dword 0f0000f00h
+	dword 0f00000ffh
+	dword 0f00000f0h
+	dword 0f000000fh
+	dword 0f0000000h
+	dword 00fffffffh
+	dword 00ffffff0h
+	dword 00fffff0fh
+	dword 00fffff00h
+	dword 00ffff0ffh
+	dword 00ffff0f0h
+	dword 00ffff00fh
+	dword 00ffff000h
+	dword 00fff0fffh
+	dword 00fff0ff0h
+	dword 00fff0f0fh
+	dword 00fff0f00h
+	dword 00fff00ffh
+	dword 00fff00f0h
+	dword 00fff000fh
+	dword 00fff0000h
+	dword 00ff0ffffh
+	dword 00ff0fff0h
+	dword 00ff0ff0fh
+	dword 00ff0ff00h
+	dword 00ff0f0ffh
+	dword 00ff0f0f0h
+	dword 00ff0f00fh
+	dword 00ff0f000h
+	dword 00ff00fffh
+	dword 00ff00ff0h
+	dword 00ff00f0fh
+	dword 00ff00f00h
+	dword 00ff000ffh
+	dword 00ff000f0h
+	dword 00ff0000fh
+	dword 00ff00000h
+	dword 00f0fffffh
+	dword 00f0ffff0h
+	dword 00f0fff0fh
+	dword 00f0fff00h
+	dword 00f0ff0ffh
+	dword 00f0ff0f0h
+	dword 00f0ff00fh
+	dword 00f0ff000h
+	dword 00f0f0fffh
+	dword 00f0f0ff0h
+	dword 00f0f0f0fh
+	dword 00f0f0f00h
+	dword 00f0f00ffh
+	dword 00f0f00f0h
+	dword 00f0f000fh
+	dword 00f0f0000h
+	dword 00f00ffffh
+	dword 00f00fff0h
+	dword 00f00ff0fh
+	dword 00f00ff00h
+	dword 00f00f0ffh
+	dword 00f00f0f0h
+	dword 00f00f00fh
+	dword 00f00f000h
+	dword 00f000fffh
+	dword 00f000ff0h
+	dword 00f000f0fh
+	dword 00f000f00h
+	dword 00f0000ffh
+	dword 00f0000f0h
+	dword 00f00000fh
+	dword 00f000000h
+	dword 000ffffffh
+	dword 000fffff0h
+	dword 000ffff0fh
+	dword 000ffff00h
+	dword 000fff0ffh
+	dword 000fff0f0h
+	dword 000fff00fh
+	dword 000fff000h
+	dword 000ff0fffh
+	dword 000ff0ff0h
+	dword 000ff0f0fh
+	dword 000ff0f00h
+	dword 000ff00ffh
+	dword 000ff00f0h
+	dword 000ff000fh
+	dword 000ff0000h
+	dword 000f0ffffh
+	dword 000f0fff0h
+	dword 000f0ff0fh
+	dword 000f0ff00h
+	dword 000f0f0ffh
+	dword 000f0f0f0h
+	dword 000f0f00fh
+	dword 000f0f000h
+	dword 000f00fffh
+	dword 000f00ff0h
+	dword 000f00f0fh
+	dword 000f00f00h
+	dword 000f000ffh
+	dword 000f000f0h
+	dword 000f0000fh
+	dword 000f00000h
+	dword 0000fffffh
+	dword 0000ffff0h
+	dword 0000fff0fh
+	dword 0000fff00h
+	dword 0000ff0ffh
+	dword 0000ff0f0h
+	dword 0000ff00fh
+	dword 0000ff000h
+	dword 0000f0fffh
+	dword 0000f0ff0h
+	dword 0000f0f0fh
+	dword 0000f0f00h
+	dword 0000f00ffh
+	dword 0000f00f0h
+	dword 0000f000fh
+	dword 0000f0000h
+	dword 00000ffffh
+	dword 00000fff0h
+	dword 00000ff0fh
+	dword 00000ff00h
+	dword 00000f0ffh
+	dword 00000f0f0h
+	dword 00000f00fh
+	dword 00000f000h
+	dword 000000fffh
+	dword 000000ff0h
+	dword 000000f0fh
+	dword 000000f00h
+	dword 0000000ffh
+	dword 0000000f0h
+	dword 00000000fh
+	dword 000000000h
 
 .code

@@ -41,6 +41,10 @@ EXIT_SMC_RESET equ 7
 
 readonly_memory equ 0c000h - 1		; stop all writes above this location
 
+BREAKPOINT_MASK equ 000001011b      ; breakpoint, debugger breakpoint and exception
+NOSTOP_MASK equ 0100b               ; locations where we dont want the debugger to stop
+EXCEPTION equ 01000b
+
 ; rax  : scratch
 ; rbx  : scratch
 ; rcx  : scratch
@@ -226,13 +230,15 @@ clock_done:
 
     jmp skip_stepping
 main_loop::
-    mov eax, [rdx].state.stepping
-    test eax, eax
+    mov rbx, qword ptr [rdx].state.breakpoint_ptr
+    test byte ptr[rbx + r11 * 4], NOSTOP_MASK
+    jnz skip_stepping
+
+    test [rdx].state.stepping, 1
     jnz step_exit
 skip_stepping:    
     ; check for control
-    mov eax, dword ptr [rdx].state.control
-    cmp eax, 1
+    cmp dword ptr [rdx].state.control, 1
     ; 0: run
     ; 1: wait
     ; 2: finished
@@ -273,8 +279,7 @@ skip_stepping:
 
 wait_loop:
     ; check for control
-    mov eax, dword ptr [rdx].state.control
-    cmp eax, 1
+    cmp dword ptr [rdx].state.control, 1
     ; 0: run
     ; 1: wait
     ; 2: finished
@@ -341,15 +346,14 @@ nmi_already_set:
 next_opcode::
     ; if we're stepping, we dont check for breakpoints
     mov eax, [rdx].state.stepping
-    test eax, eax
+    ;test eax, eax
     or eax, [rdx].state.ignore_breakpoint
     jnz dont_test_breakpoint
 
     ; check for breakpoint
     mov rbx, qword ptr [rdx].state.breakpoint_ptr
-    movzx rbx, byte ptr[rbx + r11]
+    test byte ptr[rbx + r11 * 4], BREAKPOINT_MASK
 
-    test rbx, rbx
     jnz breakpoint_exit
 
     ; check for stack breakpoint

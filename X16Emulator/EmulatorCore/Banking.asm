@@ -44,10 +44,19 @@ copy_rambank_to_memory proc
 	; breakpoints
 	mov rbx, [rdx].state.breakpoint_ptr	
 	movzx rax, byte ptr [rsi]			; ram, 0x0000 is bank number
-	shl rax, 13							; bank * 8k
-	lea rax, [rax + rbx + 010000h]		; add and adjust to start of ram breakpoint block
+	shl rax, 13	+ 2						; bank * 8k
+	lea rax, [rbx + rax + 010000h * 4]	; add and adjust to start of ram breakpoint block
 
-	add rbx, 0a000h						; destination, still rbx so breakpoint ptr
+	add rbx, 0a000h	* 4					; destination, still rbx so breakpoint ptr
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
 	jmp copy_8k							; this proc is call'd, so jmp as copy_8k as a ret.
 copy_rambank_to_memory endp
 
@@ -74,12 +83,31 @@ copy_rombank_to_memory proc
 
 	; breakpoints
 	mov rbx, [rdx].state.breakpoint_ptr	
-	movzx rax, byte ptr [rsi+1]
-	shl rax, 14							; bank * 8k
-	lea rax, [rax + rbx + 210000h]		; source
+	movzx rax, byte ptr [rsi + 1]
+	shl rax, 14 + 2							; bank * 8k * 2 * 4 (rom banks are 16k)
+	lea rax, [rbx + rax + 210000h * 4]		; source
 
-	add rbx, 0c000h
+	; break points structure is now 4 bytes, so need to call the copy 8k 2 * 4 times.
+	add rbx, 0c000h * 4
 	call copy_8k
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						; calls ret
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						; calls ret
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						; calls ret
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						; calls ret
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						; calls ret
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						; calls ret
 	add rbx, 02000h						; next dest and source
 	add rax, 02000h
 	jmp copy_8k							; calls ret
@@ -101,12 +129,31 @@ copy_rombank0_to_memory proc
 
 	; breakpoints
 	mov rbx, [rdx].state.breakpoint_ptr	
-	movzx rax, byte ptr [rsi+1]
-	shl rax, 14							; bank * 8k
-	lea rax, [rax + rbx + 210000h]		; source
+	movzx rax, byte ptr [rsi + 1]
+	shl rax, 14	+ 2						; bank * 8k * 4
+	lea rax, [rbx + rax + 210000h * 4]		; source
 
-	add rbx, 0c000h
+	; break points structure is now 4 bytes, so need to call the copy 8k 2 * 4 times.
+	add rbx, 0c000h * 4
 	call copy_8k
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						; calls ret
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						; calls ret
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						; calls ret
 	add rbx, 02000h						; next dest and source
 	add rax, 02000h
 	jmp copy_8k							; calls ret

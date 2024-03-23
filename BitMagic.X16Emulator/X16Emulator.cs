@@ -815,7 +815,7 @@ public class Emulator : IDisposable
         _smcKeyboard_ptr = (ulong)NativeMemory.Alloc(SmcKeyboardBufferSize);
         _smcMouse_ptr = (ulong)NativeMemory.Alloc(SmcMouseBufferSize);
 
-        _breakpoint_Ptr = (ulong)NativeMemory.Alloc(BreakpointSize + _rounding);
+        _breakpoint_Ptr = (ulong)NativeMemory.Alloc(BreakpointSize * 4 + _rounding);
         _breakpoint_ptr_rounded = RoundMemoryPtr(_breakpoint_Ptr);
 
         _spiHistory_ptr = (ulong)NativeMemory.Alloc(SpiHistoryPtrSize);
@@ -884,7 +884,7 @@ public class Emulator : IDisposable
         for (var i = 0; i < SpiOutboundBufferPtrSize; i++)
             spiOutboundBuffer_span[i] = 0;
 
-        var breakpoint_span = new Span<byte>((void*)_breakpoint_Ptr, BreakpointSize);
+        var breakpoint_span = new Span<uint>((void*)_breakpoint_Ptr, BreakpointSize);
         for (var i = 0; i < BreakpointSize; i++)
             breakpoint_span[i] = 0;
 
@@ -970,7 +970,7 @@ public class Emulator : IDisposable
     public unsafe Span<EmulatorHistory> History => new Span<EmulatorHistory>((void*)_history_ptr, HistorySize / 16);
     public unsafe Span<byte> KeyboardBuffer => new Span<byte>((void*)_smcKeyboard_ptr, SmcKeyboardBufferSize);
     public unsafe Span<byte> MouseBuffer => new Span<byte>((void*)_smcMouse_ptr, SmcMouseBufferSize);
-    public unsafe Span<byte> Breakpoints => new Span<byte>((void*)_breakpoint_ptr_rounded, BreakpointSize);
+    public unsafe Span<uint> Breakpoints => new Span<uint>((void*)_breakpoint_ptr_rounded, BreakpointSize);
     public unsafe Span<uint> StackInfo => new Span<uint>((void*)_stackInfo_Ptr, StackInfoSize / 4);
     public unsafe Span<byte> StackBreakpoints => new Span<byte>((void*)_stackBreakpoint_Ptr, StackBreakpointSize);
     public unsafe Span<byte> RtcNvram => new Span<byte>((void*)_rtcNvram_Ptr, RtcNvramSize);

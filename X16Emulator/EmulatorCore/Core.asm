@@ -3618,6 +3618,52 @@ noinstruction PROC
     
 noinstruction ENDP
 
+noinstruction_nop_1_1 proc
+    add r14, 1	; Clock	
+    jmp opcode_done
+    ret
+noinstruction_nop_1_1 endp
+
+noinstruction_nop_2_1 proc
+    add r14, 2	; Clock	
+    jmp opcode_done
+    ret
+noinstruction_nop_2_1 endp
+
+noinstruction_nop_4_1 proc
+    add r14, 4	; Clock	
+    jmp opcode_done
+    ret
+noinstruction_nop_4_1 endp
+
+noinstruction_nop_8_1 proc
+    add r14, 8	; Clock	
+    jmp opcode_done
+    ret
+noinstruction_nop_8_1 endp
+
+
+noinstruction_nop_2_2 proc
+    add r14, 2	; Clock	
+    inc r11
+    jmp opcode_done
+    ret
+noinstruction_nop_2_2 endp
+
+noinstruction_nop_3_2 proc
+    add r14, 3	; Clock	
+    inc r11
+    jmp opcode_done
+    ret
+noinstruction_nop_3_2 endp
+
+noinstruction_nop_4_2 proc
+    add r14, 4	; Clock	
+    inc r11
+    jmp opcode_done
+    ret
+noinstruction_nop_4_2 endp
+
 ;
 ; Opcode jump table
 ;
@@ -3627,8 +3673,8 @@ align 8
 instructions_table:
 opcode_00	qword	x00_brk 		- instructions_table ; $00
 opcode_01	qword	x01_ora_indx 	- instructions_table ; $01
-opcode_02	qword	noinstruction 	- instructions_table ; $02
-opcode_03	qword	noinstruction 	- instructions_table ; $03
+opcode_02	qword	noinstruction_nop_2_2 	- instructions_table ; $02
+opcode_03	qword	noinstruction_nop_1_1 	- instructions_table ; $03
 opcode_04	qword	x04_tsb_zp	 	- instructions_table ; $04
 opcode_05	qword	x05_ora_zp	 	- instructions_table ; $05
 opcode_06	qword	x06_asl_zp	 	- instructions_table ; $06
@@ -3636,7 +3682,7 @@ opcode_07	qword	x07_rmb0	 	- instructions_table ; $07
 opcode_08	qword	x08_php		 	- instructions_table ; $08
 opcode_09	qword	x09_ora_imm	 	- instructions_table ; $09
 opcode_0A	qword	x0A_asl_a	 	- instructions_table ; $0A
-opcode_0B	qword	noinstruction 	- instructions_table ; $0B
+opcode_0B	qword	noinstruction_nop_1_1 	- instructions_table ; $0B
 opcode_0C	qword	x0C_tsb_abs 	- instructions_table ; $0C
 opcode_0D	qword	x0D_ora_abs	 	- instructions_table ; $0D
 opcode_0E	qword	x0E_asl_abs	 	- instructions_table ; $0E
@@ -3644,7 +3690,7 @@ opcode_0F	qword	x0F_bbr0	 	- instructions_table ; $0F
 opcode_10	qword	x10_bpl		 	- instructions_table ; $10
 opcode_11	qword	x11_ora_indy 	- instructions_table ; $11
 opcode_12	qword	x12_ora_indzp 	- instructions_table ; $12
-opcode_13	qword	noinstruction 	- instructions_table ; $13
+opcode_13	qword	noinstruction_nop_1_1 	- instructions_table ; $13
 opcode_14	qword	x14_trb_zp	 	- instructions_table ; $14
 opcode_15	qword	x15_ora_zpx	 	- instructions_table ; $15
 opcode_16	qword	x16_asl_zpx	 	- instructions_table ; $16
@@ -3652,15 +3698,15 @@ opcode_17	qword	x17_rmb1	 	- instructions_table ; $17
 opcode_18	qword	x18_clc		 	- instructions_table ; $18
 opcode_19	qword	x19_ora_absy 	- instructions_table ; $19
 opcode_1A	qword	x1A_inc_a	 	- instructions_table ; $1A
-opcode_1B	qword	noinstruction 	- instructions_table ; $1B
+opcode_1B	qword	noinstruction_nop_1_1 	- instructions_table ; $1B
 opcode_1C	qword	x1C_trb_abs	 	- instructions_table ; $1C
 opcode_1D	qword	x1D_ora_absx 	- instructions_table ; $1D
 opcode_1E	qword	x1E_asl_absx 	- instructions_table ; $1E
 opcode_1F	qword	x1F_bbr1	 	- instructions_table ; $1F
 opcode_20	qword	x20_jsr		 	- instructions_table ; $20
 opcode_21	qword	x21_and_indx 	- instructions_table ; $21
-opcode_22	qword	noinstruction 	- instructions_table ; $22
-opcode_23	qword	noinstruction 	- instructions_table ; $23
+opcode_22	qword	noinstruction_nop_2_2 	- instructions_table ; $22
+opcode_23	qword	noinstruction_nop_1_1 	- instructions_table ; $23
 opcode_24	qword	x24_bit_zp	 	- instructions_table ; $24
 opcode_25	qword	x25_and_zp	 	- instructions_table ; $25
 opcode_26	qword	x26_rol_zp	 	- instructions_table ; $26
@@ -3668,7 +3714,7 @@ opcode_27	qword	x27_rmb2	 	- instructions_table ; $27
 opcode_28	qword	x28_plp		 	- instructions_table ; $28
 opcode_29	qword	x29_and_imm 	- instructions_table ; $29
 opcode_2A	qword	x2A_rol_a	 	- instructions_table ; $2A
-opcode_2B	qword	noinstruction 	- instructions_table ; $2B
+opcode_2B	qword	noinstruction_nop_1_1 	- instructions_table ; $2B
 opcode_2C	qword	x2C_bit_abs 	- instructions_table ; $2C
 opcode_2D	qword	x2D_and_abs 	- instructions_table ; $2D
 opcode_2E	qword	x2E_rol_abs 	- instructions_table ; $2E
@@ -3676,7 +3722,7 @@ opcode_2F	qword	x2F_bbr2	 	- instructions_table ; $2F
 opcode_30	qword	x30_bmi		 	- instructions_table ; $30
 opcode_31	qword	x31_and_indy 	- instructions_table ; $31
 opcode_32	qword	x32_and_indzp 	- instructions_table ; $32
-opcode_33	qword	noinstruction 	- instructions_table ; $33
+opcode_33	qword	noinstruction_nop_1_1 	- instructions_table ; $33
 opcode_34	qword	x34_bit_zpx 	- instructions_table ; $34
 opcode_35	qword	x35_and_zpx 	- instructions_table ; $35
 opcode_36	qword	x36_rol_zpx 	- instructions_table ; $36
@@ -3684,23 +3730,23 @@ opcode_37	qword	x37_rmb3 		- instructions_table ; $37
 opcode_38	qword	x38_sec		 	- instructions_table ; $38
 opcode_39	qword	x39_and_absy 	- instructions_table ; $39
 opcode_3A	qword	x3A_dec_a	 	- instructions_table ; $3A
-opcode_3B	qword	noinstruction 	- instructions_table ; $3B
+opcode_3B	qword	noinstruction_nop_1_1 	- instructions_table ; $3B
 opcode_3C	qword	x3C_bit_absx 	- instructions_table ; $3C
 opcode_3D	qword	x3D_and_absx 	- instructions_table ; $3D
 opcode_3E	qword	x3E_rol_absx 	- instructions_table ; $3E
 opcode_3F	qword	x3F_bbr3	 	- instructions_table ; $3F
 opcode_40	qword	x40_rti		 	- instructions_table ; $40
 opcode_41	qword	x41_eor_indx 	- instructions_table ; $41
-opcode_42	qword	noinstruction 	- instructions_table ; $42
-opcode_43	qword	noinstruction 	- instructions_table ; $43
-opcode_44	qword	noinstruction 	- instructions_table ; $44
+opcode_42	qword	noinstruction_nop_2_2 	- instructions_table ; $42
+opcode_43	qword	noinstruction_nop_1_1 	- instructions_table ; $43
+opcode_44	qword	noinstruction_nop_3_2 	- instructions_table ; $44
 opcode_45	qword	x45_eor_zp	 	- instructions_table ; $45
 opcode_46	qword	x46_lsr_zp	 	- instructions_table ; $46
 opcode_47	qword	x47_rmb4	 	- instructions_table ; $47
 opcode_48	qword	x48_pha		 	- instructions_table ; $48
 opcode_49	qword	x49_eor_imm 	- instructions_table ; $49
 opcode_4A	qword	x4A_lsr_a	 	- instructions_table ; $4A
-opcode_4B	qword	noinstruction 	- instructions_table ; $4B
+opcode_4B	qword	noinstruction_nop_1_1 	- instructions_table ; $4B
 opcode_4C	qword	x4C_jmp_abs 	- instructions_table ; $4C
 opcode_4D	qword	x4D_eor_abs 	- instructions_table ; $4D
 opcode_4E	qword	x4E_lsr_abs 	- instructions_table ; $4E
@@ -3708,23 +3754,23 @@ opcode_4F	qword	x4F_bbr4	 	- instructions_table ; $4F
 opcode_50	qword	x50_bvc		 	- instructions_table ; $50
 opcode_51	qword	x51_eor_indy 	- instructions_table ; $51
 opcode_52	qword	x52_eor_indzp 	- instructions_table ; $52
-opcode_53	qword	noinstruction 	- instructions_table ; $53
-opcode_54	qword	noinstruction 	- instructions_table ; $54
+opcode_53	qword	noinstruction_nop_1_1 	- instructions_table ; $53
+opcode_54	qword	noinstruction_nop_4_2 	- instructions_table ; $54
 opcode_55	qword	x55_eor_zpx 	- instructions_table ; $55
 opcode_56	qword	x56_lsr_zpx 	- instructions_table ; $56
 opcode_57	qword	x57_rmb5	 	- instructions_table ; $57
 opcode_58	qword	x58_cli		 	- instructions_table ; $58
 opcode_59	qword	x59_eor_absy 	- instructions_table ; $59
 opcode_5A	qword	x5A_phy		 	- instructions_table ; $5A
-opcode_5B	qword	noinstruction 	- instructions_table ; $5B
-opcode_5C	qword	noinstruction 	- instructions_table ; $5C
+opcode_5B	qword	noinstruction_nop_1_1 	- instructions_table ; $5B
+opcode_5C	qword	noinstruction_nop_8_1 	- instructions_table ; $5C
 opcode_5D	qword	x5D_eor_absx 	- instructions_table ; $5D
 opcode_5E	qword	x5E_lsr_absx 	- instructions_table ; $5E
 opcode_5F	qword	x5F_bbr5	 	- instructions_table ; $5F
 opcode_60	qword	x60_rts		 	- instructions_table ; $60
 opcode_61	qword	x61_adc_indx 	- instructions_table ; $61
-opcode_62	qword	noinstruction 	- instructions_table ; $62
-opcode_63	qword	noinstruction 	- instructions_table ; $63
+opcode_62	qword	noinstruction_nop_2_2 	- instructions_table ; $62
+opcode_63	qword	noinstruction_nop_1_1 	- instructions_table ; $63
 opcode_64	qword	x64_stz_zp	 	- instructions_table ; $64
 opcode_65	qword	x65_adc_zp	 	- instructions_table ; $65
 opcode_66	qword	x66_ror_zp	 	- instructions_table ; $66
@@ -3732,7 +3778,7 @@ opcode_67	qword	x67_rmb6	 	- instructions_table ; $67
 opcode_68	qword	x68_pla		 	- instructions_table ; $68
 opcode_69	qword	x69_adc_imm 	- instructions_table ; $69
 opcode_6A	qword	x6A_ror_a	 	- instructions_table ; $6A
-opcode_6B	qword	noinstruction 	- instructions_table ; $6B
+opcode_6B	qword	noinstruction_nop_1_1 	- instructions_table ; $6B
 opcode_6C	qword	x6C_jmp_ind 	- instructions_table ; $6C
 opcode_6D	qword	x6D_adc_abs 	- instructions_table ; $6D
 opcode_6E	qword	x6E_ror_abs 	- instructions_table ; $6E
@@ -3740,7 +3786,7 @@ opcode_6F	qword	x6F_bbr6	 	- instructions_table ; $6F
 opcode_70	qword	x70_bvs		 	- instructions_table ; $70
 opcode_71	qword	x71_adc_indy 	- instructions_table ; $71
 opcode_72	qword	x72_adc_indzp 	- instructions_table ; $72
-opcode_73	qword	noinstruction 	- instructions_table ; $73
+opcode_73	qword	noinstruction_nop_1_1 	- instructions_table ; $73
 opcode_74	qword	x74_stz_zpx 	- instructions_table ; $74
 opcode_75	qword	x75_adc_zpx 	- instructions_table ; $75
 opcode_76	qword	x76_ror_zpx 	- instructions_table ; $76
@@ -3748,15 +3794,15 @@ opcode_77	qword	x77_rmb7	 	- instructions_table ; $77
 opcode_78	qword	x78_sei		 	- instructions_table ; $78
 opcode_79	qword	x79_adc_absy 	- instructions_table ; $79
 opcode_7A	qword	x7A_ply		 	- instructions_table ; $7A
-opcode_7B	qword	noinstruction 	- instructions_table ; $7B
+opcode_7B	qword	noinstruction_nop_1_1 	- instructions_table ; $7B
 opcode_7C	qword	x7C_jmp_indx 	- instructions_table ; $7C
 opcode_7D	qword	x7D_adc_absx 	- instructions_table ; $7D
 opcode_7E	qword	x7E_ror_absx 	- instructions_table ; $7E
 opcode_7F	qword	x7F_bbr7	 	- instructions_table ; $7F
 opcode_80	qword	x80_bra		 	- instructions_table ; $80
 opcode_81	qword	x81_sta_indx 	- instructions_table ; $81
-opcode_82	qword	noinstruction 	- instructions_table ; $82
-opcode_83	qword	noinstruction 	- instructions_table ; $83
+opcode_82	qword	noinstruction_nop_2_2 	- instructions_table ; $82
+opcode_83	qword	noinstruction_nop_1_1 	- instructions_table ; $83
 opcode_84	qword	x84_sty_zp	 	- instructions_table ; $84
 opcode_85	qword	x85_sta_zp	 	- instructions_table ; $85
 opcode_86	qword	x86_stx_zp	 	- instructions_table ; $86
@@ -3764,7 +3810,7 @@ opcode_87	qword	x87_smb0	 	- instructions_table ; $87
 opcode_88	qword	x88_dey		 	- instructions_table ; $88
 opcode_89	qword	x89_bit_imm 	- instructions_table ; $89
 opcode_8A	qword	x8A_txa		 	- instructions_table ; $8A
-opcode_8B	qword	noinstruction 	- instructions_table ; $8B
+opcode_8B	qword	noinstruction_nop_1_1 	- instructions_table ; $8B
 opcode_8C	qword	x8C_sty_abs 	- instructions_table ; $8C
 opcode_8D	qword	x8D_sta_abs 	- instructions_table ; $8D
 opcode_8E	qword	x8E_stx_abs 	- instructions_table ; $8E
@@ -3772,7 +3818,7 @@ opcode_8F	qword	x8F_bbs0	 	- instructions_table ; $8F
 opcode_90	qword	x90_bcc		 	- instructions_table ; $90
 opcode_91	qword	x91_sta_indy 	- instructions_table ; $91
 opcode_92	qword	x92_sta_indzp 	- instructions_table ; $92
-opcode_93	qword	noinstruction 	- instructions_table ; $93
+opcode_93	qword	noinstruction_nop_1_1 	- instructions_table ; $93
 opcode_94	qword	x94_sty_zpx 	- instructions_table ; $94
 opcode_95	qword	x95_sta_zpx 	- instructions_table ; $95
 opcode_96	qword	x96_stx_zpy 	- instructions_table ; $96
@@ -3780,7 +3826,7 @@ opcode_97	qword	x97_smb1	 	- instructions_table ; $97
 opcode_98	qword	x98_tya		 	- instructions_table ; $98
 opcode_99	qword	x99_sta_absy 	- instructions_table ; $99
 opcode_9A	qword	x9A_txs		 	- instructions_table ; $9A
-opcode_9B	qword	noinstruction 	- instructions_table ; $9B
+opcode_9B	qword	noinstruction_nop_1_1 	- instructions_table ; $9B
 opcode_9C	qword	x9C_stz_abs 	- instructions_table ; $9C
 opcode_9D	qword	x9D_sta_absx 	- instructions_table ; $9D
 opcode_9E	qword	x9E_stz_absx 	- instructions_table ; $9E
@@ -3788,7 +3834,7 @@ opcode_9F	qword	x9F_bbs1	 	- instructions_table ; $9F
 opcode_A0	qword	xA0_ldy_imm 	- instructions_table ; $A0
 opcode_A1	qword	xA1_lda_indx 	- instructions_table ; $A1
 opcode_A2	qword	xA2_ldx_imm 	- instructions_table ; $A2
-opcode_A3	qword	noinstruction 	- instructions_table ; $A3
+opcode_A3	qword	noinstruction_nop_1_1 	- instructions_table ; $A3
 opcode_A4	qword	xA4_ldy_zp	 	- instructions_table ; $A4
 opcode_A5	qword	xA5_lda_zp	 	- instructions_table ; $A5
 opcode_A6	qword	xA6_ldx_zp	 	- instructions_table ; $A6
@@ -3796,7 +3842,7 @@ opcode_A7	qword	xA7_smb2	 	- instructions_table ; $A7
 opcode_A8	qword	xA8_tay		 	- instructions_table ; $A8
 opcode_A9	qword	xA9_lda_imm 	- instructions_table ; $A9
 opcode_AA	qword	xAA_tax		 	- instructions_table ; $AA
-opcode_AB	qword	noinstruction 	- instructions_table ; $AB
+opcode_AB	qword	noinstruction_nop_1_1 	- instructions_table ; $AB
 opcode_AC	qword	xAC_ldy_abs 	- instructions_table ; $AC
 opcode_AD	qword	xAD_lda_abs 	- instructions_table ; $AD
 opcode_AE	qword	xAE_ldx_abs 	- instructions_table ; $AE
@@ -3804,7 +3850,7 @@ opcode_AF	qword	xAF_bbs2	 	- instructions_table ; $AF
 opcode_B0	qword	xB0_bcs		 	- instructions_table ; $B0
 opcode_B1	qword	xB1_lda_indy 	- instructions_table ; $B1
 opcode_B2	qword	xB2_lda_indzp 	- instructions_table ; $B2
-opcode_B3	qword	noinstruction 	- instructions_table ; $B3
+opcode_B3	qword	noinstruction_nop_1_1 	- instructions_table ; $B3
 opcode_B4	qword	xB4_ldy_zpx 	- instructions_table ; $B4
 opcode_B5	qword	xB5_lda_zpx 	- instructions_table ; $B5
 opcode_B6	qword	xB6_ldx_zpy 	- instructions_table ; $B6
@@ -3812,15 +3858,15 @@ opcode_B7	qword	xB7_smb3	 	- instructions_table ; $B7
 opcode_B8	qword	xB8_clv		 	- instructions_table ; $B8
 opcode_B9	qword	xB9_lda_absy 	- instructions_table ; $B9
 opcode_BA	qword	xBA_tsx		 	- instructions_table ; $BA
-opcode_BB	qword	noinstruction 	- instructions_table ; $BB
+opcode_BB	qword	noinstruction_nop_1_1 	- instructions_table ; $BB
 opcode_BC	qword	xBC_ldy_absx 	- instructions_table ; $BC
 opcode_BD	qword	xBD_lda_absx 	- instructions_table ; $BD
 opcode_BE	qword	xBE_ldx_absy 	- instructions_table ; $BE
 opcode_BF	qword	xBF_bbs3 		- instructions_table ; $BF
 opcode_C0	qword	xC0_cmpy_imm 	- instructions_table ; $C0
 opcode_C1	qword	xC1_sbc_indx 	- instructions_table ; $C1
-opcode_C2	qword	noinstruction 	- instructions_table ; $C2
-opcode_C3	qword	noinstruction 	- instructions_table ; $C3
+opcode_C2	qword	noinstruction_nop_2_2 	- instructions_table ; $C2
+opcode_C3	qword	noinstruction_nop_1_1 	- instructions_table ; $C3
 opcode_C4	qword	xC4_cmpy_zp 	- instructions_table ; $C4
 opcode_C5	qword	xC5_cmp_zp	 	- instructions_table ; $C5
 opcode_C6	qword	xC6_dec_zp	 	- instructions_table ; $C6
@@ -3836,8 +3882,8 @@ opcode_CF	qword	xCF_bbs4 	 	- instructions_table ; $CF
 opcode_D0	qword	xD0_bne		 	- instructions_table ; $D0
 opcode_D1	qword	xD1_cmp_indy 	- instructions_table ; $D1
 opcode_D2	qword	xD2_cmp_indzp 	- instructions_table ; $D2
-opcode_D3	qword	noinstruction 	- instructions_table ; $D3
-opcode_D4	qword	noinstruction 	- instructions_table ; $D4
+opcode_D3	qword	noinstruction_nop_1_1 	- instructions_table ; $D3
+opcode_D4	qword	noinstruction_nop_4_2 	- instructions_table ; $D4
 opcode_D5	qword	xD5_cmp_zpx 	- instructions_table ; $D5
 opcode_D6	qword	xD6_dec_zpx 	- instructions_table ; $D6
 opcode_D7	qword	xD7_smb5 		- instructions_table ; $D7
@@ -3845,14 +3891,14 @@ opcode_D8	qword	xD8_cld		 	- instructions_table ; $D8
 opcode_D9	qword	xD9_cmp_absy 	- instructions_table ; $D9
 opcode_DA	qword	xDA_phx		 	- instructions_table ; $DA
 opcode_DB	qword	xDB_stp		 	- instructions_table ; $DB
-opcode_DC	qword	noinstruction 	- instructions_table ; $DC
+opcode_DC	qword	noinstruction_nop_4_1 	- instructions_table ; $DC
 opcode_DD	qword	xDD_cmp_absx 	- instructions_table ; $DD
 opcode_DE	qword	xDE_dec_absx 	- instructions_table ; $DE
 opcode_DF	qword	xDF_bbs5	 	- instructions_table ; $DF
 opcode_E0	qword	xE0_cmpx_imm 	- instructions_table ; $E0
 opcode_E1	qword	xE1_sbc_indx 	- instructions_table ; $E1
-opcode_E2	qword	noinstruction 	- instructions_table ; $E2
-opcode_E3	qword	noinstruction 	- instructions_table ; $E3
+opcode_E2	qword	noinstruction_nop_2_2 	- instructions_table ; $E2
+opcode_E3	qword	noinstruction_nop_1_1 	- instructions_table ; $E3
 opcode_E4	qword	xE4_cmpx_zp 	- instructions_table ; $E4
 opcode_E5	qword	xE5_sbc_zp	 	- instructions_table ; $E5
 opcode_E6	qword	xE6_inc_zp	 	- instructions_table ; $E6
@@ -3860,7 +3906,7 @@ opcode_E7	qword	xe7_smb6	 	- instructions_table ; $E7
 opcode_E8	qword	xE8_inx	 		- instructions_table ; $E8
 opcode_E9	qword	xE9_sbc_imm 	- instructions_table ; $E9
 opcode_EA	qword	xEA_nop		 	- instructions_table ; $EA
-opcode_EB	qword	noinstruction 	- instructions_table ; $EB
+opcode_EB	qword	noinstruction_nop_1_1 	- instructions_table ; $EB
 opcode_EC	qword	xEC_cmpx_abs 	- instructions_table ; $EC
 opcode_ED	qword	xED_sbc_abs 	- instructions_table ; $ED
 opcode_EE	qword	xEE_inc_abs 	- instructions_table ; $EE
@@ -3868,16 +3914,16 @@ opcode_EF	qword	xEF_bbs6 		- instructions_table ; $EF
 opcode_F0	qword	xF0_beq		 	- instructions_table ; $F0
 opcode_F1	qword	xF1_sbc_indy 	- instructions_table ; $F1
 opcode_F2	qword	xF2_sbc_indzp 	- instructions_table ; $F2
-opcode_F3	qword	noinstruction 	- instructions_table ; $F3
-opcode_F4	qword	noinstruction 	- instructions_table ; $F4
+opcode_F3	qword	noinstruction_nop_1_1 	- instructions_table ; $F3
+opcode_F4	qword	noinstruction_nop_4_2 	- instructions_table ; $F4
 opcode_F5	qword	xF5_sbc_zpx 	- instructions_table ; $F5
 opcode_F6	qword	xF6_inc_zpx 	- instructions_table ; $F6
 opcode_F7	qword	xf7_smb7	 	- instructions_table ; $F7
 opcode_F8	qword	xF8_sed		 	- instructions_table ; $F8
 opcode_F9	qword	xF9_sbc_absy 	- instructions_table ; $F9
 opcode_FA	qword	xFA_plx		 	- instructions_table ; $FA
-opcode_FB	qword	noinstruction 	- instructions_table ; $FB
-opcode_FC	qword	noinstruction 	- instructions_table ; $FC
+opcode_FB	qword	noinstruction_nop_1_1 	- instructions_table ; $FB
+opcode_FC	qword	noinstruction_nop_4_1 	- instructions_table ; $FC
 opcode_FD	qword	xFD_sbc_absx 	- instructions_table ; $FD
 opcode_FE	qword	xFE_inc_absx 	- instructions_table ; $FE
 opcode_FF	qword	xFF_bbs7	 	- instructions_table ; $FF

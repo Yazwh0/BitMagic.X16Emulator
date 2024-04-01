@@ -219,7 +219,7 @@ public unsafe class SdCard : IDisposable
         _logger.LogLine($"Setting home directory to '{directory}'.");
         _homeFolder = directory;
 
-        AddDirectoryFiles(directory);
+        AddDirectoryFiles(directory, "\\");
 
         if (hostFsToSdCardSync)
         {
@@ -243,22 +243,22 @@ public unsafe class SdCard : IDisposable
     private void _watcher_Renamed(object _, RenamedEventArgs e)
     {
         DeleteFile(e.OldFullPath);
-        AddFile(e.FullPath);
+        AddFile(e.FullPath, "\\");
     }
 
-    private void _watcher_Created(object _, FileSystemEventArgs e) => AddFile(e.FullPath);
+    private void _watcher_Created(object _, FileSystemEventArgs e) => AddFile(e.FullPath, "\\");
 
     private void _watcher_Deleted(object _, FileSystemEventArgs e) => DeleteFile(e.FullPath);
 
-    private void _watcher_Changed(object _, FileSystemEventArgs e) => AddFile(e.FullPath);
+    private void _watcher_Changed(object _, FileSystemEventArgs e) => AddFile(e.FullPath, "\\");
 
-    public void AddDirectory(string directory)
+    public void AddDirectory(string directory, string destFolder)
     {
-        _logger.LogLine($"Adding files from '{directory}':");
-        AddDirectoryFiles(directory);
+        _logger.LogLine($"Adding files from '{directory}' to '{destFolder}':");
+        AddDirectoryFiles(directory, destFolder);
     }
 
-    private void AddDirectoryFiles(string directory)
+    private void AddDirectoryFiles(string directory, string destFolder)
     {
         string wildcard = "*.*";
         if (!System.IO.Directory.Exists(directory)) { 
@@ -268,11 +268,11 @@ public unsafe class SdCard : IDisposable
 
         foreach (var filename in System.IO.Directory.GetFiles(directory, wildcard))
         {
-            AddFile(filename);
+            AddFile(filename, destFolder);
         }
     }
 
-    public void AddFiles(string filenames)
+    public void AddFiles(string filenames, string destFolder)
     {
         var searchName = Path.GetFileName(filenames);
         var path = Path.GetDirectoryName(filenames) ?? throw new Exception("No path!");
@@ -280,7 +280,7 @@ public unsafe class SdCard : IDisposable
 
         foreach (var filename in entries)
         {
-            AddFile(filename);
+            AddFile(filename, destFolder);
         }
     }
 
@@ -298,11 +298,17 @@ public unsafe class SdCard : IDisposable
         }
     }
 
-    private void AddFile(string filename)
+    private void AddFile(string filename, string destFolder)
     {
         lock (Lock)
         {
             var actName = FixFilename(filename);
+
+            if (!destFolder.EndsWith('\\'))
+                actName = $"{destFolder}\\{actName}";
+            else
+                actName = $"{destFolder}{actName}";
+
             if (FileUpdates.Contains(actName))
             {
                 _logger.LogLine($"[PC] >> [16] Skipping : {actName}");
@@ -327,6 +333,8 @@ public unsafe class SdCard : IDisposable
 
             _logger.Log($" -> '{actName}'...");
 
+            EnsureDirectoryExists(destFolder);
+
             if (FileSystem.FileExists(actName))
             {
                 FileSystem.DeleteFile(actName);
@@ -339,6 +347,21 @@ public unsafe class SdCard : IDisposable
             FileSystem.UpdateFsInfoFreeSpace();
 
             _logger.LogLine(" Done.");
+        }
+    }
+
+    private void EnsureDirectoryExists(string folder)
+    {
+        var path = folder.Split('\\');
+
+        var toCreate = "";
+
+        for (var i = 0; i < path.Length; i++)
+        {
+            toCreate += '\\' + path[0];
+
+            if (!FileSystem.DirectoryExists(toCreate))
+                FileSystem.CreateDirectory(toCreate);
         }
     }
 

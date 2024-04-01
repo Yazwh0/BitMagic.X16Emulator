@@ -321,7 +321,7 @@ static class Program
         {
             foreach (var file in options.SdCardFiles)
             {
-                sdCard.AddFiles(file);
+                sdCard.AddFiles(file, "\\");
             }
         }
 

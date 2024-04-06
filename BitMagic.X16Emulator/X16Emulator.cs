@@ -960,6 +960,8 @@ public class Emulator : IDisposable
             _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded, _stackInfo_Ptr, _stackBreakpoint_Ptr, _rtcNvram_Ptr,
             _pcm_Ptr, _audioOutput_ptr, _psg_ptr);
 
+    public ulong DisplayPtr => _display_ptr;
+
     public unsafe Span<byte> Memory => new Span<byte>((void*)_memory_ptr_rounded, RamSize);
     public unsafe Span<byte> RamBank => new Span<byte>((void*)_ram_ptr_rounded, BankedRamSize);
     public unsafe Span<byte> RomBank => new Span<byte>((void*)_rom_ptr_rounded, RomSize);

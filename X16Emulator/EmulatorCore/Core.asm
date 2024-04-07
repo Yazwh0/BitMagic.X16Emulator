@@ -41,9 +41,15 @@ EXIT_SMC_RESET equ 7
 
 readonly_memory equ 0c000h - 1		; stop all writes above this location
 
-BREAKPOINT_MASK equ 000001011b      ; breakpoint, debugger breakpoint and exception
-NOSTOP_MASK equ 0100b               ; locations where we dont want the debugger to stop
-EXCEPTION equ 01000b
+BREAKPOINT_MASK     equ 000001011b      ; breakpoint, debugger breakpoint and exception
+NOSTOP_MASK         equ      0100b               ; locations where we dont want the debugger to stop
+EXCEPTION           equ     01000b
+MEMORY_WRITTEN      equ    010000b          ; used by the debugger to see where write activity has occured, can be cleared on demand.
+MEMORY_PROTECTION   equ   0100000b          ; used to indicate where memory has been written to in the life time of the session.
+MEMORY_WRITE_VALUE  equ   0110000b          ; write this everytime
+MEMORY_EXECUTION    equ  01000000b          ; execution points
+MEMORY_READ         equ 010000000b          ; read this session
+
 
 ; rax  : scratch
 ; rbx  : scratch
@@ -365,6 +371,9 @@ dont_test_breakpoint:
     mov [rdx].state.ignore_breakpoint, 0
     movzx rbx, byte ptr [rsi+r11]	; Get opcode
 
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + r11 * 4], MEMORY_EXECUTION
+   
     ;cmp r11, 0E38Dh
     ;jne debug_skip
     ;mov rbx, 0dbh
@@ -992,6 +1001,9 @@ lda_body_end macro checkvera, clock, pc
 endm
 
 lda_body macro checkvera, clock, pc
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_READ    
+
     mov r8b, [rsi+rbx]
     lda_body_end checkvera, clock, pc
 endm
@@ -1058,6 +1070,9 @@ ldx_body_end macro checkvera, clock, pc
 endm
 
 ldx_body macro checkvera, clock, pc
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_READ    
+
     mov r9b, [rsi+rbx]
     ldx_body_end checkvera, clock, pc
 endm
@@ -1103,6 +1118,9 @@ ldy_body_end macro checkvera, clock, pc
 endm
 
 ldy_body macro checkvera, clock, pc
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_READ    
+
     mov r10b, [rsi+rbx]
     ldy_body_end checkvera, clock, pc
 endm
@@ -1141,6 +1159,9 @@ sta_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
     mov byte ptr [rsi+rbx], r8b
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE
+
     step_io_write checkvera
 
 skip:
@@ -1198,6 +1219,9 @@ stx_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
     mov byte ptr [rsi+rbx], r9b
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE
+
     step_io_write checkvera
     
 skip:
@@ -1230,6 +1254,9 @@ sty_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
     mov byte ptr [rsi+rbx], r10b
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE
+
     step_io_write checkvera
     
 skip:
@@ -1260,7 +1287,11 @@ x8C_sty_abs endp
 
 stz_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
+
     mov byte ptr [rsi+rbx], 0
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE
+
     step_io_write checkvera
 
 skip:
@@ -1301,6 +1332,10 @@ inc_body macro checkvera, checkreadonly, clock, pc
     inc byte ptr [rsi+rbx]
 
     write_flags_r15_preservecarry
+
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
+
     step_io_readwrite checkvera
 
 skip:
@@ -1315,7 +1350,12 @@ dec_body macro checkvera, checkreadonly, clock, pc
 
     clc
     dec byte ptr [rsi+rbx]
+
     write_flags_r15_preservecarry
+
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
+
     step_io_readwrite checkvera
 
 skip:
@@ -1486,6 +1526,9 @@ asl_body macro checkreadonly, clock, pc
 
     write_flags_r15	
 
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
+    
     add r11w, pc					; move PC on
     add r14, clock					; Clock
 
@@ -1549,6 +1592,9 @@ lsr_body macro checkreadonly, clock, pc
     mov byte ptr [rsi+rbx], r12b
 
     write_flags_r15	
+
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
 
     add r14, clock				; Clock
     add r11w, pc				; add on PC
@@ -1621,6 +1667,9 @@ rol_body macro checkreadonly, clock, pc
     cmovnz r12, r13
     and r15, 1011111111111111b		; mask off the zero flag
     or r15, r12						; add on zero flag if needed
+
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
     
     add r14, clock					; Clock
     add r11w, pc					; add on PC
@@ -1710,6 +1759,8 @@ ror_body macro checkreadonly, clock, pc
     rol rdi, 8						; change carry to negative
     or r15, rdi						; add on to flags
   
+    mov rax, qword ptr [rdx].state.breakpoint_ptr
+    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
 
     add r14, clock					; Clock
     add r11w, pc					; add on PC
@@ -1755,7 +1806,7 @@ x6A_ror_a proc
 
     rol rdi, 8						; change carry to negative
     or r15, rdi						; add on to flags
-    
+
     add r14, 2						; Clock
     jmp opcode_done	
 x6A_ror_a endp
@@ -1786,6 +1837,7 @@ x76_ror_zpx endp
 
 and_body_end macro checkvera, clock, pc
     and r8b, [rsi+rbx]
+
     write_flags_r15_preservecarry
     step_vera_read checkvera
 

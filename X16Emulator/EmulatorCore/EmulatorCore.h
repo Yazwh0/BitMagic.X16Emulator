@@ -42,6 +42,9 @@ extern "C"
 		int32_t ym_left;
 		int32_t ym_right;
 
+		uint32_t initialised;
+		uint32_t blank;
+
 		__int64 wrapper_flags; // used by linux wrapper
 
 		int8_t* memory;

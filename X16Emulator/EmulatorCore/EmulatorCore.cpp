@@ -22,20 +22,19 @@ extern "C"
 {
     int __fastcall asm_func(state* state);
     ym_wrapper* _ym;
-    bool _initialised = false;
 
     // This is an example of an exported function.
     // int8_t* mainMemory,
     EMULATORCODE_API int fnEmulatorCode(state* state)
     {
-        if (!_initialised)
+        if (state->initialised == 0)
         {   
             _ym = new ym_wrapper(state);
             state->step_ym = &step_ym;
             state->write_register_ym = &write_register_ym;
             state->sleep = &sleep;
             state->get_ticks = &get_ticks;
-            _initialised = true;
+            state->initialised = 1;
         }
         return asm_func(state);
     }

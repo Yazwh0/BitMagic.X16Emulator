@@ -463,6 +463,11 @@ no_break:
     add r11w, 1						; PC+1
 
 
+    mov eax, 0ffffffffh
+    mov [rdx].state.memory_write, eax
+    mov [rdx].state.memory_read, eax
+    mov [rdx].state.memory_readptr, eax
+
     ; Jump table
     lea rax, [instructions_table]				; start of jump table
     pushf
@@ -473,6 +478,29 @@ no_break:
 cpu_is_waiting:
     add r14, 1
 opcode_done::
+
+    mov rcx, [rdx].state.breakpoint_ptr
+    pushf
+
+    ; with these checks in one place we can implement read\write breakpoints
+
+    mov eax, [rdx].state.memory_write
+    cmp eax, 0ffffffffh
+    je no_write
+    or dword ptr [rcx + rax * 4], MEMORY_WRITE_VALUE
+no_write:
+    mov eax, [rdx].state.memory_read
+    cmp eax, 0ffffffffh
+    je no_read
+    or dword ptr [rcx + rax * 4], MEMORY_READ
+
+    mov eax, [rdx].state.memory_readptr
+    cmp eax, 0ffffffffh
+    je no_read
+    or dword ptr [rcx + rax * 4], MEMORY_READ
+no_read:
+
+    popf
     mov rdi, [rdx].state.debug_pos
 
     call via_step	; todo: change to macro call
@@ -1001,8 +1029,7 @@ lda_body_end macro checkvera, clock, pc
 endm
 
 lda_body macro checkvera, clock, pc
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_READ    
+    mov [rdx].state.memory_read, ebx
 
     mov r8b, [rsi+rbx]
     lda_body_end checkvera, clock, pc
@@ -1070,9 +1097,8 @@ ldx_body_end macro checkvera, clock, pc
 endm
 
 ldx_body macro checkvera, clock, pc
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_READ    
-
+    mov [rdx].state.memory_read, ebx
+  
     mov r9b, [rsi+rbx]
     ldx_body_end checkvera, clock, pc
 endm
@@ -1118,8 +1144,7 @@ ldy_body_end macro checkvera, clock, pc
 endm
 
 ldy_body macro checkvera, clock, pc
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_READ    
+    mov [rdx].state.memory_read, ebx 
 
     mov r10b, [rsi+rbx]
     ldy_body_end checkvera, clock, pc
@@ -1159,8 +1184,7 @@ sta_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
     mov byte ptr [rsi+rbx], r8b
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE
+    mov [rdx].state.memory_write, ebx
 
     step_io_write checkvera
 
@@ -1219,8 +1243,7 @@ stx_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
     mov byte ptr [rsi+rbx], r9b
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE
+    mov [rdx].state.memory_write, ebx
 
     step_io_write checkvera
     
@@ -1254,8 +1277,7 @@ sty_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
     mov byte ptr [rsi+rbx], r10b
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE
+    mov [rdx].state.memory_write, ebx
 
     step_io_write checkvera
     
@@ -1289,8 +1311,7 @@ stz_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
     mov byte ptr [rsi+rbx], 0
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE
+    mov [rdx].state.memory_write, ebx
 
     step_io_write checkvera
 
@@ -1333,8 +1354,8 @@ inc_body macro checkvera, checkreadonly, clock, pc
 
     write_flags_r15_preservecarry
 
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
+    mov [rdx].state.memory_read, ebx
+    mov [rdx].state.memory_write, ebx
 
     step_io_readwrite checkvera
 
@@ -1353,8 +1374,8 @@ dec_body macro checkvera, checkreadonly, clock, pc
 
     write_flags_r15_preservecarry
 
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
+    mov [rdx].state.memory_read, ebx
+    mov [rdx].state.memory_write, ebx
 
     step_io_readwrite checkvera
 
@@ -1526,8 +1547,8 @@ asl_body macro checkreadonly, clock, pc
 
     write_flags_r15	
 
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
+    mov [rdx].state.memory_read, ebx
+    mov [rdx].state.memory_write, ebx
     
     add r11w, pc					; move PC on
     add r14, clock					; Clock
@@ -1593,8 +1614,8 @@ lsr_body macro checkreadonly, clock, pc
 
     write_flags_r15	
 
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
+    mov [rdx].state.memory_read, ebx
+    mov [rdx].state.memory_write, ebx
 
     add r14, clock				; Clock
     add r11w, pc				; add on PC
@@ -1668,8 +1689,8 @@ rol_body macro checkreadonly, clock, pc
     and r15, 1011111111111111b		; mask off the zero flag
     or r15, r12						; add on zero flag if needed
 
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
+    mov [rdx].state.memory_read, ebx
+    mov [rdx].state.memory_write, ebx
     
     add r14, clock					; Clock
     add r11w, pc					; add on PC
@@ -1759,8 +1780,8 @@ ror_body macro checkreadonly, clock, pc
     rol rdi, 8						; change carry to negative
     or r15, rdi						; add on to flags
   
-    mov rax, qword ptr [rdx].state.breakpoint_ptr
-    or dword ptr [rax + rbx * 4], MEMORY_WRITE_VALUE + MEMORY_READ
+    mov [rdx].state.memory_read, ebx
+    mov [rdx].state.memory_write, ebx
 
     add r14, clock					; Clock
     add r11w, pc					; add on PC

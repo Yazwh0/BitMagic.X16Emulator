@@ -29,6 +29,10 @@ state struct
 	ym_data					dword ?
 	ym_left					dword ?
 	ym_right				dword ?
+
+	wrapper_initialised		dword ?
+	wrapper_spacer			dword ?
+
 	; C part ends
 
 	wrapper_flags			qword ?
@@ -186,6 +190,10 @@ state struct
 	via_interrupt			dword ?
 
 	rom_bank				dword ?
+
+	memory_read				dword ?
+	memory_readptr			dword ?
+	memory_write			dword ?
 
 	; VERA FX
 	fx_addr_mode			dword ?

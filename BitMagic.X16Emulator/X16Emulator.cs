@@ -303,6 +303,9 @@ public class Emulator : IDisposable
         public uint Ym_Data = 0;
         public int Ym_Left = 0;
         public int Ym_Right = 0;
+
+        public uint WrapperInitialised = 0;
+        public uint WrapperSpacer = 0;
         // end of C wrapper
 
         public ulong WrapperFlags = 0;  // used by the linux wrapper to see if these calls have had their handlers injected.
@@ -458,6 +461,9 @@ public class Emulator : IDisposable
         public uint Via_Interrupt = 0;
 
         public uint RomBank = 0;
+        public uint MemoryRead = 0xffffffff;
+        public uint MemoryReadPtr = 0xffffffff;
+        public uint MemoryWrite = 0xffffffff;
 
         // FX
         public uint FxAddrMode = 0;

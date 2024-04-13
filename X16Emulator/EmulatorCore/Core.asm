@@ -2293,7 +2293,7 @@ no_total_overflow:
     and r15w, 0feffh				; mask carry	
     xor eax, eax
     cmp ecx, 0000h          
-    setl al                    ; set if above
+    setge al                    ; set if above
     shl rax, 8
     or r15, rax                 ; or in
 

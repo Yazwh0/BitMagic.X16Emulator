@@ -214,12 +214,12 @@ public unsafe class SdCard : IDisposable
     }
 
     // Copies a directory and starts a watcher
-    public void SetHomeDirectory(string directory, bool hostFsToSdCardSync)
+    public void SetHomeDirectory(string directory, bool hostFsToSdCardSync, bool allowOverwrite)
     {
         _logger.LogLine($"Setting home directory to '{directory}'.");
         _homeFolder = directory;
 
-        AddDirectoryFiles(directory, "\\");
+        AddDirectoryFiles(directory, "\\", allowOverwrite);
 
         if (hostFsToSdCardSync)
         {
@@ -243,22 +243,22 @@ public unsafe class SdCard : IDisposable
     private void _watcher_Renamed(object _, RenamedEventArgs e)
     {
         DeleteFile(e.OldFullPath);
-        AddFile(e.FullPath, "\\");
+        AddFile(e.FullPath, "\\", true);
     }
 
-    private void _watcher_Created(object _, FileSystemEventArgs e) => AddFile(e.FullPath, "\\");
+    private void _watcher_Created(object _, FileSystemEventArgs e) => AddFile(e.FullPath, "\\", true);
 
     private void _watcher_Deleted(object _, FileSystemEventArgs e) => DeleteFile(e.FullPath);
 
-    private void _watcher_Changed(object _, FileSystemEventArgs e) => AddFile(e.FullPath, "\\");
+    private void _watcher_Changed(object _, FileSystemEventArgs e) => AddFile(e.FullPath, "\\", true);
 
-    public void AddDirectory(string directory, string destFolder)
+    public void AddDirectory(string directory, string destFolder, bool allowOverwrite)
     {
         _logger.LogLine($"Adding files from '{directory}' to '{destFolder}':");
-        AddDirectoryFiles(directory, destFolder);
+        AddDirectoryFiles(directory, destFolder, allowOverwrite);
     }
 
-    private void AddDirectoryFiles(string directory, string destFolder)
+    private void AddDirectoryFiles(string directory, string destFolder, bool allowOverwrite)
     {
         string wildcard = "*.*";
         if (!System.IO.Directory.Exists(directory)) { 
@@ -268,11 +268,11 @@ public unsafe class SdCard : IDisposable
 
         foreach (var filename in System.IO.Directory.GetFiles(directory, wildcard))
         {
-            AddFile(filename, destFolder);
+            AddFile(filename, destFolder, allowOverwrite);
         }
     }
 
-    public void AddFiles(string filenames, string destFolder)
+    public void AddFiles(string filenames, string destFolder, bool allowOverwrite)
     {
         var searchName = Path.GetFileName(filenames);
         var path = Path.GetDirectoryName(filenames) ?? throw new Exception("No path!");
@@ -280,7 +280,7 @@ public unsafe class SdCard : IDisposable
 
         foreach (var filename in entries)
         {
-            AddFile(filename, destFolder);
+            AddFile(filename, destFolder, allowOverwrite);
         }
     }
 
@@ -298,7 +298,7 @@ public unsafe class SdCard : IDisposable
         }
     }
 
-    private void AddFile(string filename, string destFolder)
+    private void AddFile(string filename, string destFolder, bool allowOverwrite)
     {
         lock (Lock)
         {
@@ -337,7 +337,13 @@ public unsafe class SdCard : IDisposable
 
             if (FileSystem.FileExists(actName))
             {
-                FileSystem.DeleteFile(actName);
+                if (allowOverwrite)
+                    FileSystem.DeleteFile(actName);
+                else
+                {
+                    _logger.LogLine("Alread Exists.");
+                    return;
+                }
             }
             using var file = FileSystem.OpenFile(actName, FileMode.CreateNew, FileAccess.Write);
             file.Write(source);

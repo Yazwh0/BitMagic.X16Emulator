@@ -313,7 +313,7 @@ static class Program
         // create the sdcard
         if (!string.IsNullOrWhiteSpace(options.SdCardFolder))
         {
-            emulator.SdCard!.SetHomeDirectory(options.SdCardFolder, options.SdCardSyncTo);
+            emulator.SdCard!.SetHomeDirectory(options.SdCardFolder, options.SdCardSyncTo, true);
         }
 
         // add files after directories.
@@ -321,7 +321,7 @@ static class Program
         {
             foreach (var file in options.SdCardFiles)
             {
-                sdCard.AddFiles(file, "\\");
+                sdCard.AddFiles(file, "\\", true);
             }
         }
 

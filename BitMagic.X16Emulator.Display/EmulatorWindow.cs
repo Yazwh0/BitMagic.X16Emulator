@@ -297,7 +297,7 @@ public static class EmulatorWindow
         if (!_hasMouse)
             return;
 
-        _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
+       // _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
     }
 
     private static void EmulatorWindow_MouseUp(IMouse arg1, Silk.NET.Input.MouseButton arg2)
@@ -305,7 +305,7 @@ public static class EmulatorWindow
         if (!_hasMouse)
             return;
 
-        _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
+     //   _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
     }
 
     private static SmcBuffer.MouseButtons GetButtons(IMouse mouse) =>

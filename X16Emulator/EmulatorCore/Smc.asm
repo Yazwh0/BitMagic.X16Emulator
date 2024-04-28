@@ -114,7 +114,7 @@ smc_transmit:
 	qword smc_sendnothing	- smc_transmit ; 1f
 	qword smc_sendnothing	- smc_transmit ; 20
 	qword mouse				- smc_transmit ; 21
-	qword smc_sendnothing	- smc_transmit ; 22
+	qword mouse_device_id	- smc_transmit ; 22
 	qword smc_sendnothing	- smc_transmit ; 23
 	qword smc_sendnothing	- smc_transmit ; 24
 	qword smc_sendnothing	- smc_transmit ; 25
@@ -173,6 +173,11 @@ no_mouse_data:
 	mov dword ptr [rdx].state.i2c_datatotransmit, 0
 	ret
 
+
+mouse_device_id:
+	mov dword ptr [rdx].state.i2c_datatotransmit, 1
+	mov rbx, 0
+	ret
 
 keyboard:
 	mov eax, dword ptr [rdx].state.smc_keyboard_readposition

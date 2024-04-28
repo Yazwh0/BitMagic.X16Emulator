@@ -75,6 +75,7 @@ public class SmcBuffer
             PushMouseByte(btns);
             PushMouseByte((byte)toSendX);
             PushMouseByte((byte)toSendY);
+            //PushMouseByte(0);
 
             if (xDelta == 0 && yDelta == 0)
                 return;

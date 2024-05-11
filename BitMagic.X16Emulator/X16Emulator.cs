@@ -82,13 +82,15 @@ public class Emulator : IDisposable
     [DllImport(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator\X16Emulator\EmulatorCore\x64\Debug\EmulatorCore.dll")]
 #endif
 #if RELEASE
-#if OS_WINDOWS
-    [DllImport(@"EmulatorCore.dll")]
-#endif
-#if OS_LINUX
-    [DllImport(@"./EmulatorCore.so")]
-#endif
-#endif
+//#if OS_WINDOWS
+//    [DllImport(@"EmulatorCore.dll")]
+//#endif
+//#if OS_LINUX
+//    [DllImport(@"./EmulatorCore.so")]
+//#endif
+
+    [DllImport(@"EmulatorCore")]
+    #endif
     private static extern int fnEmulatorCode(ref CpuState state);
 
     public class VeraState

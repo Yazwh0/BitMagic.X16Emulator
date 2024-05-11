@@ -13,7 +13,7 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see https://www.gnu.org/licenses/.
 
-includelib      msvcrtd
+;includelib      msvcrtd
 
 .CODE
 
@@ -165,6 +165,7 @@ restore_registers macro
 endm
 
 public asm_func
+
 
 asm_func proc state_ptr:QWORD
     mov rdx, rsi						; move state to rdx

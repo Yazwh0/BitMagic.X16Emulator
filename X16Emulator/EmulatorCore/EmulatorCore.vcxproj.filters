@@ -16,9 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
-    <None Include="Ym.asm">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -127,6 +124,9 @@
       <Filter>Source Files</Filter>
     </Text>
     <Text Include="Vera_Render_Layers.asm">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="Ym.asm">
       <Filter>Source Files</Filter>
     </Text>
   </ItemGroup>

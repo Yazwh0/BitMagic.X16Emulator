@@ -80,6 +80,7 @@ public class Ien
         var emulator = new Emulator();
 
         emulator.A = 0x08;
+        emulator.InterruptDisable = true;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -126,6 +127,7 @@ public class Ien
         var emulator = new Emulator();
 
         emulator.A = 0xff;
+        emulator.InterruptDisable = true;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

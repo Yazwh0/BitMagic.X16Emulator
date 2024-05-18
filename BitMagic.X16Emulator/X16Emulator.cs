@@ -105,7 +105,7 @@ public class Emulator : IDisposable
         public int Data0_Step { get => (int)_emulator._state.Data0_Step; set => _emulator._state.Data0_Step = (ulong)value; }
         public int Data1_Step { get => (int)_emulator._state.Data1_Step; set => _emulator._state.Data1_Step = (ulong)value; }
         public bool AddrSel { get => _emulator._state.AddrSel != 0; set => _emulator._state.AddrSel = (value ? (byte)1 : (byte)0); }
-        public bool DcSel { get => _emulator._state.DcSel != 0; set => _emulator._state.DcSel = (value ? (byte)1 : (byte)0); }
+        public byte DcSel { get => _emulator._state.DcSel; set => _emulator._state.DcSel = value; }
         public UInt32 VideoOutput { get => _emulator._state.VideoOutput; set => _emulator._state.VideoOutput = value; }
         public UInt32 Dc_HScale { get => _emulator._state.Dc_HScale; set => _emulator._state.Dc_HScale = value; }
         public UInt32 Dc_VScale { get => _emulator._state.Dc_VScale; set => _emulator._state.Dc_VScale = value; }
@@ -217,6 +217,11 @@ public class Emulator : IDisposable
 
         public byte CacheIndex { get => (byte)_emulator._state.FxCacheIndex; set => _emulator._state.FxCacheIndex = (byte)(value & 0b111); }
         public int CacheShift { get => (int)_emulator._state.FxCacheFillShift; set => _emulator._state.FxCacheFillShift = (uint)value; }
+
+        public bool MultiplierEnable { get => _emulator._state.FxMultiplierEnable != 0; set => _emulator._state.FxMultiplierEnable = value ? 1u : 0u; }
+        //public bool Accumulate { get => _emulator._state.FxAccumulate != 0; set => _emulator._state.FxAccumulate = value ? 1u : 0u; }
+        public uint Accumulator { get => _emulator._state.FxAccumulator; set => _emulator._state.FxAccumulator = value; }
+        public uint AccumulateDirection { get => _emulator._state.FxAccumulateDirection; set => _emulator._state.FxAccumulateDirection = value; }
     }
 
     public class ViaState
@@ -477,6 +482,10 @@ public class Emulator : IDisposable
         public uint FxOneByteCycling = 0;
         public uint Fx2ByteCacheIncr = 0;
         public uint FxCacheFillShift = 0;
+        public uint FxMultiplierEnable = 0;
+        public uint FxAccumulator = 0;
+        public uint FxAccumulateDirection = 0;
+        public uint FxSpacer = 0;
 
         // End FX
 

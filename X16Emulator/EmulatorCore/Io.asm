@@ -102,8 +102,8 @@ io_registers_read:
 	vera_r_9f26 qword io_r_readmemory - io_registers_read
 	vera_r_9f27 qword io_r_readmemory - io_registers_read
 	vera_r_9f28 qword io_r_readmemory - io_registers_read
-	vera_r_9f29 qword io_r_readmemory - io_registers_read
-	vera_r_9f2a qword io_r_readmemory - io_registers_read
+	vera_r_9f29 qword vera_afterread_9f29 - io_registers_read
+	vera_r_9f2a qword vera_afterread_9f2a - io_registers_read
 	vera_r_9f2b qword io_r_readmemory - io_registers_read
 	vera_r_9f2c qword io_r_readmemory - io_registers_read
 	vera_r_9f2d qword io_r_readmemory - io_registers_read

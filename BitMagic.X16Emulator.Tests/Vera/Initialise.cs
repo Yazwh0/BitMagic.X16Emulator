@@ -112,7 +112,7 @@ public class Vera_Initialise
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = true;
+        emulator.Vera.DcSel = 1;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -128,7 +128,7 @@ public class Vera_Initialise
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = false;
+        emulator.Vera.DcSel = 0;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -144,7 +144,7 @@ public class Vera_Initialise
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = true;
+        emulator.Vera.DcSel = 1;
         emulator.Vera.AddrSel = true;
 
         await X16TestHelper.Emulate(@"
@@ -161,7 +161,7 @@ public class Vera_Initialise
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = false;
+        emulator.Vera.DcSel = 0;
         emulator.Vera.Dc_HScale = 0x010000; // 1:1
         emulator.Vera.Dc_VScale = 0x010000;
         emulator.Vera.Dc_Border = 0x03;
@@ -188,7 +188,7 @@ public class Vera_Initialise
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = true;
+        emulator.Vera.DcSel = 1;
         emulator.Vera.Dc_HScale = 0x010000; // not real values
         emulator.Vera.Dc_VScale = 0x010000;
         emulator.Vera.Dc_Border = 0x03;
@@ -215,7 +215,7 @@ public class Vera_Initialise
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = false;
+        emulator.Vera.DcSel = 0;
         emulator.Vera.SpriteEnable = true;
         emulator.Vera.VideoOutput = 0;
 
@@ -232,7 +232,7 @@ public class Vera_Initialise
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = false;
+        emulator.Vera.DcSel = 0;
         emulator.Vera.Layer1Enable = true;
         emulator.Vera.VideoOutput = 0;
 
@@ -250,7 +250,7 @@ public class Vera_Initialise
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = false;
+        emulator.Vera.DcSel = 0;
         emulator.Vera.Layer0Enable = true;
         emulator.Vera.VideoOutput = 0;
 
@@ -268,7 +268,7 @@ public class Vera_Initialise
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = false;
+        emulator.Vera.DcSel = 0;
         emulator.Vera.Layer0Enable = true;
         emulator.Vera.Layer1Enable = true;
         emulator.Vera.SpriteEnable = true;

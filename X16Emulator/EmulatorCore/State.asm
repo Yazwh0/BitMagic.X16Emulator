@@ -207,6 +207,10 @@ state struct
 	fx_one_byte_cycling		dword ?
 	fx_2byte_cache_incr		dword ?
 	fx_cache_fill_shift		dword ?
+	fx_multiplier_enable	dword ?
+	fx_accumulator			dword ?
+	fx_accumulate_direction	dword ?
+	fx_spacer				dword ?
 
 	; End FX
 

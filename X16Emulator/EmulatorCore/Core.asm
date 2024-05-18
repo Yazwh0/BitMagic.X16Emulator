@@ -2247,7 +2247,7 @@ decimal_sub macro imm
 
     ; set the flags, so set the Carry flag
     read_flags_rax
-   ; int 3
+
     cmc
     sbb rcx, r12    ; Data - A + (C-1), this is the only point C is used
 

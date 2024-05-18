@@ -330,16 +330,20 @@ addr_done:
 	;
 	; DcSel CTRL
 	;
-	mov r13b, [rdx].state.dcsel
-	shl r13b, 1
-	or byte ptr [rsi+CTRL], r13b
+	movzx r13d, [rdx].state.dcsel
+	mov eax, r13d
+	shl eax, 1
+	and byte ptr [rsi+CTRL], 01h
+	or byte ptr [rsi+CTRL], al		
 
 	;
 	; DC_xxx + DC_ Video Settings
 	;
-	test r13b, r13b
-	jnz set_dc1
+	lea rax, dc_sel_table
+	add rax, [rax + r13 * 8]
+	jmp rax
 
+dc_sel0:
 	xor rax, rax
 	mov al, byte ptr [rdx].state.sprite_enable
 	shl rax, 6
@@ -369,7 +373,7 @@ addr_done:
 
 	jmp dc_done
 
-set_dc1:
+dc_sel1:
 
 	mov ax, word ptr [rdx].state.dc_hstart
 	shr ax, 2
@@ -386,6 +390,19 @@ set_dc1:
 	mov ax, word ptr [rdx].state.dc_vstop
 	shr ax, 1
 	mov byte ptr [rsi+DC_VSTOP], al
+
+	jmp dc_done
+
+version:
+not_supported:
+	; default is the version
+
+	mov byte ptr [rsi+DC_VER0], 056h
+	mov byte ptr [rsi+DC_VER1], VERA_VERSION_L
+	mov byte ptr [rsi+DC_VER2], VERA_VERSION_M
+	mov byte ptr [rsi+DC_VER3], VERA_VERSION_H
+	
+	jmp dc_done
 
 dc_done:
 
@@ -585,6 +602,82 @@ dc_done:
 
 not_initial:
 	ret
+
+
+
+dc_sel_table:
+	qword dc_sel0 - dc_sel_table
+	qword dc_sel1 - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword not_supported - dc_sel_table
+	qword version - dc_sel_table
+
 vera_init endp
 
 ;
@@ -670,28 +763,47 @@ skip:
 endm
 
 vera_write_dataport macro
-local cannot_cache_write, cache_write, fx_4bit_pixels, no_transparancy, done
-	movzx r13, byte ptr [rsi+rbx]			; get value that has been written
-
+local cannot_cache_write, cache_write, fx_4bit_pixels, no_transparancy, done, no_multiplication
 	cmp rdi, 01f9c0h
 	jge cannot_cache_write
 
 	test [rdx].state.fx_cache_write, 1
 	jnz cache_write
 cannot_cache_write:
-
+	movzx r13, byte ptr [rsi+rbx]			; get value that has been written
 	mov byte ptr [rax+rdi], r13b			; store in vram
 	vera_dataupdate_stuctures
 	jmp done
 
 cache_write:
+
+	mov r12d, [rdx].state.fx_cache			; get the cache value
+
+	; check if multiplication is set
+	test [rdx].state.fx_multiplier_enable, 1
+	jz no_multiplication
+
+	mov ecx, r12d
+	shr ecx, 16
+	movsx r12d, r12w
+	movsx ecx, cx
+	imul r12d, ecx
+
+	mov ecx, [rdx].state.fx_accumulator
+	lea r13, [r12 + rcx]					; addition
+	sub r12d, ecx							; sub
+
+	test [rdx].state.fx_accumulate_direction, 1
+	cmovz r12d, r13d						; is sub
+
+no_multiplication:
 	push rdi
 	and rdi, 1fffch							; cache writes are 4 byte alligned
 
+	movzx r13, byte ptr [rsi+rbx]			; get value that has been written
+
 	test [rdx].state.fx_transparancy, 1
 	jz no_transparancy
-
-	mov r12d, [rdx].state.fx_cache			; get the cache value
 
 	push rsi
 	push r8
@@ -809,23 +921,21 @@ fx_4bit_pixels:
 	jmp done
 
 no_transparancy:
-	push r8
 
-	lea r12, data_cache_mask
-	mov r13, [r12 + r13 * 4]
+	lea rcx, data_cache_mask
+	mov r13, [rcx + r13 * 4]				; r13 is the byte written
 
-	mov r12d, [rdx].state.fx_cache			; get the cache value and AND the mask
-	and r12d, r13d
+	and r12d, r13d							; and value with cache value
 
 	xor r13d, 0ffffffffh					; invert to use against value in ram
-	mov r8d, [rax+rdi]						; get current value
-	and r8d, r13d							; mask
 
-	or r12d, r8d							; and combine the two masked variables
+	mov ecx, [rax+rdi]						; get current value
+	and ecx, r13d							; mask
+
+	or r12d, ecx							; and combine the two masked variables
 
 	mov [rax+rdi], r12d						; update vram
 
-	pop r8
 	pop rdi
 
 done:
@@ -930,7 +1040,6 @@ endm
 ; [rsi+rbx]		output location in main memory
 ; 
 ; should only be called if data0\data1 is read\written.
-
 vera_dataaccess_body macro doublestep, write_value
 	local cache_write_0, done_0, no_transparancy_0, fx_4bit_pixels_0, cache_write_1, done_1, no_transparancy_1 ,cache_done
 
@@ -1064,6 +1173,53 @@ vera_afterreadwrite proc
 	;dec r13
 	vera_dataaccess_body 1, 1
 vera_afterreadwrite endp
+
+;
+; VERA read side effects for FX
+;
+; rbx			address
+; [rsi+rbx]		output location in main memory
+vera_afterread_9f29 proc
+	; if DCSel is 6, reading FX_ACCUM_RESET resets accumulator
+	movzx r13, byte ptr [rdx].state.dcsel
+
+	cmp r13d, 6
+	jne done
+
+	mov [rdx].state.fx_accumulator, 0
+
+done:
+	ret
+vera_afterread_9f29 endp
+
+vera_afterread_9f2a proc
+	; if DCSel is 6, reading FX_ACCUM turns on accumulator
+	movzx r13, byte ptr [rdx].state.dcsel
+
+	cmp r13d, 6
+	jne done
+
+	; this latches the output of the multiplication and copies it to the accumulator
+	mov r12d, [rdx].state.fx_cache			; get the cache value
+
+	mov ecx, r12d
+	shr ecx, 16
+	movsx r12d, r12w
+	movsx ecx, cx
+	imul r12d, ecx
+
+	mov ecx, [rdx].state.fx_accumulator
+	lea r13, [r12 + rcx]					; addition
+	sub r12d, ecx							; sub
+
+	test [rdx].state.fx_accumulate_direction, 1
+	cmovz r12d, r13d						; is sub	
+
+	mov [rdx].state.fx_accumulator, r12d
+
+done:
+	ret
+vera_afterread_9f2a endp
 
 ;
 ; Update procs for vera registers
@@ -1869,9 +2025,53 @@ dc_sel2:
 	mov [rdx].state.fx_2byte_cache_incr, eax
 
 	mov eax, r13d
+	and eax, 10h
+	shr eax, 4
+	mov [rdx].state.fx_multiplier_enable, eax
+
+	mov eax, r13d
 	shr eax, 1
 	and eax, 0111b
 	mov [rdx].state.fx_cache_index, eax
+	
+	test r13d, 01000000b
+	jz no_latch
+
+	push r13
+	; this latches the output of the multiplication and copies it to the accumulator
+	mov r12d, [rdx].state.fx_cache			; get the cache value
+
+	mov ecx, r12d
+	shr ecx, 16
+	movsx r12d, r12w
+	movsx ecx, cx
+	imul r12d, ecx
+
+	mov ecx, [rdx].state.fx_accumulator
+	lea r13, [r12 + rcx]					; addition
+	sub r12d, ecx							; sub
+
+	test [rdx].state.fx_accumulate_direction, 1
+	cmovz r12d, r13d						; is sub	
+
+	mov [rdx].state.fx_accumulator, r12d
+	pop r13
+
+no_latch:
+;	shr eax, 6
+;	mov [rdx].state.fx_accumulate, eax
+		
+	mov eax, r13d
+	and eax, 00100000b
+	shr eax, 5
+	mov [rdx].state.fx_accumulate_direction, eax
+
+	; Reset accumulator
+	mov eax, 0ffffffffh
+	xor ecx, ecx
+	test r13d, 01000000b
+	cmovz eax, ecx
+	and [rdx].state.fx_accumulator, eax
 
 	test [rdx].state.fx_4bit_mode, 1
 	jnz dc_sel2_4bit

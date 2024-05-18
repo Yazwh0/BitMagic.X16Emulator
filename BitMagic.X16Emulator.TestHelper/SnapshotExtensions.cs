@@ -179,6 +179,29 @@ public static class SnapshotExtensions
         return snapshot.CanChange(memoryArea, address);
     }
 
+    public static SnapshotResultTest Is(this SnapshotResultTest snapshot, MemoryAreas memoryArea, int address, IEnumerable<byte> values)
+    {
+        var toReturn = snapshot;
+        var a = address;
+
+        foreach (var v in values)
+        {
+            var r = memoryArea;
+            var thisa = a;
+
+            if (r == MemoryAreas.BankedRam)
+                snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(v, GetValue(r, thisa, snapshot.Emulator), $"Memory 0x{(thisa & 0xff0000) >> 16:X2}:{thisa & 0xffff:X4} is not {v}"));
+            else
+                snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(v, GetValue(r, thisa, snapshot.Emulator), $"Memory 0x{thisa:X4} is not {v}"));
+
+            toReturn = snapshot.CanChange(memoryArea, thisa);
+
+            a++;
+        }
+
+        return toReturn;
+    }
+
     private static int GetValue(Registers register, Emulator emulator) => register switch 
     {
         Registers.A => emulator.A,

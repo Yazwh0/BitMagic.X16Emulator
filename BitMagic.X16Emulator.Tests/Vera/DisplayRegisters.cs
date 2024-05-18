@@ -10,7 +10,7 @@ public class DisplayRegisters
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = true;
+        emulator.Vera.DcSel = 1;
         emulator.A = 0xff;
 
         await X16TestHelper.Emulate(@"
@@ -33,7 +33,7 @@ public class DisplayRegisters
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = true;
+        emulator.Vera.DcSel = 1;
         emulator.A = 0xff;
 
         await X16TestHelper.Emulate(@"
@@ -53,7 +53,7 @@ public class DisplayRegisters
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = true;
+        emulator.Vera.DcSel = 1;
         emulator.A = 0xff;
 
         await X16TestHelper.Emulate(@"
@@ -73,7 +73,7 @@ public class DisplayRegisters
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = true;
+        emulator.Vera.DcSel = 1;
         emulator.A = 0xff;
 
         await X16TestHelper.Emulate(@"
@@ -94,7 +94,7 @@ public class DisplayRegisters
     {
         var emulator = new Emulator();
 
-        emulator.Vera.DcSel = false;
+        emulator.Vera.DcSel = 0;
         emulator.A = 0xff;
 
         await X16TestHelper.Emulate(@"

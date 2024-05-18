@@ -320,7 +320,6 @@ render_pixel_data macro mask, shift, pixeladd
 	; ensure output pixel is in visible bounds
 	; we do this in parts as r13 can be either extended to go into the buffer (opposite lines)
 	; or negative if off screen.
-	;int 3
 	mov rax, r13
 	if pixeladd ne 0
 		add eax, pixeladd

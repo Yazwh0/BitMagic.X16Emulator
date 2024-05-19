@@ -215,7 +215,15 @@ public class Emulator : IDisposable
         public bool TwoByteCacheIncr { get => _emulator._state.Fx2ByteCacheIncr != 0; set => _emulator._state.Fx2ByteCacheIncr = value ? 1u : 0u; }
         public uint Cache { get => _emulator._state.FxCache; set => _emulator._state.FxCache = value; }
 
-        public byte CacheIndex { get => (byte)_emulator._state.FxCacheIndex; set => _emulator._state.FxCacheIndex = (byte)(value & 0b111); }
+        public byte CacheIndex
+        {
+            get => (byte)_emulator._state.FxCacheIndex;
+            set {
+                var v = (byte)(value & 0b111);
+                _emulator._state.FxCacheIndex = v;
+                _emulator._state.FxCacheFillShift = (uint)(v >> 1) << 3;
+            }
+        }
         public int CacheShift { get => (int)_emulator._state.FxCacheFillShift; set => _emulator._state.FxCacheFillShift = (uint)value; }
 
         public bool MultiplierEnable { get => _emulator._state.FxMultiplierEnable != 0; set => _emulator._state.FxMultiplierEnable = value ? 1u : 0u; }
@@ -953,7 +961,7 @@ public class Emulator : IDisposable
         var memory_span = new Span<byte>((void*)_memory_ptr_rounded, RamSize);
         for (var i = 2; i < RamSize; i++) // 2 as we dont change the RAM\ROM bank, as these are used on startup to set the rom bank, a slight difference to hardware.
         {
-            if (i < 0x9f00 || (i >= 0xa000 && i < 0xc000) ) // dont change IO area or ROM data
+            if (i < 0x9f00 || (i >= 0xa000 && i < 0xc000)) // dont change IO area or ROM data
                 memory_span[i] = memoryFillValue;
         }
 

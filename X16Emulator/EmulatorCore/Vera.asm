@@ -783,6 +783,8 @@ cache_write:
 	test [rdx].state.fx_multiplier_enable, 1
 	jz no_multiplication
 
+	;int 3
+
 	mov ecx, r12d
 	shr ecx, 16
 	movsx r12d, r12w
@@ -791,7 +793,8 @@ cache_write:
 
 	mov ecx, [rdx].state.fx_accumulator
 	lea r13, [r12 + rcx]					; addition
-	sub r12d, ecx							; sub
+	sub ecx, r12d							; sub
+	mov r12d, ecx
 
 	test [rdx].state.fx_accumulate_direction, 1
 	cmovz r12d, r13d						; is sub
@@ -1193,7 +1196,7 @@ done:
 vera_afterread_9f29 endp
 
 vera_afterread_9f2a proc
-	; if DCSel is 6, reading FX_ACCUM turns on accumulator
+	; if DCSel is 6, reading FX_ACCUM sets accumulator
 	movzx r13, byte ptr [rdx].state.dcsel
 
 	cmp r13d, 6
@@ -1210,7 +1213,8 @@ vera_afterread_9f2a proc
 
 	mov ecx, [rdx].state.fx_accumulator
 	lea r13, [r12 + rcx]					; addition
-	sub r12d, ecx							; sub
+	sub ecx, r12d							; sub
+	mov r12d, ecx
 
 	test [rdx].state.fx_accumulate_direction, 1
 	cmovz r12d, r13d						; is sub	
@@ -2033,7 +2037,19 @@ dc_sel2:
 	shr eax, 1
 	and eax, 0111b
 	mov [rdx].state.fx_cache_index, eax
-	
+
+	; THIS IS BROKEN. We do not handle 4bit index movement properly AT ALL here
+	mov ecx, [rdx].state.fx_4bit_mode	; 1 for 4bit mode
+	xor ecx, 0fffffffeh					; invert, so we can and the new index to set the shift
+	and eax, ecx
+	shl eax, 2
+	mov [rdx].state.fx_cache_fill_shift, eax
+			
+	mov eax, r13d
+	and eax, 00100000b
+	shr eax, 5
+	mov [rdx].state.fx_accumulate_direction, eax
+
 	test r13d, 01000000b
 	jz no_latch
 
@@ -2049,7 +2065,8 @@ dc_sel2:
 
 	mov ecx, [rdx].state.fx_accumulator
 	lea r13, [r12 + rcx]					; addition
-	sub r12d, ecx							; sub
+	sub ecx, r12d							; sub
+	mov r12d, ecx
 
 	test [rdx].state.fx_accumulate_direction, 1
 	cmovz r12d, r13d						; is sub	
@@ -2060,34 +2077,32 @@ dc_sel2:
 no_latch:
 ;	shr eax, 6
 ;	mov [rdx].state.fx_accumulate, eax
-		
-	mov eax, r13d
-	and eax, 00100000b
-	shr eax, 5
-	mov [rdx].state.fx_accumulate_direction, eax
+
 
 	; Reset accumulator
-	mov eax, 0ffffffffh
+	mov eax, [rdx].state.fx_accumulator
 	xor ecx, ecx
-	test r13d, 01000000b
-	cmovz eax, ecx
-	and [rdx].state.fx_accumulator, eax
-
-	test [rdx].state.fx_4bit_mode, 1
-	jnz dc_sel2_4bit
-
-dc_sel2_8bit:
-	shr eax, 1						; ignore nibble bit
-	shl eax, 3						; * 8
-	mov [rdx].state.fx_cache_fill_shift, eax
+	test r13d, 10000000b
+	cmovnz eax, ecx
+	mov [rdx].state.fx_accumulator, eax
 
 	ret
 
-dc_sel2_4bit:
-	shl eax, 2						; * 4
-	mov [rdx].state.fx_cache_fill_shift, eax
+;	test [rdx].state.fx_4bit_mode, 1
+;	jnz dc_sel2_4bit
 
-	ret
+;dc_sel2_8bit:
+;	shr eax, 1						; ignore nibble bit
+;	shl eax, 3						; * 8
+;	mov [rdx].state.fx_cache_fill_shift, eax
+
+;	ret
+
+;dc_sel2_4bit:
+;	shl eax, 2						; * 4
+;	mov [rdx].state.fx_cache_fill_shift, eax
+
+;	ret
 
 dc_sel6:
 	movzx r13, byte ptr [rsi+rbx]

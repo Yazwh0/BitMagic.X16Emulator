@@ -7,6 +7,34 @@ namespace BitMagic.X16Emulator.Tests.Vera.Fx;
 public class Cache
 {
     [TestMethod]
+    public async Task SetIndex()
+    {
+        var emulator = new Emulator();
+
+        emulator.Vera.DcSel = 0x02;
+        emulator.VeraFx.CacheIndex = 0;
+
+        var (_, snapshot) = await X16TestHelper.EmulateChanges(@"
+                .machine CommanderX16R40
+                .org $810
+                stp
+                lda #%00001000  ; 4 -- so byte 2
+                sta FX_MULT
+                stp",
+                emulator);
+
+        snapshot.Snap();
+        emulator.Emulate();
+
+        snapshot.Compare().IgnoreVia()
+            .CanChange(Registers.A)
+            .AssertNoOtherChanges();
+
+        Assert.AreEqual(0x04, emulator.VeraFx.CacheIndex);
+        Assert.AreEqual(0x10, emulator.VeraFx.CacheShift);
+    }
+
+    [TestMethod]
     public async Task FillDirect()
     {
         var emulator = new Emulator();
@@ -79,5 +107,42 @@ public class Cache
             .AssertNoOtherChanges();
 
         Assert.AreEqual(0x04030201u, emulator.VeraFx.Cache);
+    }
+
+    [TestMethod]
+    public async Task FillVram_Index()
+    {
+        var emulator = new Emulator();
+
+        emulator.A = 0x00;
+        emulator.VeraFx.CacheIndex = 4; // nibble based
+        emulator.VeraFx.Cachefill = true;
+        emulator.VeraFx.TwoByteCacheIncr = false;
+
+        emulator.Vera.Vram[0x00] = 0x01;
+        emulator.Vera.Vram[0x01] = 0x02;
+        emulator.Vera.Vram[0x02] = 0x03;
+        emulator.Vera.Vram[0x03] = 0x04;
+        emulator.Vera.Data0_Address = 0x00000;
+        emulator.Vera.Data0_Step = 0x01;
+
+        var (_, snapshot) = await X16TestHelper.EmulateChanges(@"
+                .machine CommanderX16R40
+                .org $810
+                stp
+                lda DATA0
+                lda DATA0
+                stp",
+                emulator);
+
+        snapshot.Snap();
+        emulator.Emulate();
+
+        snapshot.Compare().IgnoreVia()
+            .CanChange(Registers.A)
+            .IgnoreVera()
+            .AssertNoOtherChanges();
+
+        Assert.AreEqual(0x02010000u, emulator.VeraFx.Cache);
     }
 }

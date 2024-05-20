@@ -327,6 +327,12 @@ set_address1:
 	
 addr_done:
 
+	mov rbx, 03fffeh
+	mov rax, 03ffffh
+	test [rdx].state.fx_4bit_mode, 1
+	cmovnz rbx, rax
+	mov [rdx].state.data_mask, rbx
+
 	;
 	; DcSel CTRL
 	;
@@ -1044,7 +1050,7 @@ endm
 ; 
 ; should only be called if data0\data1 is read\written.
 vera_dataaccess_body macro doublestep, write_value
-	local cache_write_0, done_0, no_transparancy_0, fx_4bit_pixels_0, cache_write_1, done_1, no_transparancy_1 ,cache_done
+	local cache_write_0, done_0, no_transparancy_0, fx_4bit_pixels_0, cache_write_1, done_1, no_transparancy_1 ,cache_done, no_fx_step_1, polyfill_1, not_fx_1, affine_1
 
 	mov rax, [rdx].state.vram_ptr				; get value from vram
 	push rsi
@@ -1119,7 +1125,39 @@ step_data1:
 
 	add rdi, [rdx].state.data1_step
 	and rdi, 1ffffh								; mask off high bits so we wrap
+	;int 3
 
+	mov r13d, [rdx].state.fx_addr_mode
+	test r13d, r13d
+	jz not_fx_1
+	cmp r13d, 2
+	je polyfill_1
+	jg affine_1	
+
+	; line helper mode, so stop on x
+	mov r13d, [rdx].state.fx_x_position
+	add r13d, [rdx].state.fx_x_increment
+	
+	test r13d, 00010000h
+	jz no_fx_step_1
+	
+	and r13d, 0fffeffffh					; always mask out the increment bit
+	mov [rdx].state.fx_x_position, r13d
+
+	;step on data1 by data0's step
+	add rdi, [rdx].state.data0_step
+	and rdi, 1ffffh
+
+	jmp not_fx_1
+
+no_fx_step_1:
+	mov [rdx].state.fx_x_position, r13d
+
+	jmp not_fx_1
+polyfill_1:
+affine_1:
+
+not_fx_1:
 	if doublestep eq 1
 		if write_value eq 1
 			vera_write_dataport
@@ -1186,11 +1224,30 @@ vera_afterread_9f29 proc
 	; if DCSel is 6, reading FX_ACCUM_RESET resets accumulator
 	movzx r13, byte ptr [rdx].state.dcsel
 
+	cmp r13d, 2
+	jl done
+	je dc_sel_2
+
+	cmp r13d, 4
+	jl dc_sel_3
+	je dc_sel_4
+
 	cmp r13d, 6
-	jne done
+	jl dc_sel_5
+	je dc_sel_6
+	ret
 
+dc_sel_2:
+	ret
+dc_sel_3:
+	ret
+dc_sel_4:
+	ret
+dc_sel_5:
+	ret
+dc_sel_6:
 	mov [rdx].state.fx_accumulator, 0
-
+	ret
 done:
 	ret
 vera_afterread_9f29 endp
@@ -1686,6 +1743,18 @@ dc_sel2_4bit:
 
 	ret
 
+dc_sel3:
+	mov r13b, byte ptr [rsi+rbx]
+	; r13 is the bottom 8 bits of a 6.9 fixed point number, convert to 16.16
+	shl r13d, 7
+	mov ecx, [rdx].state.fx_x_increment
+	and ecx, 0ffff8000h
+	or ecx, r13d
+	mov [rdx].state.fx_x_increment, ecx
+
+	mov byte ptr [rsi+rbx], r12b
+	ret
+
 dc_sel6:
 	movzx r13, byte ptr [rsi+rbx]
 	mov eax, [rdx].state.fx_cache
@@ -1704,7 +1773,7 @@ dc_sel_table:
 	qword dc_sel0 - dc_sel_table
 	qword dc_sel1 - dc_sel_table
 	qword dc_sel2 - dc_sel_table
-	qword dc_notsupported - dc_sel_table
+	qword dc_sel3 - dc_sel_table
 	qword dc_notsupported - dc_sel_table
 	qword dc_notsupported - dc_sel_table
 	qword dc_sel6 - dc_sel_table
@@ -1797,6 +1866,47 @@ dc_sel1:
 	mov word ptr [rdx].state.dc_hstop, r13w
 	ret
 
+dc_sel2:
+	movzx r13, byte ptr [rsi+rbx]
+	mov eax, r13d
+	and r13b, 01111111b
+	; r13 is the top 7 bits of a 6.9 fixed point number, convert to 16.16
+	shl r13d, 7+8
+	mov ecx, [rdx].state.fx_x_increment
+	and ecx, 000007fffh
+	or ecx, r13d
+	mov [rdx].state.fx_x_increment, ecx
+
+	shr eax, 7
+	mov [rdx].state.fx_x_mult_32, eax
+
+	mov eax, [rdx].state.fx_addr_mode
+	test eax, eax
+	jz dc_sel2_done
+
+	cmp [rdx].state.fx_addr_mode, 2
+	jl dc_sel_line_mode
+	je dc_sel_poly_fill
+
+	; affine helper
+	ret
+
+dc_sel_line_mode:
+	mov eax, [rdx].state.fx_x_position
+	and eax, 0fffe0000h						; clear bit '0', the overflow
+	or eax, 00008000h
+	mov [rdx].state.fx_x_position, eax
+	ret
+
+dc_sel_poly_fill:
+	mov eax, [rdx].state.fx_x_position
+	and eax, 0ffff0000h
+	or eax, 00008000h
+	mov [rdx].state.fx_x_position, eax
+	
+dc_sel2_done:
+	ret
+
 dc_sel6:
 	movzx r13, byte ptr [rsi+rbx]
 	mov eax, [rdx].state.fx_cache
@@ -1816,7 +1926,7 @@ dc_sel_table:
 	qword dc_sel0 - dc_sel_table
 	qword dc_sel1 - dc_sel_table
 	qword dc_notsupported - dc_sel_table
-	qword dc_notsupported - dc_sel_table
+	qword dc_sel2 - dc_sel_table
 	qword dc_notsupported - dc_sel_table
 	qword dc_notsupported - dc_sel_table
 	qword dc_sel6 - dc_sel_table

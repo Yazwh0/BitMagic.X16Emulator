@@ -230,6 +230,10 @@ public class Emulator : IDisposable
         //public bool Accumulate { get => _emulator._state.FxAccumulate != 0; set => _emulator._state.FxAccumulate = value ? 1u : 0u; }
         public uint Accumulator { get => _emulator._state.FxAccumulator; set => _emulator._state.FxAccumulator = value; }
         public uint AccumulateDirection { get => _emulator._state.FxAccumulateDirection; set => _emulator._state.FxAccumulateDirection = value; }
+
+        public uint IncrementX { get => _emulator._state.FxXIncrement; set => _emulator._state.FxXIncrement = value; }
+        public uint PositionX { get => _emulator._state.FxXPosition; set => _emulator._state.FxXPosition = value; }
+        public bool Mult32X { get => _emulator._state.FxXMult32 != 0; set => _emulator._state.FxXPosition = value ? 1u : 0u; }
     }
 
     public class ViaState
@@ -356,6 +360,7 @@ public class Emulator : IDisposable
         public ulong Data1_Address = 0;
         public ulong Data0_Step = 0;
         public ulong Data1_Step = 0;
+        public ulong Data_Mask = 0;
 
         public ulong Clock_Previous = 0x00;
         public ulong Clock = 0x00;
@@ -493,6 +498,12 @@ public class Emulator : IDisposable
         public uint FxMultiplierEnable = 0;
         public uint FxAccumulator = 0;
         public uint FxAccumulateDirection = 0;
+        public uint FxXIncrement = 0;
+        public uint FxXPosition = 0;
+        public uint FxYIncrement = 0;
+        public uint FxYPosition = 0;
+        public uint FxXMult32 = 0;
+        public uint FxYMult32 = 0;
         public uint FxSpacer = 0;
 
         // End FX

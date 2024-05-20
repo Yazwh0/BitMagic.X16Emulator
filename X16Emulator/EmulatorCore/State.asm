@@ -70,6 +70,7 @@ state struct
 	data1_address			qword ?
 	data0_step				qword ?
 	data1_step				qword ?
+	data_mask				qword ?
 
 	clock_previous			qword ?
 	clock					qword ?
@@ -210,7 +211,16 @@ state struct
 	fx_multiplier_enable	dword ?
 	fx_accumulator			dword ?
 	fx_accumulate_direction	dword ?
+	fx_x_increment			dword ?
+	fx_x_position			dword ?
+	fx_y_increment			dword ?
+	fx_y_position			dword ?
+	fx_x_mult_32			dword ?
+	fx_y_mult_32			dword ?
 	fx_spacer				dword ?
+
+
+
 
 	; End FX
 

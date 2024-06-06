@@ -481,7 +481,7 @@ cpu_is_waiting:
 opcode_done::
 
     mov rcx, [rdx].state.breakpoint_ptr
-    pushf
+    ;pushf
 
     ; with these checks in one place we can implement read\write breakpoints
 
@@ -501,13 +501,13 @@ no_write:
     or dword ptr [rcx + rax * 4], MEMORY_READ
 no_read:
 
-    popf
+    ;popf
     mov rdi, [rdx].state.debug_pos
 
     call via_step	; todo: change to macro call
 
     ; ----------------------- AUDIO
-    pushf
+    ;pushf
     mov rax, [rdx].state.clock_audionext    ; rax is a parameter to vera_render_audio
     cmp r14, rax
     jl no_vera_audio
@@ -527,7 +527,7 @@ no_read:
     or [rdx].state.interrupt, al
     
     no_ym_audio:
-    popf
+    ;popf
     ; ----------------------- AUDIO DONE
 
 

@@ -6,6 +6,8 @@ using BitMagic.TemplateEngine.X16;
 using BitMagic.Compiler;
 using BitMagic.Compiler.Files;
 using BitMagic.X16Emulator.Snapshot;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace BitMagic.X16Emulator.TestHelper;
 

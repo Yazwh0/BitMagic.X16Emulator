@@ -45,7 +45,7 @@ extern "C"
     void sleepWrapper(int64_t usec)
     {
         __asm__ __volatile__(
-            "mov %%rdi, %%rbx" :
+            "mov %0, %%rbx" : : "r"(usec)
         );
 
         std::this_thread::sleep_for(std::chrono::microseconds(usec));

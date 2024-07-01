@@ -17,8 +17,13 @@ struct state
     uint32_t ym_data;
     int32_t ym_left;
     int32_t ym_right;
+
+    int32_t initialised;
+    int32_t blank;
+
     int64_t WrapperFlags;
- 	int8_t* memory;	
+
+ 	int8_t* memory;
 };
 
 #endif

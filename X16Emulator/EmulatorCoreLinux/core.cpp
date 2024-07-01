@@ -17,7 +17,6 @@ extern "C"
     void write_register_ym();
 
     ym_wrapper* _ym;
-    bool _initialised = false;
 
     int32_t fnEmulatorCode(void* state)
     {
@@ -25,16 +24,15 @@ extern "C"
 
         struct state* actState = (struct state*)state;
 
-        if (!_initialised)
+        if (actState->initialised == 0)
         {
             _ym = new ym_wrapper(actState);
-            _initialised = true;
+            actState->GetTicks = &getTicks;
+            actState->Sleep = &sleepWrapper;
+            actState->step_ym = &step_ym;
+            actState->write_register_ym = &write_register_ym;
+            actState->initialised = 1;
         }
-
-        actState->GetTicks = &getTicks;
-        actState->Sleep = &sleepWrapper;
-        actState->step_ym = &step_ym;
-        actState->write_register_ym = &write_register_ym;
 
         __asm__ __volatile__(
             "mov %1, %%rsi    \t\n"
@@ -52,7 +50,13 @@ extern "C"
     int64_t getTicks()
     {
         auto duration = std::chrono::system_clock::now().time_since_epoch();
-        return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+        auto ticks = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+
+        __asm__ __volatile__(
+            "mov %%rax, %0" : "=a"(ticks)
+        );
+
+        return ticks;
     }
 
     void step_ym()

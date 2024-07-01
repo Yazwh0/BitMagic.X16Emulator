@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <unistd.h>
-#include <sys/time.h>
+#include <chrono>
+#include <thread>
 #include <signal.h>
 #include "state.h"
 #include "ym_wrapper.cpp"
@@ -45,16 +46,13 @@ extern "C"
 
     void sleepWrapper(int64_t usec)
     {
-        sleep(usec);
+        std::this_thread::sleep_for(std::chrono::microseconds(usec));
     }
 
     int64_t getTicks()
     {
-        struct timeval tp;
-        gettimeofday(&tp, NULL);
-        int64_t ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
-
-        return ms;
+        auto duration = std::chrono::system_clock::now().time_since_epoch();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
     }
 
     void step_ym()

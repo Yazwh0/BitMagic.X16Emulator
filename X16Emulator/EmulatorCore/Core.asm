@@ -2840,7 +2840,7 @@ x20_jsr proc
     mov [rsi + rbx], ah					; Put PC Low byte on stack
     sub bl, 1							; Move stack pointer on
 
-    ; store stack info for debuggin
+    ; store stack info for debugging
     mov dword ptr [rdi + rbx * 4 - 400h], ecx
 
     mov [rsi + rbx], al					; Put PC High byte on stack
@@ -3586,6 +3586,7 @@ x00_brk proc
     or rcx, rax
     mov rdi, qword ptr [rdx].state.stackinfo_ptr
 
+    inc r11
     mov rax, r11						; Get PC as the return address (to put address on the stack -- different to JSR)
 
     movzx rbx, word ptr [rdx].state.stackpointer	; Get stack pointer

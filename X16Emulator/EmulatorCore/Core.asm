@@ -53,7 +53,7 @@ MEMORY_READ         equ 010000000b          ; read this session
 
 ; rax  : scratch
 ; rbx  : scratch
-; rcx  : scratch
+; rcx  : scratch -- although used to pass number of read side effects from an opcode to io readwrite
 ; rdx  : state object 
 ; rsi  : current memory context
 ; rdi  : scratch
@@ -798,6 +798,7 @@ rambank_change:
 endm
 
 ; Check if we have read the vera data registers
+; r13 will be set if so
 check_vera_access macro check_allvera
     local done, vera_skip
 
@@ -905,6 +906,18 @@ read_absx_rbx macro check_allvera
     check_vera_access check_allvera
 endm
 
+read_absx_rbx_doubleread_onboundary macro check_allvera, read_nopenalty, read_penalty
+    local no_overflow
+    mov ecx, read_nopenalty
+    movzx rbx, word ptr [rsi+r11]	; Get 16bit value in memory.
+    add bl, r9b			; Add X
+    jnc no_overflow
+    add bh, 1			; Add high bit
+    mov ecx, read_penalty
+no_overflow:
+    check_vera_access check_allvera
+endm
+
 read_absx_rbx_pagepenalty macro
     local no_overflow
     movzx rbx, word ptr [rsi+r11]	; Get 16bit value in memory.
@@ -919,6 +932,18 @@ endm
 read_absy_rbx macro check_allvera
     movzx rbx, word ptr [rsi+r11]	; Get 16bit value in memory.
     add bx, r10w		; Add Y
+    check_vera_access check_allvera
+endm
+
+read_absy_rbx_doubleread_onboundary macro check_allvera, read_nopenalty, read_penalty
+    local no_overflow
+    mov ecx, read_nopenalty
+    movzx rbx, word ptr [rsi+r11]	; Get 16bit value in memory.
+    add bl, r10b		; Add Y
+    jnc no_overflow
+    add bh, 1			; Add high bit
+    mov ecx, read_penalty
+no_overflow:
     check_vera_access check_allvera
 endm
 
@@ -1212,14 +1237,54 @@ x8D_sta_abs proc
 x8D_sta_abs endp
 
 x9D_sta_absx proc
-    read_absx_rbx 1
+    ; need to check if X crosses a boundary, if not step any read on
+    ; sta $abcd, x is RW when X doesn't cross
+    ; sta $abcd, x is W when id does
+    read_absx_rbx_doubleread_onboundary 1, 1, 0   ; sets ecx for the boundary penalty
+    test ecx, ecx
+    jnz x9D_sta_absx_read_write
     sta_body 1, 1, 5, 2
 x9D_sta_absx endp
 
+x9D_sta_absx_read_write proc
+    pre_write_check 1
+
+    mov byte ptr [rsi+rbx], r8b
+    mov [rdx].state.memory_write, ebx
+
+    step_io_readwrite 1
+
+skip:
+    add r14, 5
+    add r11w, 2			; add on PC
+
+    jmp opcode_done
+x9D_sta_absx_read_write endp
+
 x99_sta_absy proc
-    read_absy_rbx 1
+    ; need to check if Y crosses a boundary, if not step any read on
+    ; sta $abcd, y is RW when Y doesn't cross
+    ; sta $abcd, y is W when id does
+    read_absy_rbx_doubleread_onboundary 1, 1, 0
+    test ecx, ecx
+    jnz x99_sta_absy_read_write
     sta_body 1, 1, 5, 2
 x99_sta_absy endp
+
+x99_sta_absy_read_write proc
+    pre_write_check 1
+
+    mov byte ptr [rsi+rbx], r8b
+    mov [rdx].state.memory_write, ebx
+
+    step_io_readwrite 1
+
+skip:
+    add r14, 5
+    add r11w, 2			; add on PC
+
+    jmp opcode_done
+x99_sta_absy_read_write endp
 
 x81_sta_indx proc
     read_indx_rbx 1
@@ -1339,15 +1404,38 @@ x9C_stz_abs proc
 x9C_stz_abs endp
 
 x9E_stz_absx proc
-    read_absx_rbx 1
+    read_absx_rbx_doubleread_onboundary 1, 1, 0
+    test ecx, ecx
+    jnz x9E_stz_absx_read_write
     stz_body 1, 1, 5, 2
 x9E_stz_absx endp
+
+x9E_stz_absx_read_write proc
+    pre_write_check 1
+
+    mov byte ptr [rsi+rbx], 0
+    mov [rdx].state.memory_write, ebx
+
+    step_io_readwrite 1
+
+skip:
+    add r14, 5
+    add r11w, 2			; add on PC
+
+    jmp opcode_done
+x9E_stz_absx_read_write endp
 
 ;
 ; INC\DEC
 ;
 
-inc_body macro checkvera, checkreadonly, clock, pc
+inc_body macro checkvera, checkreadonly, clock, pc, saveecx
+    if checkvera eq 1
+        if saveecx eq 1
+            push rcx
+        endif
+    endif
+
     pre_write_check checkreadonly
 
     clc
@@ -1358,7 +1446,16 @@ inc_body macro checkvera, checkreadonly, clock, pc
     mov [rdx].state.memory_read, ebx
     mov [rdx].state.memory_write, ebx
 
-    step_io_readwrite checkvera
+    if checkvera eq 1
+        if saveecx eq 1
+            pop rcx
+        endif
+        if saveecx eq 0
+            mov ecx, 1
+        endif
+
+        step_io_readwrite checkvera
+    endif
 
 skip:
     add r14, clock
@@ -1367,7 +1464,13 @@ skip:
     jmp opcode_done
 endm
 
-dec_body macro checkvera, checkreadonly, clock, pc
+dec_body macro checkvera, checkreadonly, clock, pc, saveecx
+    if checkvera eq 1
+        if saveecx eq 1
+            push rcx
+        endif
+    endif
+    
     pre_write_check checkreadonly
 
     clc
@@ -1378,7 +1481,17 @@ dec_body macro checkvera, checkreadonly, clock, pc
     mov [rdx].state.memory_read, ebx
     mov [rdx].state.memory_write, ebx
 
-    step_io_readwrite checkvera
+    if checkvera eq 1
+        if saveecx eq 1
+            pop rcx
+        endif
+        if saveecx eq 0
+            mov ecx, 1
+        endif
+
+        step_io_readwrite checkvera
+    endif
+
 
 skip:
     add r14, clock
@@ -1406,40 +1519,40 @@ x3A_dec_a endp
 
 xEE_inc_abs proc
     read_abs_rbx 0
-    inc_body 1, 1, 6, 2
+    inc_body 1, 1, 6, 2, 0
 xEE_inc_abs endp
 
 xCE_dec_abs proc
     read_abs_rbx 0
-    dec_body 1, 1, 6, 2
+    dec_body 1, 1, 6, 2, 0
 xCE_dec_abs endp
 
 
 xFE_inc_absx proc
-    read_absx_rbx 0
-    inc_body 1, 1, 7, 2
+    read_absx_rbx_doubleread_onboundary 0, 2, 1
+    inc_body 1, 1, 7, 2, 1
 xFE_inc_absx endp
 
 xDE_dec_absx proc
-    read_absx_rbx 0
-    dec_body 1, 1, 7, 2
+    read_absx_rbx_doubleread_onboundary 0, 2, 1
+    dec_body 1, 1, 7, 2, 1
 xDE_dec_absx endp
 
 
 xE6_inc_zp proc
     read_zp_rbx
-    inc_body 0, 0, 5, 1
+    inc_body 0, 0, 5, 1, 0
 xE6_inc_zp endp
 
 xC6_dec_zp proc
     read_zp_rbx
-    dec_body 0, 0, 5, 1
+    dec_body 0, 0, 5, 1, 0
 xC6_dec_zp endp
 
 
 xF6_inc_zpx proc
     read_zpx_rbx
-    inc_body 0, 0, 6, 1
+    inc_body 0, 0, 6, 1, 0
 xF6_inc_zpx endp
 
 xD6_dec_zpx proc
@@ -1540,7 +1653,7 @@ x98_tya endp
 ; ASL
 ;
 
-asl_body macro checkreadonly, clock, pc
+asl_body macro checkreadonly, checkvera, clock, pc
     pre_write_check checkreadonly
 
     read_flags_rax
@@ -1551,6 +1664,12 @@ asl_body macro checkreadonly, clock, pc
     mov [rdx].state.memory_read, ebx
     mov [rdx].state.memory_write, ebx
     
+    if checkvera eq 1
+        mov ecx, 1
+
+        step_io_readwrite 1
+    endif
+
     add r11w, pc					; move PC on
     add r14, clock					; Clock
 
@@ -1582,31 +1701,32 @@ x0A_asl_a proc
     jmp opcode_done	
 x0A_asl_a endp
 
+; ASL ABS and ABS, X do a Read, Step, Write, so need to accomodate that if a IO region is addressed
 x0E_asl_abs proc
-    read_abs_rbx 0
-    asl_body 1, 6, 2
+    read_abs_rbx 1
+    asl_body 1, 1, 6, 2
 x0E_asl_abs endp
 
 x1E_asl_absx proc
-    read_absx_rbx 0
-    asl_body 1, 7, 2
+    read_absx_rbx 1
+    asl_body 1, 1, 7, 2
 x1E_asl_absx endp
 
 x06_asl_zp proc
     read_zp_rbx
-    asl_body 0, 5, 1
+    asl_body 0, 0, 5, 1
 x06_asl_zp endp
 
 x16_asl_zpx proc
     read_zpx_rbx
-    asl_body 0, 6, 1
+    asl_body 0, 0, 6, 1
 x16_asl_zpx endp
 
 ;
 ; LSR
 ;
 
-lsr_body macro checkreadonly, clock, pc
+lsr_body macro checkreadonly, checkvera, clock, pc
     pre_write_check checkreadonly
 
     movzx r12, byte ptr [rsi+rbx]
@@ -1617,6 +1737,12 @@ lsr_body macro checkreadonly, clock, pc
 
     mov [rdx].state.memory_read, ebx
     mov [rdx].state.memory_write, ebx
+    
+    if checkvera eq 1
+        mov ecx, 1
+
+        step_io_readwrite 1
+    endif
 
     add r14, clock				; Clock
     add r11w, pc				; add on PC
@@ -1629,6 +1755,8 @@ skip:
     shr r12b,1					; shift
 
     write_flags_r15	
+
+    mov [rdx].state.memory_read, ebx
 
     add r14, clock				; Clock
     add r11w, pc				; add on PC
@@ -1649,30 +1777,33 @@ x4A_lsr_a endp
 
 x4E_lsr_abs proc
     read_abs_rbx 0
-    lsr_body 1, 6, 2
+    lsr_body 1, 1, 6, 2
 x4E_lsr_abs endp
 
 x5E_lsr_absx proc
     read_absx_rbx 0
-    lsr_body 1, 7, 2
+    lsr_body 1, 1, 7, 2
 x5E_lsr_absx endp
 
 x46_lsr_zp proc
     read_zp_rbx
-    lsr_body 0, 5, 1
+    lsr_body 0, 0, 5, 1
 x46_lsr_zp endp
 
 x56_lsr_zpx proc
     read_zpx_rbx
-    lsr_body 0, 6, 1
+    lsr_body 0, 0, 6, 1
 x56_lsr_zpx endp
 
 ;
 ; ROL
 ;
 
-rol_body macro checkreadonly, clock, pc
+rol_body macro checkreadonly, checkvera, clock, pc
     pre_write_check checkreadonly
+    if checkvera eq 1
+        push r13        ; need r13 as it indicates a io area write
+    endif
 
     mov rdi, r15					; save registers
     and rdi, 0100h					; mask carry
@@ -1692,6 +1823,13 @@ rol_body macro checkreadonly, clock, pc
 
     mov [rdx].state.memory_read, ebx
     mov [rdx].state.memory_write, ebx
+
+    if checkvera eq 1
+        pop r13
+        mov ecx, 1
+
+        step_io_readwrite 1
+    endif
     
     add r14, clock					; Clock
     add r11w, pc					; add on PC
@@ -1737,30 +1875,33 @@ x2A_rol_a endp
 
 x2E_rol_abs proc	
     read_abs_rbx 0
-    rol_body 1, 6, 2
+    rol_body 1, 1, 6, 2
 x2E_rol_abs endp
 
 x3E_rol_absx proc	
     read_absx_rbx 0
-    rol_body 1, 7, 2
+    rol_body 1, 1, 7, 2
 x3E_rol_absx endp
 
 x26_rol_zp proc
     read_zp_rbx
-    rol_body 0, 5, 1
+    rol_body 0, 0, 5, 1
 x26_rol_zp endp
 
 x36_rol_zpx proc
     read_zpx_rbx
-    rol_body 0, 6, 1
+    rol_body 0, 0, 6, 1
 x36_rol_zpx endp
 
 ;
 ; ROR
 ;
 
-ror_body macro checkreadonly, clock, pc
+ror_body macro checkreadonly, checkvera, clock, pc
     pre_write_check checkreadonly
+    if checkvera eq 1
+        push r13                    ; need r13 as it indicates a io area write
+    endif
 
     mov rdi, r15					; save registers
     and rdi, 0100h					; mask carry
@@ -1784,6 +1925,13 @@ ror_body macro checkreadonly, clock, pc
     mov [rdx].state.memory_read, ebx
     mov [rdx].state.memory_write, ebx
 
+    if checkvera eq 1
+        pop r13
+        mov ecx, 1
+
+        step_io_readwrite 1
+    endif
+    
     add r14, clock					; Clock
     add r11w, pc					; add on PC
     jmp opcode_done	
@@ -1835,22 +1983,22 @@ x6A_ror_a endp
 
 x6E_ror_abs proc	
     read_abs_rbx 0
-    ror_body 1, 6, 2
+    ror_body 1, 1, 6, 2
 x6E_ror_abs endp
 
 x7E_ror_absx proc	
     read_absx_rbx 0
-    ror_body 1, 7, 2
+    ror_body 1, 1, 7, 2
 x7E_ror_absx endp
 
 x66_ror_zp proc
     read_zp_rbx
-    ror_body 0, 5, 1
+    ror_body 0, 0, 5, 1
 x66_ror_zp endp
 
 x76_ror_zpx proc
     read_zpx_rbx
-    ror_body 0, 6, 1
+    ror_body 0, 0, 6, 1
 x76_ror_zpx endp
 
 ;
@@ -3357,7 +3505,9 @@ x1C_trb_abs proc
     and byte ptr [rsi+rbx], al
     jz set_zero
     
+    mov ecx, 1
     step_io_readwrite 1
+
     add r14, 6
     add r11w, 2
     jmp opcode_done
@@ -3377,8 +3527,9 @@ skip:
 set_zero:
     ;        NZ A P C
     or r15w, 0100000000000000b
-    step_io_readwrite 1
-    
+
+    mov ecx, 1
+    step_io_readwrite 1    
 
     add r14, 6
     add r11w, 2
@@ -3417,7 +3568,9 @@ x0C_tsb_abs proc
     or byte ptr [rsi+rbx], r8b
     jz set_zero
     
+    mov ecx, 1
     step_io_readwrite 1
+
     add r14, 6
     add r11w, 2
     jmp opcode_done
@@ -3435,6 +3588,8 @@ skip:
 set_zero:
     ;        NZ A P C
     or r15w, 0100000000000000b
+
+    mov ecx, 1
     step_io_readwrite 1
 
     add r14, 6

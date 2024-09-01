@@ -1050,7 +1050,7 @@ endm
 ; 
 ; should only be called if data0\data1 is read\written.
 vera_dataaccess_body macro doublestep, write_value
-	local cache_write_0, done_0, no_transparancy_0, fx_4bit_pixels_0, cache_write_1, done_1, no_transparancy_1 ,cache_done, no_fx_step_1, polyfill_1, not_fx_1, affine_1
+	local cache_write_0, done_0, no_transparancy_0, fx_4bit_pixels_0, cache_write_1, done_1, no_transparancy_1 ,cache_done, no_fx_step_1, polyfill_1, not_fx_1, affine_1, read_loop
 
 	mov rax, [rdx].state.vram_ptr				; get value from vram
 	push rsi
@@ -1060,25 +1060,43 @@ vera_dataaccess_body macro doublestep, write_value
 	jne step_data1
 
 	mov rdi, [rdx].state.data0_address
-
+	
 	if write_value eq 1 and doublestep eq 0
 		vera_write_dataport
 	endif
 
-	if write_value eq 0
-		vera_read_dataport_cache
+	if doublestep eq 0
+
+		if write_value eq 0
+			vera_read_dataport_cache
+		endif
+
+		add rdi, [rdx].state.data0_step
+		and rdi, 1ffffh								; mask off high bits so we wrap
+
 	endif
 
-	add rdi, [rdx].state.data0_step
-	and rdi, 1ffffh								; mask off high bits so we wrap
-
 	if doublestep eq 1
+
+		inc ecx
+
+		read_loop:
+
+		vera_read_dataport_cache
+
+		add rdi, [rdx].state.data0_step
+		and rdi, 1ffffh	
+		
+		sub ecx, 1
+		jnz read_loop
+
 		if write_value eq 1
 			vera_write_dataport
 		endif
 
 		add rdi, [rdx].state.data0_step			; perform second step
 		and rdi, 1ffffh							; mask off high bits so we wrap
+
 	endif
 
 	mov [rdx].state.data0_address, rdi

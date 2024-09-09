@@ -3860,38 +3860,35 @@ noinstruction_nop_2_1 proc
     ret
 noinstruction_nop_2_1 endp
 
-noinstruction_nop_4_1 proc
+noinstruction_nop_4_3 proc
+    ; LDD abs
     add r14, 4	; Clock	
+    add r11, 2
     jmp opcode_done
-    ret
-noinstruction_nop_4_1 endp
+noinstruction_nop_4_3 endp
 
-noinstruction_nop_8_1 proc
+noinstruction_nop_8_3 proc
     add r14, 8	; Clock	
+    add r11, 2
     jmp opcode_done
-    ret
-noinstruction_nop_8_1 endp
-
+noinstruction_nop_8_3 endp
 
 noinstruction_nop_2_2 proc
     add r14, 2	; Clock	
     inc r11
     jmp opcode_done
-    ret
 noinstruction_nop_2_2 endp
 
 noinstruction_nop_3_2 proc
     add r14, 3	; Clock	
     inc r11
     jmp opcode_done
-    ret
 noinstruction_nop_3_2 endp
 
 noinstruction_nop_4_2 proc
     add r14, 4	; Clock	
     inc r11
     jmp opcode_done
-    ret
 noinstruction_nop_4_2 endp
 
 ;
@@ -3993,7 +3990,7 @@ opcode_58	qword	x58_cli		 	- instructions_table ; $58
 opcode_59	qword	x59_eor_absy 	- instructions_table ; $59
 opcode_5A	qword	x5A_phy		 	- instructions_table ; $5A
 opcode_5B	qword	noinstruction_nop_1_1 	- instructions_table ; $5B
-opcode_5C	qword	noinstruction_nop_8_1 	- instructions_table ; $5C
+opcode_5C	qword	noinstruction_nop_8_3 	- instructions_table ; $5C
 opcode_5D	qword	x5D_eor_absx 	- instructions_table ; $5D
 opcode_5E	qword	x5E_lsr_absx 	- instructions_table ; $5E
 opcode_5F	qword	x5F_bbr5	 	- instructions_table ; $5F
@@ -4121,7 +4118,7 @@ opcode_D8	qword	xD8_cld		 	- instructions_table ; $D8
 opcode_D9	qword	xD9_cmp_absy 	- instructions_table ; $D9
 opcode_DA	qword	xDA_phx		 	- instructions_table ; $DA
 opcode_DB	qword	xDB_stp		 	- instructions_table ; $DB
-opcode_DC	qword	noinstruction_nop_4_1 	- instructions_table ; $DC
+opcode_DC	qword	noinstruction_nop_4_3 	- instructions_table ; $DC
 opcode_DD	qword	xDD_cmp_absx 	- instructions_table ; $DD
 opcode_DE	qword	xDE_dec_absx 	- instructions_table ; $DE
 opcode_DF	qword	xDF_bbs5	 	- instructions_table ; $DF
@@ -4153,7 +4150,7 @@ opcode_F8	qword	xF8_sed		 	- instructions_table ; $F8
 opcode_F9	qword	xF9_sbc_absy 	- instructions_table ; $F9
 opcode_FA	qword	xFA_plx		 	- instructions_table ; $FA
 opcode_FB	qword	noinstruction_nop_1_1 	- instructions_table ; $FB
-opcode_FC	qword	noinstruction_nop_4_1 	- instructions_table ; $FC
+opcode_FC	qword	noinstruction_nop_4_3 	- instructions_table ; $FC
 opcode_FD	qword	xFD_sbc_absx 	- instructions_table ; $FD
 opcode_FE	qword	xFE_inc_absx 	- instructions_table ; $FE
 opcode_FF	qword	xFF_bbs7	 	- instructions_table ; $FF

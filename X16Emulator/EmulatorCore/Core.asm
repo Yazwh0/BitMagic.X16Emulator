@@ -3862,6 +3862,9 @@ noinstruction_nop_2_1 endp
 
 noinstruction_nop_4_3 proc
     ; LDD abs
+    read_abs_rbx 0
+    step_vera_read 1
+
     add r14, 4	; Clock	
     add r11, 2
     jmp opcode_done

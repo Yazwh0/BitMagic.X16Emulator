@@ -8,6 +8,7 @@ using BitMagic.Compiler.Files;
 using BitMagic.X16Emulator.Snapshot;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using System;
 
 namespace BitMagic.X16Emulator.TestHelper;
 
@@ -17,7 +18,7 @@ public static class X16TestHelper
         => (await EmulateTemplateChanges(code, emulator, dontChangeEmulatorOptions, expectedResult)).Emulator;
 
     public static async Task<Emulator> Emulate(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
-        => (await EmulateChanges(code, emulator, dontChangeEmulatorOptions, expectedResult)).Emulator;
+        => (await EmulateChanges(code, emulator, dontChangeEmulatorOptions, expectedResult, false)).Emulator;
 
     public static async Task<(Emulator Emulator, Snapshot.Snapshot Snapshot)> EmulateTemplateChanges(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
     {
@@ -34,7 +35,7 @@ public static class X16TestHelper
         return await Emulate(project, emulator, dontChangeEmulatorOptions, expectedResult);
     }
 
-    public static Task<(Emulator Emulator, Snapshot.Snapshot Snapshot)> EmulateChanges(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
+    public static Task<(Emulator Emulator, Snapshot.Snapshot Snapshot)> EmulateChanges(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode, bool displayOutput = true)
     {
         if (string.IsNullOrWhiteSpace(code))
             throw new Exception("No code to compile");
@@ -50,10 +51,10 @@ public static class X16TestHelper
         //templateResult.Parent = project.Code;
         //project.Code = templateResult;
 
-        return Emulate(project, emulator, dontChangeEmulatorOptions, expectedResult);
+        return Emulate(project, emulator, dontChangeEmulatorOptions, expectedResult, displayOutput);
     }
 
-    private static async Task<(Emulator Emulator, Snapshot.Snapshot Snapshot)> Emulate(Project project, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
+    private static async Task<(Emulator Emulator, Snapshot.Snapshot Snapshot)> Emulate(Project project, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode, bool displayOutput = true)
     {
         var compiler = new Compiler.Compiler(project, new NullLogger()); // code, new NullLogger());
 
@@ -86,33 +87,36 @@ public static class X16TestHelper
 
         var ts = stopWatch.Elapsed;
 
-        Console.WriteLine($"Time:\t{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}.{(ts.Milliseconds / 10):00}");
+        if (displayOutput)
+        {
+            Console.WriteLine($"Time:\t{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}.{(ts.Milliseconds / 10):00}");
 
-        Console.WriteLine($"A:   \t${emulator.A:X2}");
-        Console.WriteLine($"X:   \t${emulator.X:X2}");
-        Console.WriteLine($"Y:   \t${emulator.Y:X2}");
-        Console.WriteLine($"PC:  \t${emulator.Pc:X4}");
-        Console.WriteLine($"SP:  \t${emulator.StackPointer:X4}");
+            Console.WriteLine($"A:   \t${emulator.A:X2}");
+            Console.WriteLine($"X:   \t${emulator.X:X2}");
+            Console.WriteLine($"Y:   \t${emulator.Y:X2}");
+            Console.WriteLine($"PC:  \t${emulator.Pc:X4}");
+            Console.WriteLine($"SP:  \t${emulator.StackPointer:X4}");
 
-        Console.WriteLine($"Ticks:\t${emulator.Clock:X4}");
+            Console.WriteLine($"Ticks:\t${emulator.Clock:X4}");
 
-        Console.Write("Flags:\t[");
-        Console.Write(emulator.Negative ? "N" : " ");
-        Console.Write(emulator.Overflow ? "V" : " ");
-        Console.Write(" ");
-        Console.Write(emulator.BreakFlag ? "B" : " ");
-        Console.Write(emulator.Decimal ? "D" : " ");
-        Console.Write(emulator.InterruptDisable ? "I" : " ");
-        Console.Write(emulator.Zero ? "Z" : " ");
-        Console.Write(emulator.Carry ? "C]" : " ]");
-        Console.WriteLine();
-        Console.WriteLine($"Speed:\t{emulator.Clock / ts.TotalSeconds / 1000000.0:0.00}Mhz");
-        Console.WriteLine();
-        Console.WriteLine($"D0 Adr:\t${emulator.Vera.Data0_Address:X5} (step ${emulator.Vera.Data0_Step:X2})");
-        Console.WriteLine($"D1 Adr:\t${emulator.Vera.Data1_Address:X5} (step ${emulator.Vera.Data1_Step:X2})");
-        Console.WriteLine();
-        Console.WriteLine($"Beam:\t{emulator.Vera.Beam_X}, {emulator.Vera.Beam_Y} ({emulator.Vera.Beam_Position})");
-        Console.WriteLine();
+            Console.Write("Flags:\t[");
+            Console.Write(emulator.Negative ? "N" : " ");
+            Console.Write(emulator.Overflow ? "V" : " ");
+            Console.Write(" ");
+            Console.Write(emulator.BreakFlag ? "B" : " ");
+            Console.Write(emulator.Decimal ? "D" : " ");
+            Console.Write(emulator.InterruptDisable ? "I" : " ");
+            Console.Write(emulator.Zero ? "Z" : " ");
+            Console.Write(emulator.Carry ? "C]" : " ]");
+            Console.WriteLine();
+            Console.WriteLine($"Speed:\t{emulator.Clock / ts.TotalSeconds / 1000000.0:0.00}Mhz");
+            Console.WriteLine();
+            Console.WriteLine($"D0 Adr:\t${emulator.Vera.Data0_Address:X5} (step ${emulator.Vera.Data0_Step:X2})");
+            Console.WriteLine($"D1 Adr:\t${emulator.Vera.Data1_Address:X5} (step ${emulator.Vera.Data1_Step:X2})");
+            Console.WriteLine();
+            Console.WriteLine($"Beam:\t{emulator.Vera.Beam_X}, {emulator.Vera.Beam_Y} ({emulator.Vera.Beam_Position})");
+            Console.WriteLine();
+        }
 
         if (emulateResult != expectedResult)
             Assert.Fail($"Emulate Result is not from a {expectedResult}. Actual: {emulateResult}");
@@ -219,5 +223,18 @@ public class NullLogger : IEmulatorLogger
 
     public void LogLine(string message)
     {
+    }
+}
+
+public static class SpanExtensions
+{
+    public static Span<byte> Set(this Span<byte> span, IEnumerable<byte> toSet, int index = 0)
+    {
+        foreach (var i in toSet)
+        {
+            span[index++] = i;
+        }
+
+        return span;
     }
 }

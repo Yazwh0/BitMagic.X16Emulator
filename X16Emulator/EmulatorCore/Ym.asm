@@ -48,9 +48,11 @@ ymnext_done:
 	push r9
 	push r8	
 	push rdx    
+	push rcx
 
 	call [rdx].state.step_ym
 
+	pop rcx
 	pop rdx
 	pop r8
 	pop r9
@@ -91,9 +93,11 @@ ym_write_data proc
 	push r9
 	push r8	
 	push rdx    
+	push rcx
 
 	call [rdx].state.write_registers_ym ; will udpate the status byte
 
+	pop rcx
 	pop rdx
 	pop r8
 	pop r9

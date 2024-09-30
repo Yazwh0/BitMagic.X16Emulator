@@ -1,7 +1,5 @@
-﻿using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using BitMagic.Common;
-using Silk.NET.SDL;
 
 namespace BitMagic.X16Emulator;
 
@@ -93,6 +91,15 @@ public class Emulator : IDisposable
 
     public class VeraState
     {
+
+        [Flags]
+        public enum VeraBreakpointType : byte
+        {
+            Read = 1,
+            Write = 2,
+            Load = 4
+        }
+
         private readonly Emulator _emulator;
         public VeraState(Emulator emulator)
         {
@@ -322,7 +329,7 @@ public class Emulator : IDisposable
         public int Ym_Right = 0;
 
         public uint WrapperInitialised = 0;
-        public uint WrapperSpacer = 0;
+        public uint WrapperSpacer = 0x01020304;
         // end of C wrapper
 
         public ulong WrapperFlags = 0;  // used by the linux wrapper to see if these calls have had their handlers injected.
@@ -352,6 +359,7 @@ public class Emulator : IDisposable
         public ulong CurrentBankAddress = 0;
 
         public ulong VramPtr = 0;
+        public ulong VramBreakpointPtr = 0;
         public ulong PalettePtr = 0;
         public ulong SpritePtr = 0;
         public ulong PsgPtr = 0;
@@ -438,6 +446,7 @@ public class Emulator : IDisposable
 
         public uint SpiPosition = 0;
         public uint SpiChipSelect = 0;
+        public uint SpiAutoTx = 0;
         public uint SpiReceiveCount = 0;
         public uint SpiSendCount = 0;
         public uint SpiSendLength = 0;
@@ -454,6 +463,7 @@ public class Emulator : IDisposable
         public uint JoypadPrevious = 0;
 
         public uint StackBreakpointHit = 0;
+        public uint BreakpointSource = 0;
         public uint VideoOutput = 1; // VGA
 
         public uint InitialStartup = 1;
@@ -504,9 +514,13 @@ public class Emulator : IDisposable
         public uint FxYPosition = 0;
         public uint FxXMult32 = 0;
         public uint FxYMult32 = 0;
-        public uint FxSpacer = 0;
+        //public uint FxSpacer = 0;
 
         // End FX
+
+        public uint VramData = 0;
+
+        public uint HistoryLogMask = (0x400 * 16) - 1; // 1024 entries
 
         public ushort Pc = 0;
         public ushort StackPointer = 0x1fd; // apparently
@@ -664,7 +678,7 @@ public class Emulator : IDisposable
             ulong display, ulong palette, ulong sprite, ulong displayBuffer, ulong history, ulong i2cBuffer,
             ulong smcKeyboardPtr, ulong smcMousePtr, ulong spiHistoryPtr, ulong spiInboundBufferPtr, ulong spiOutbandBufferPtr,
             ulong breakpointPtr, ulong stackInfoPtr, ulong stackBreakpointPtr, ulong rtcNvramPtr, ulong pcmPtr,
-            ulong audioOutputPtr, ulong psgPtr)
+            ulong audioOutputPtr, ulong psgPtr, ulong vramBreakpoint_ptr)
         {
             MemoryPtr = memory;
             RomPtr = rom;
@@ -688,6 +702,7 @@ public class Emulator : IDisposable
             PcmPtr = pcmPtr;
             AudioOutputPtr = audioOutputPtr;
             PsgPtr = psgPtr;
+            VramBreakpointPtr = vramBreakpoint_ptr;
         }
     }
 
@@ -702,6 +717,14 @@ public class Emulator : IDisposable
         Breakpoint,
         SmcReset,
         Unsupported = -1
+    }
+
+    [Flags]
+    public enum BreakpointSourceType
+    {
+        Breakpoint = 0x01,
+        Vram = 0x02,
+        Stack = 0x04
     }
 
     private CpuState _state;
@@ -740,18 +763,30 @@ public class Emulator : IDisposable
     public ulong Spi_CsdRegister_0 { get => _state.SpiCsdRegister_0; set => _state.SpiCsdRegister_0 = value; }
     public ulong Spi_CsdRegister_1 { get => _state.SpiCsdRegister_1; set => _state.SpiCsdRegister_1 = value; }
 
-    public bool StackBreakpointHit { get => _state.StackBreakpointHit != 0; set => _state.StackBreakpointHit = (uint)(value ? 1 : 0); }
+
+    public BreakpointSourceType BreakpointSource { get => (BreakpointSourceType)_state.BreakpointSource; set => _state.BreakpointSource = (uint)value; }
 
     public ulong Clock_AudioNext { get => _state.Clock_AudioNext; set => _state.Clock_AudioNext = value; }
 
     public uint AudioWrite => _state.AudioWrite;
 
-    public VeraState Vera => new VeraState(this);
-    public ViaState Via => new ViaState(this);
-    public I2cState I2c => new I2cState(this);
-    public SmcState Smc => new SmcState(this);
-    public VeraAudioState VeraAudio => new VeraAudioState(this);
-    public VeraFxState VeraFx => new VeraFxState(this);
+    private readonly VeraState _vera;
+    public VeraState Vera => _vera;
+
+    private readonly ViaState _via;
+    public ViaState Via => _via;
+
+    private readonly I2cState _i2c;
+    public I2cState I2c => _i2c;
+
+    private readonly SmcState _smc;
+    public SmcState Smc => _smc;
+
+    private readonly VeraAudioState _veraAudio;
+    public VeraAudioState VeraAudio => _veraAudio;
+
+    private readonly VeraFxState _veraFx;
+    public VeraFxState VeraFx => _veraFx;
 
     public uint Keyboard_ReadPosition => _state.Keyboard_ReadPosition;
     public uint Keyboard_WritePosition { get => _state.Keyboard_WritePosition; set => _state.Keyboard_WritePosition = value; }
@@ -771,11 +806,12 @@ public class Emulator : IDisposable
     private readonly ulong _ram_ptr;
     private readonly ulong _ram_ptr_rounded;
     private readonly ulong _vram_ptr;
+    private readonly ulong _vramBreakpoint_ptr;
     private readonly ulong _display_ptr;
     private readonly ulong _display_buffer_ptr;
     private readonly ulong _display_buffer_ptr_rounded;
     private readonly ulong _palette_ptr;
-    private readonly ulong _history_ptr;
+    private ulong _history_ptr;
     private readonly ulong _sprite_ptr;
     private readonly ulong _i2cBuffer_ptr;
     private readonly ulong _smcKeyboard_ptr;
@@ -799,7 +835,7 @@ public class Emulator : IDisposable
     public const int DisplaySize = 800 * 525 * 4 * 6; // *6 for each layer
     public const int PaletteSize = 256 * 4;
     public const int DisplayBufferSize = 2048 * 2 * 5; // Pallette index for two lines * 4 for each layers 0, 1, sprite value, sprite depth, sprite collision - one line being rendered, one being output, 2048 to provide enough space so scaling of $ff works
-    public const int HistorySize = 16 * 1024;
+    //public const int HistorySize = 16 * 1024;
     public const int SpriteSize = 64 * 128;
     public const int I2cBufferSize = 1024;
     public const int SmcKeyboardBufferSize = 16;
@@ -826,8 +862,19 @@ public class Emulator : IDisposable
         _state.SpiSdCardSize = (uint)(sdCard.Size / 512L);
     }
 
-    public unsafe Emulator()
+    public EmulatorOptions Options { get; private set; }
+
+    public unsafe Emulator(EmulatorOptions? options = null)
     {
+        Options = options ?? new EmulatorOptions();
+
+        if (Options.HistorySize == 0 || (Options.HistorySize & (Options.HistorySize - 1)) != 0)
+            throw new Exception("History size must be a multiple of 2 and not zero");
+
+        _state = new CpuState();
+
+        _state.HistoryLogMask = (uint)(Options.HistorySize * 16 - 1);
+
         _memory_ptr = (ulong)NativeMemory.Alloc(RamSize + _rounding);
         _memory_ptr_rounded = RoundMemoryPtr(_memory_ptr);
 
@@ -842,9 +889,10 @@ public class Emulator : IDisposable
 
         _display_ptr = (ulong)NativeMemory.Alloc(DisplaySize);
         _vram_ptr = (ulong)NativeMemory.Alloc(VramSize);
+        _vramBreakpoint_ptr = (ulong)NativeMemory.Alloc(VramSize);
         _palette_ptr = (ulong)NativeMemory.Alloc(PaletteSize);
         _sprite_ptr = (ulong)NativeMemory.Alloc(SpriteSize);
-        _history_ptr = (ulong)NativeMemory.Alloc(HistorySize);
+        _history_ptr = (ulong)NativeMemory.Alloc(State.HistoryLogMask + 1);
         _i2cBuffer_ptr = (ulong)NativeMemory.Alloc(I2cBufferSize);
         _smcKeyboard_ptr = (ulong)NativeMemory.Alloc(SmcKeyboardBufferSize);
         _smcMouse_ptr = (ulong)NativeMemory.Alloc(SmcMouseBufferSize);
@@ -863,7 +911,14 @@ public class Emulator : IDisposable
         _audioOutput_ptr = (ulong)NativeMemory.Alloc(AudioOutputSize);
         _psg_ptr = (ulong)NativeMemory.Alloc(PsgSize);
 
-        _state = new CpuState();
+
+        _vera = new VeraState(this);
+        _via = new ViaState(this);
+        _i2c = new I2cState(this);
+        _smc = new SmcState(this);
+        _veraAudio = new VeraAudioState(this);
+        _veraFx = new VeraFxState(this);
+
         SetPointers();
 
         var memory_span = new Span<byte>((void*)_memory_ptr_rounded, RamSize);
@@ -875,8 +930,12 @@ public class Emulator : IDisposable
             ram_span[i] = 0;
 
         var vram_span = new Span<byte>((void*)_vram_ptr, VramSize);
+        var vrambreakpoint_span = new Span<byte>((void*)_vramBreakpoint_ptr, VramSize);
         for (var i = 0; i < VramSize; i++)
+        {
             vram_span[i] = 0;
+            vrambreakpoint_span[i] = 0;
+        }
 
         var rom_span = new Span<byte>((void*)_rom_ptr_rounded, RomSize);
         for (var i = 0; i < RomSize; i++)
@@ -886,8 +945,8 @@ public class Emulator : IDisposable
         for (var i = 0; i < DisplayBufferSize; i++)
             buffer_span[i] = 0;
 
-        var history_span = new Span<byte>((void*)_history_ptr, HistorySize);
-        for (var i = 0; i < HistorySize; i++)
+        var history_span = new Span<byte>((void*)_history_ptr, (int)State.HistoryLogMask + 1);
+        for (var i = 0; i < State.HistoryLogMask + 1; i++)
             history_span[i] = 0;
 
         var sprite_span = new Span<byte>((void*)_sprite_ptr, SpriteSize);
@@ -992,7 +1051,7 @@ public class Emulator : IDisposable
     private void SetPointers() => _state.SetPointers(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,
             _sprite_ptr, _display_buffer_ptr_rounded, _history_ptr, _i2cBuffer_ptr, _smcKeyboard_ptr, _smcMouse_ptr, _spiHistory_ptr,
             _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded, _stackInfo_Ptr, _stackBreakpoint_Ptr, _rtcNvram_Ptr,
-            _pcm_Ptr, _audioOutput_ptr, _psg_ptr);
+            _pcm_Ptr, _audioOutput_ptr, _psg_ptr, _vramBreakpoint_ptr);
 
     public ulong DisplayPtr => _display_ptr;
 
@@ -1003,10 +1062,11 @@ public class Emulator : IDisposable
     public unsafe Span<byte> DisplayRaw => new Span<byte>((void*)_display_ptr, DisplaySize);
     public unsafe Span<PixelRgba> Palette => new Span<PixelRgba>((void*)_palette_ptr, PaletteSize / 4);
     public unsafe Span<Sprite> Sprites => new Span<Sprite>((void*)_sprite_ptr, 128);
-    public unsafe Span<EmulatorHistory> History => new Span<EmulatorHistory>((void*)_history_ptr, HistorySize / 16);
+    public unsafe Span<EmulatorHistory> History => new Span<EmulatorHistory>((void*)_history_ptr, ((int)State.HistoryLogMask + 1) / 16);
     public unsafe Span<byte> KeyboardBuffer => new Span<byte>((void*)_smcKeyboard_ptr, SmcKeyboardBufferSize);
     public unsafe Span<byte> MouseBuffer => new Span<byte>((void*)_smcMouse_ptr, SmcMouseBufferSize);
     public unsafe Span<uint> Breakpoints => new Span<uint>((void*)_breakpoint_ptr_rounded, BreakpointSize);
+    public unsafe Span<byte> VramBreakpoints => new Span<byte>((void*)_vramBreakpoint_ptr, VramSize);
     public unsafe Span<uint> StackInfo => new Span<uint>((void*)_stackInfo_Ptr, StackInfoSize / 4);
     public unsafe Span<byte> StackBreakpoints => new Span<byte>((void*)_stackBreakpoint_Ptr, StackBreakpointSize);
     public unsafe Span<byte> RtcNvram => new Span<byte>((void*)_rtcNvram_Ptr, RtcNvramSize);
@@ -1016,6 +1076,7 @@ public class Emulator : IDisposable
     public unsafe Span<short> AudioOutputBuffer => new Span<short>((void*)_audioOutput_ptr, AudioOutputSize / 2);
     public ulong AudioOutputPtr => _audioOutput_ptr;
     public SmcBuffer SmcBuffer { get; }
+    public EmulatorResult Result { get; internal set; }
 
     public EmulatorResult Emulate()
     {
@@ -1031,19 +1092,54 @@ public class Emulator : IDisposable
 
         System.Threading.Thread.CurrentThread.Priority = System.Threading.ThreadPriority.Highest;
         var r = fnEmulatorCode(ref _state);
-        var result = (EmulatorResult)r;
+        Result = (EmulatorResult)r;
         System.Threading.Thread.CurrentThread.Priority = System.Threading.ThreadPriority.Normal;
 
         //spi.Stop();
         //i2c.Stop();
 
-        return result;
+        return Result;
     }
 
     public void SetState(CpuState state)
     {
         _state = state;
         SetPointers();
+    }
+
+    public unsafe void SetOptions(EmulatorOptions options)
+    {
+        var oldOptions = Options;
+
+        Options = options;
+
+        if (oldOptions.HistorySize != options.HistorySize)
+        {
+            if (Options.HistorySize == 0 || (Options.HistorySize & (Options.HistorySize - 1)) != 0)
+                throw new Exception("History size must be a multiple of 2 and not zero");
+
+            NativeMemory.Free((void*)_history_ptr);
+
+            _state.HistoryLogMask = (uint)(Options.HistorySize * 16 - 1);
+
+            _history_ptr = (ulong)NativeMemory.Alloc(State.HistoryLogMask + 1);
+            _state.HistoryPtr = _history_ptr;
+
+            var history_span = new Span<byte>((void*)_history_ptr, (int)_state.HistoryLogMask + 1);
+            for (var i = 0; i < State.HistoryLogMask + 1; i++)
+                history_span[i] = 0;
+
+            _state.History_Pos = 0;
+        }
+    }
+
+    public unsafe void ResetHistory()
+    {
+        var history_span = new Span<byte>((void*)_history_ptr, (int)_state.HistoryLogMask + 1);
+        for (var i = 0; i < State.HistoryLogMask + 1; i++)
+            history_span[i] = 0;
+
+        _state.History_Pos = 0;
     }
 
     public unsafe void Dispose()
@@ -1059,6 +1155,7 @@ public class Emulator : IDisposable
         NativeMemory.Free((void*)_ram_ptr);
         NativeMemory.Free((void*)_display_ptr);
         NativeMemory.Free((void*)_vram_ptr);
+        NativeMemory.Free((void*)_vramBreakpoint_ptr);
         NativeMemory.Free((void*)_palette_ptr);
         NativeMemory.Free((void*)_sprite_ptr);
         NativeMemory.Free((void*)_display_buffer_ptr);
@@ -1077,4 +1174,9 @@ public class Emulator : IDisposable
         NativeMemory.Free((void*)_audioOutput_ptr);
         NativeMemory.Free((void*)_psg_ptr);
     }
+}
+
+public class EmulatorOptions
+{
+    public int HistorySize { get; set; } = 0x400;
 }

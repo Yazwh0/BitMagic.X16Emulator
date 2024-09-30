@@ -23,21 +23,21 @@ io_afterwrite proc
 	dec r13
 	lea rax, io_registers_write
 	add rax, [rax + r13 * 8]
-	jmp rax
+	jmp rax						; this rets to the caller of this proc
 io_afterwrite endp
 
 io_afterread proc
 	dec r13
 	lea rax, io_registers_read
 	add rax, [rax + r13 * 8]
-	jmp rax
+	jmp rax						; this rets to the caller of this proc
 io_afterread endp
 
 io_afterreadwrite proc
 	dec r13
 	lea rax, io_registers_readwrite
 	add rax, [rax + r13 * 8]
-	jmp rax
+	jmp rax						; this rets to the caller of this proc
 io_afterreadwrite endp
 
 io_r_readmemory proc
@@ -123,7 +123,7 @@ io_registers_read:
 	vera_r_9f3b qword io_r_readmemory - io_registers_read
 	vera_r_9f3c qword io_r_readmemory - io_registers_read
 	vera_r_9f3d qword io_r_readmemory - io_registers_read
-	vera_r_9f3e qword io_r_readmemory - io_registers_read
+	vera_r_9f3e qword vera_afterread_spidata - io_registers_read
 	vera_r_9f3f qword io_r_readmemory - io_registers_read
 
 	ym_r_9f40 qword io_r_readmemory - io_registers_read

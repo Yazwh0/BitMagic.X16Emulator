@@ -22,8 +22,9 @@ SPI_ILLEGAL_COMMAND equ 00000100b
 SPI_ERASE_RESET		equ 00000010b
 SPI_IDLE_STATE		equ 00000001b
 
-SPI_SELECT		equ 01b
-SPI_SLOWCLOCK	equ 10b
+SPI_SELECT		equ 001b
+SPI_SLOWCLOCK	equ 010b
+SPI_AUTOTX		equ 100b
 
 SPI_DEFAULT_RESPONSE equ 0ffh
 
@@ -116,6 +117,38 @@ writing_block:
 	ret
 vera_update_spi_data endp
 
+vera_afterread_spidata proc
+
+	mov eax, dword ptr [rdx].state.spi_autotx
+	test eax, eax
+	jz not_autotx
+
+	; if autotx is on, then place the next byte on the dataport
+	; put data into reply
+	mov ebx, dword ptr [rdx].state.spi_sendcount
+	mov rax, qword ptr [rdx].state.spi_outbound_buffer_ptr
+	movzx r13, byte ptr [rax + rbx]
+	mov byte ptr [rsi+SPI_DATA], r13b
+	mov dword ptr [rdx].state.spi_previousvalue, r13d
+
+	inc rbx
+
+	mov r13d, dword ptr [rdx].state.spi_sendlength
+
+
+	xor rax, rax
+	cmp r13d, ebx									; are we done?
+
+	cmove rbx, rax									; if done clear sendlength and sendcount
+	cmove r13, rax									
+
+	mov dword ptr [rdx].state.spi_sendcount, ebx
+	mov dword ptr [rdx].state.spi_sendlength, r13d
+
+not_autotx:
+	ret
+vera_afterread_spidata endp
+
 spi_do_nothing proc
 	mov r13b, SPI_DEFAULT_RESPONSE
 	mov byte ptr [rsi+SPI_DATA], r13b
@@ -136,6 +169,7 @@ spi_not_known proc
 	ret
 spi_not_known endp
 
+; sends data from SDCARD to X16.
 spi_send_data proc
 	mov ebx, dword ptr [rdx].state.spi_sendlength
 	test rbx, rbx
@@ -517,7 +551,7 @@ spi_command_table:
 	qword spi_not_known - spi_command_table ;  38
 	qword spi_not_known - spi_command_table ;  39
 	qword spi_not_known - spi_command_table ;  40
-	qword spi_acmd41	 - spi_command_table ;  41
+	qword spi_acmd41	- spi_command_table ;  41
 	qword spi_not_known - spi_command_table ;  42
 	qword spi_not_known - spi_command_table ;  43
 	qword spi_not_known - spi_command_table ;  44
@@ -531,10 +565,10 @@ spi_command_table:
 	qword spi_not_known - spi_command_table ;  52
 	qword spi_not_known - spi_command_table ;  53
 	qword spi_not_known - spi_command_table ;  54
-	qword spi_cmd55		 - spi_command_table ;  55
+	qword spi_cmd55		- spi_command_table ;  55
 	qword spi_not_known - spi_command_table ;  56
 	qword spi_not_known - spi_command_table ;  57
-	qword spi_read_ocr - spi_command_table ;  58
+	qword spi_read_ocr  - spi_command_table ;  58
 	qword spi_not_known - spi_command_table ;  59
 	qword spi_not_known - spi_command_table ;  60
 	qword spi_not_known - spi_command_table ;  61
@@ -543,12 +577,15 @@ spi_command_table:
 	qword spi_not_known - spi_command_table ;  64
 
 
-
-
 vera_update_spi_ctrl proc
 	movzx r13, byte ptr [rsi+SPI_CTRL]
-	and r13b, SPI_SELECT + SPI_SLOWCLOCK					; can only set slow clock or select
+	and r13b, SPI_SELECT + SPI_SLOWCLOCK + SPI_AUTOTX		; can only set slow clock, select or autotx.
 	mov byte ptr [rsi+SPI_CTRL], r13b
+
+	mov eax, r13d
+	and eax, SPI_AUTOTX
+	shr eax, 2
+	mov dword ptr [rdx].state.spi_autotx, eax
 
 	mov ebx, dword ptr [rdx].state.spi_chipselect
 	and r13d, 1

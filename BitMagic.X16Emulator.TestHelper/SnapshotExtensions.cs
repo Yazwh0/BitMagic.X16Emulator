@@ -3,6 +3,7 @@ using TestAssert = Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text;
 using BitMagic.Common.Address;
 using System.Net;
+using static BitMagic.X16Emulator.Emulator;
 
 namespace BitMagic.X16Emulator.TestHelper;
 
@@ -138,6 +139,32 @@ public static class SnapshotExtensions
         return snapshot;
     }
 
+    public static SnapshotResultTest ResultIs(this SnapshotResultTest snapshot, EmulatorResult result)
+    {
+        var r = result;
+        snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(r, snapshot.Emulator.Result));
+
+        return snapshot;
+    }
+
+    public static SnapshotResultTest ResultIs(this SnapshotResultTest snapshot, BreakpointSourceType breakpointSource)
+    {
+        var r = breakpointSource;
+        snapshot.Tests.Add(() => {
+            TestAssert.Assert.AreEqual(EmulatorResult.Breakpoint, snapshot.Emulator.Result);
+            TestAssert.Assert.AreEqual(r, snapshot.Emulator.BreakpointSource);
+            });
+
+        return snapshot;
+    }
+
+    public static SnapshotResultTest Is(this SnapshotResultTest snapshot, Action test)
+    {
+        snapshot.Tests.Add(test);
+
+        return snapshot;
+    }
+
     public static SnapshotResultTest Is(this SnapshotResultTest snapshot, Registers register, byte value)
     {
         var v = (int)value;
@@ -172,9 +199,9 @@ public static class SnapshotExtensions
         var r = memoryArea;
 
         if (r == MemoryAreas.BankedRam)
-            snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(v, GetValue(r, a, snapshot.Emulator), $"Memory 0x{(address & 0xff0000) >> 16 :X2}:{address & 0xffff:X4} is not {v}"));
+            snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(v, GetValue(r, a, snapshot.Emulator), $"Memory 0x{(address & 0xff0000) >> 16 :X2}:{address & 0xffff:X4} is not 0x{v:X2} its 0x{GetValue(r, a, snapshot.Emulator):X2}"));
         else
-            snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(v, GetValue(r, a, snapshot.Emulator), $"Memory 0x{a:X4} is not {v}"));
+            snapshot.Tests.Add(() => TestAssert.Assert.AreEqual(v, GetValue(r, a, snapshot.Emulator), $"Memory 0x{a:X4} is not 0x{v:X2} its 0x{GetValue(r, a, snapshot.Emulator):X2}"));
 
         return snapshot.CanChange(memoryArea, address);
     }
@@ -235,6 +262,8 @@ public static class SnapshotExtensions
 
     public static void AssertNoOtherChanges(this SnapshotResultTest snapshot)
     {
+        snapshot.DisplayStatus();
+
         snapshot.Changes.RemoveAll(i => i.DisplayName == "Clock");
         snapshot.CanChange(MemoryAreas.Ram, 0xa000, 0xc000 - 1); // banked ram will show as well, so lets remove one.
 
@@ -266,5 +295,32 @@ public static class SnapshotExtensions
         {
             i();
         }
+    }
+
+    public static void DisplayStatus(this SnapshotResultTest snapshot)
+    {
+        Console.WriteLine($"A:   \t${snapshot.Emulator.A:X2}");
+        Console.WriteLine($"X:   \t${snapshot.Emulator.X:X2}");
+        Console.WriteLine($"Y:   \t${snapshot.Emulator.Y:X2}");
+        Console.WriteLine($"PC:  \t${snapshot.Emulator.Pc:X4}");
+        Console.WriteLine($"SP:  \t${snapshot.Emulator.StackPointer:X4}");
+
+        Console.WriteLine($"Ticks:\t${snapshot.Emulator.Clock:X4}");
+
+        Console.Write("Flags:\t[");
+        Console.Write(snapshot.Emulator.Negative ? "N" : " ");
+        Console.Write(snapshot.Emulator.Overflow ? "V" : " ");
+        Console.Write(" ");
+        Console.Write(snapshot.Emulator.BreakFlag ? "B" : " ");
+        Console.Write(snapshot.Emulator.Decimal ? "D" : " ");
+        Console.Write(snapshot.Emulator.InterruptDisable ? "I" : " ");
+        Console.Write(snapshot.Emulator.Zero ? "Z" : " ");
+        Console.Write(snapshot.Emulator.Carry ? "C]" : " ]");
+        Console.WriteLine();
+        Console.WriteLine($"D0 Adr:\t${snapshot.Emulator.Vera.Data0_Address:X5} (step ${snapshot.Emulator.Vera.Data0_Step:X2})");
+        Console.WriteLine($"D1 Adr:\t${snapshot.Emulator.Vera.Data1_Address:X5} (step ${snapshot.Emulator.Vera.Data1_Step:X2})");
+        Console.WriteLine();
+        Console.WriteLine($"Beam:\t{snapshot.Emulator.Vera.Beam_X}, {snapshot.Emulator.Vera.Beam_Y} ({snapshot.Emulator.Vera.Beam_Position})");
+        Console.WriteLine();
     }
 }

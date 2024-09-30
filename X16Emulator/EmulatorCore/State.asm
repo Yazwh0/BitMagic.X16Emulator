@@ -13,6 +13,10 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see https://www.gnu.org/licenses/.
 
+BREAKPOINT			equ 000001b
+BREAKPOINT_VRAM		equ 000010b
+BREAKPOINT_STACK    equ 000100b
+
 state struct 
 
 	; functions
@@ -62,6 +66,7 @@ state struct
 
 	; Vera
 	vram_ptr				qword ?
+	vrambreakpoint_ptr		qword ?
 	palette_ptr				qword ? 
 	sprite_ptr				qword ?
 	psg_ptr					qword ?
@@ -149,6 +154,7 @@ state struct
 
 	spi_position			dword ?
 	spi_chipselect			dword ?
+	spi_autotx				dword ?
 	spi_receivecount		dword ?
 	spi_sendcount			dword ?
 	spi_sendlength			dword ?
@@ -165,6 +171,7 @@ state struct
 	joypad_previous			dword ?
 
 	stack_breakpoint_hit	dword ?
+	breakpoint_source		dword ?
 
 	video_output			dword ?
 
@@ -217,10 +224,10 @@ state struct
 	fx_y_position			dword ?
 	fx_x_mult_32			dword ?
 	fx_y_mult_32			dword ?
-	fx_spacer				dword ?
+	;fx_spacer				dword ?
 
-
-
+	vram_data				dword ?
+	history_log_mask		dword ?
 
 	; End FX
 

@@ -176,7 +176,15 @@ handle0_fetch_bitmap_wait:
 	jmp layer0_complete
 
 handle0_render_bitmap:
+	;mov ebx, [rdx].state.layer0_tiledata
+
+	mov eax, [rdx].state.layer0_mapdata
+	and eax, 0ffffh
 	mov ebx, [rdx].state.layer0_tiledata
+	mov r10d, [rdx].state.layer0_tilepos
+	mov r13d, [rdx].state.layer0_width
+	mov r14d, [rdx].state.layer0_mask
+
 	call [rdx].state.layer0_renderer
 
 	add dword ptr [rdx].state.layer0_x, eax
@@ -348,7 +356,15 @@ handle1_fetch_bitmap_wait:
 	jmp layer1_complete
 
 handle1_render_bitmap:
+	;mov ebx, [rdx].state.layer1_tiledata
+
+	mov eax, [rdx].state.layer1_mapdata
+	and eax, 0ffffh
 	mov ebx, [rdx].state.layer1_tiledata
+	mov r10d, [rdx].state.layer1_tilepos
+	mov r13d, [rdx].state.layer1_width
+	mov r14d, [rdx].state.layer1_mask
+
 	call [rdx].state.layer1_renderer
 
 	add dword ptr [rdx].state.layer1_x, eax

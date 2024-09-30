@@ -176,6 +176,7 @@ get_tile_data macro tile_height, tile_width, colour_depth
 		add ebx, r11d
 	endif
 
+	and rbx, 01ffffh
 	mov ebx, dword ptr [rsi + rbx]				; set ebx 32bits worth of values
 
 	if colour_depth eq 0 or colour_depth eq 1

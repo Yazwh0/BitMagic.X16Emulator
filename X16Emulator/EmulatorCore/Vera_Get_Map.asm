@@ -72,6 +72,7 @@ get_map_data macro map_height, map_width, tile_height, tile_width
 
 	lea rax, [r13 + rax * 2]		; VRAM Address + position * 2
 
+	and rax, 01ffffh
 	mov eax, dword ptr[rsi + rax]	; now has tile number(ah) and data(al)
 	ret
 endm

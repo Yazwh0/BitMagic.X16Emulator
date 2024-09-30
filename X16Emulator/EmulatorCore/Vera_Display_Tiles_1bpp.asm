@@ -57,6 +57,7 @@ layer0_1bpp_til_x_render proc
 	je pixel_16
 
 pixel_8:
+	and r10d, 0111b
 	lea r13, pixel_jump_8
 	add r13, [r13 + r10 * 8]
 	jmp r13
@@ -87,6 +88,7 @@ pixel_jump_8:
 	ret
 
 pixel_16:
+	and r10d, 01111b
 	lea r13, pixel_jump_16
 	add r13, [r13 + r10 * 8]
 	jmp r13
@@ -148,6 +150,7 @@ layer0_1bpp_til_t_render proc
 	je pixel_16
 
 pixel_8:
+	and r10d, 0111b
 	lea r13, pixel_jump_8
 	add r13, [r13 + r10 * 8]
 	jmp r13
@@ -178,6 +181,7 @@ pixel_jump_8:
 	ret
 
 pixel_16:
+	and r10d, 01111b
 	lea r13, pixel_jump_16
 	add r13, [r13 + r10 * 8]
 	jmp r13
@@ -250,6 +254,7 @@ layer1_1bpp_til_x_render proc
 	je pixel_16
 
 pixel_8:
+	and r10d, 0111b
 	lea r13, pixel_jump_8
 	add r13, [r13 + r10 * 8]
 	jmp r13
@@ -280,6 +285,7 @@ pixel_jump_8:
 	ret
 
 pixel_16:
+	and r10d, 01111b
 	lea r13, pixel_jump_16
 	add r13, [r13 + r10 * 8]
 	jmp r13
@@ -345,6 +351,7 @@ layer1_1bpp_til_t_render proc
 	je pixel_16
 	
 pixel_8:
+	and r10d, 0111b
 	lea r13, pixel_jump_8
 	add r13, [r13 + r10 * 8]
 	jmp r13
@@ -375,6 +382,7 @@ pixel_jump_8:
 	ret
 
 pixel_16:
+	and r10d, 01111b
 	lea r13, pixel_jump_16
 	add r13, [r13 + r10 * 8]
 	jmp r13

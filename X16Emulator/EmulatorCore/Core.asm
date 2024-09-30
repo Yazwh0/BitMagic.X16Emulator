@@ -52,7 +52,7 @@ MEMORY_READ         equ 010000000b          ; read this session
 
 
 ; rax  : scratch
-; rbx  : scratch
+; rbx  : scratch -- used to pass address on opcodes around
 ; rcx  : scratch -- although used to pass number of read side effects from an opcode to io readwrite
 ; rdx  : state object 
 ; rsi  : current memory context
@@ -229,6 +229,7 @@ clock_done:
     call copy_rambank_to_memory
     call copy_rombank_to_memory
 
+    mov dword ptr [rdx].state.breakpoint_source, 0
     mov dword ptr [rdx].state.stack_breakpoint_hit, 0
     mov [rdx].state.ignore_breakpoint, 1
     mov dword ptr [rdx].state.exit_code, 0
@@ -356,20 +357,23 @@ next_opcode::
     ;test eax, eax
     or eax, [rdx].state.ignore_breakpoint
     jnz dont_test_breakpoint
+    
+    ; check for any other breakpoint source
+    mov ebx, dword ptr [rdx].state.breakpoint_source
+    test ebx, ebx
+    jnz breakpoint_exit_stepback
 
     ; check for breakpoint
     mov rbx, qword ptr [rdx].state.breakpoint_ptr
     test byte ptr[rbx + r11 * 4], BREAKPOINT_MASK
-
-    jnz breakpoint_exit
+    jnz breakpoint_exit_normal
 
     ; check for stack breakpoint
     mov ebx, dword ptr [rdx].state.stack_breakpoint_hit
     test ebx, ebx
-    jnz breakpoint_exit
+    jnz breakpoint_exit_stack
 
 dont_test_breakpoint:
-    mov [rdx].state.ignore_breakpoint, 0
     movzx rbx, byte ptr [rsi+r11]	; Get opcode
 
     mov rax, qword ptr [rdx].state.breakpoint_ptr
@@ -390,10 +394,9 @@ dont_test_breakpoint:
     mov rdi, [rdx].state.history_ptr
     mov rcx, [rdx].state.history_pos
     add rdi, rcx
+    ; moved history pos to after opcode
     mov [rdx].state.debug_pos, rdi
-    add rcx, 16
-    and rcx, (1024*16)-1
-    mov [rdx].state.history_pos, rcx
+
     mov word ptr [rdi], r11w		; PC
     mov byte ptr [rdi+2], bl		; Opcode
     mov al, byte ptr [rsi+1]
@@ -474,11 +477,18 @@ no_break:
     pushf
     add rax, [rax + rbx*8]
     popf
-    jmp rax
+    jmp rax                                     ; jump to opcode
 
 cpu_is_waiting:
     add r14, 1
 opcode_done::
+    mov [rdx].state.ignore_breakpoint, 0        ; do this after the opcode has been processed as things like vram reads need to trigger a breakpoint
+
+    mov rcx, [rdx].state.history_pos
+    add rcx, 16
+    ;and rcx, (1024*16)-1
+    and ecx, [rdx].state.history_log_mask
+    mov [rdx].state.history_pos, rcx
 
     mov rcx, [rdx].state.breakpoint_ptr
     ;pushf
@@ -488,16 +498,19 @@ opcode_done::
     mov eax, [rdx].state.memory_write
     cmp eax, 0ffffffffh
     je no_write
+    and eax, 0ffffh
     or dword ptr [rcx + rax * 4], MEMORY_WRITE_VALUE
 no_write:
     mov eax, [rdx].state.memory_read
     cmp eax, 0ffffffffh
     je no_read
+    and eax, 0ffffh
     or dword ptr [rcx + rax * 4], MEMORY_READ
 
     mov eax, [rdx].state.memory_readptr
     cmp eax, 0ffffffffh
     je no_read
+    and eax, 0ffffh
     or dword ptr [rcx + rax * 4], MEMORY_READ
 no_read:
 
@@ -751,6 +764,17 @@ step_exit:
     ;leave - masm adds this.
     ret
 
+breakpoint_exit_stack:
+    or [rdx].state.breakpoint_source, BREAKPOINT_STACK
+    jmp breakpoint_exit
+
+breakpoint_exit_normal:
+    or [rdx].state.breakpoint_source, BREAKPOINT
+    jmp breakpoint_exit
+
+breakpoint_exit_stepback:
+    dec r11w
+
 breakpoint_exit:
     call vera_render_display
     mov [rdx].state.render_ready, 1						; signal that we need to redraw the UI
@@ -788,30 +812,50 @@ rombank_change:
 ;    mov byte ptr [rsi+1], al
 ;    cmp al, 1 --- ??
 
+    push rbx
     call copy_rombank_to_memory
+    pop rbx
 
     jmp done
 rambank_change:
+    push rbx
     call switch_rambank
+    pop rbx
 
     done:
 endm
 
 ; Check if we have read the vera data registers
 ; r13 will be set if so
-check_vera_access macro check_allvera
+check_vera_access macro checkallvera
     local done, vera_skip
 
     ;if check_allvera eq 1
-        xor r13, r13
-        lea rax, [rbx - (09f00h - 1)]		; set to bottom of range we're interested in
-        cmp rax, 42h						; check upper bound of IO area + 1. Currently via1\2 + vera + YM
-        cmovbe r13, rax						; set r13 to the address in vera + 1.
-    ;else
-    ;	lea rax, [rbx - 09f23h]				; get value to check
-    ;	cmp rax, 1
-    ;	setbe r13b							; store if we need to let vera know data has changed
-    ;endif
+
+    xor r13, r13
+    lea rax, [rbx - (09f00h - 1)]		    ; set to bottom of range we're interested in
+    cmp rax, 42h						    ; check upper bound of IO area + 1. Currently via1\2 + vera + YM
+    cmovbe r13, rax						    ; set r13 to the address in vera + 1.
+
+
+;    lea rax, [rbx - (09f24h - 1)]           ; check between 9f23 and 9f24
+;    cmp rax, 01h
+;    ja done                                 ; if above then we're not in range
+    
+;    mov rax, [rdx].state.data1_address
+;    mov rdi, [rdx].state.data0_address
+;    cmovnz eax, edi                        ; rax now contains the correct address in vram
+
+;    mov edi, [rdx].state.stepping
+;    or edi, [rdx].state.ignore_breakpoint
+;    jnz done
+
+;    mov rdi, [rdx].state.vrambreakpoint_ptr
+;    movzx rax, byte ptr [rdi + rax]         ; al now has the breakpoint value
+;    shl eax, 1                              ; convert 0001b into BREAKPOINT_VRAM
+;    or [rdx].state.breakpoint_source, eax
+
+;    jnz next_opcode
 
 done:
 
@@ -897,7 +941,7 @@ endm
 
 read_abs_rbx macro check_allvera
     movzx rbx, word ptr [rsi+r11]	; Get 16bit value in memory.
-    check_vera_access check_allvera
+    check_vera_access
 endm
 
 read_absx_rbx macro check_allvera
@@ -1046,7 +1090,6 @@ lda_body_end macro checkvera, clock, pc
     lahf
     and r15w, 0100h			; preserve carry		
     or r15w, ax				; store flags over (carry is always clear)
-    step_vera_read checkvera
 
     add r14, clock
     add r11w, pc
@@ -1055,9 +1098,22 @@ lda_body_end macro checkvera, clock, pc
 endm
 
 lda_body macro checkvera, clock, pc
-    mov [rdx].state.memory_read, ebx
 
-    mov r8b, [rsi+rbx]
+    if checkvera eq 1
+        movzx eax, byte ptr [rsi+rbx]
+        mov dword ptr [rdx].state.vram_data, eax 
+
+        step_vera_read checkvera                    ; might not return, can change the value on data ports
+
+        mov r8d, dword ptr [rdx].state.vram_data
+        mov [rdx].state.memory_read, ebx
+    endif
+
+    if checkvera eq 0
+        mov [rdx].state.memory_read, ebx
+        mov r8b, [rsi+rbx]
+    endif
+
     lda_body_end checkvera, clock, pc
 endm
 
@@ -1112,9 +1168,9 @@ xB2_lda_indzp endp
 ; -----------------------------
 
 ldx_body_end macro checkvera, clock, pc
+
     test r9b, r9b
     write_flags_r15_preservecarry
-    step_vera_read checkvera
 
     add r14, clock
     add r11w, pc
@@ -1123,9 +1179,21 @@ ldx_body_end macro checkvera, clock, pc
 endm
 
 ldx_body macro checkvera, clock, pc
-    mov [rdx].state.memory_read, ebx
-  
-    mov r9b, [rsi+rbx]
+    if checkvera eq 1
+        movzx eax, byte ptr [rsi+rbx]
+        mov dword ptr [rdx].state.vram_data, eax 
+
+        step_vera_read checkvera
+
+        mov r9d, dword ptr [rdx].state.vram_data
+        mov [rdx].state.memory_read, ebx  
+    endif
+
+    if checkvera eq 0
+        mov [rdx].state.memory_read, ebx  
+        mov r9b, [rsi+rbx]
+    endif
+
     ldx_body_end checkvera, clock, pc
 endm
 
@@ -1161,7 +1229,6 @@ xBE_ldx_absy endp
 ldy_body_end macro checkvera, clock, pc
     test r10b, r10b
     write_flags_r15_preservecarry
-    step_vera_read checkvera
 
     add r14, clock
     add r11w, pc
@@ -1170,9 +1237,22 @@ ldy_body_end macro checkvera, clock, pc
 endm
 
 ldy_body macro checkvera, clock, pc
-    mov [rdx].state.memory_read, ebx 
 
-    mov r10b, [rsi+rbx]
+    if checkvera eq 1
+        movzx eax, byte ptr [rsi+rbx]
+        mov dword ptr [rdx].state.vram_data, eax 
+
+        step_vera_read checkvera
+
+        mov r10d, dword ptr [rdx].state.vram_data
+        mov [rdx].state.memory_read, ebx
+    endif
+
+    if checkvera eq 0
+        mov [rdx].state.memory_read, ebx 
+        mov r10b, [rsi+rbx]
+    endif
+
     ldy_body_end checkvera, clock, pc
 endm
 
@@ -1207,12 +1287,13 @@ xBC_ldy_absx endp
 ; -----------------------------
 
 sta_body macro checkvera, checkreadonly, clock, pc
+
     pre_write_check checkreadonly
 
-    mov byte ptr [rsi+rbx], r8b
-    mov [rdx].state.memory_write, ebx
-
+    mov byte ptr [rsi + rbx], r8b
     step_io_write checkvera
+
+    mov [rdx].state.memory_write, ebx
 
 skip:
     add r14, clock
@@ -1309,9 +1390,10 @@ stx_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
     mov byte ptr [rsi+rbx], r9b
-    mov [rdx].state.memory_write, ebx
 
     step_io_write checkvera
+
+    mov [rdx].state.memory_write, ebx
     
 skip:
     add r14, clock
@@ -1343,9 +1425,10 @@ sty_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
     mov byte ptr [rsi+rbx], r10b
-    mov [rdx].state.memory_write, ebx
 
     step_io_write checkvera
+
+    mov [rdx].state.memory_write, ebx
     
 skip:
     add r14, clock
@@ -1377,10 +1460,10 @@ stz_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
     mov byte ptr [rsi+rbx], 0
-    mov [rdx].state.memory_write, ebx
 
     step_io_write checkvera
 
+    mov [rdx].state.memory_write, ebx
 skip:
     add r14, clock
     add r11w, pc			; add on PC
@@ -1457,7 +1540,16 @@ inc_body macro checkvera, checkreadonly, clock, pc, saveecx
         step_io_readwrite checkvera
     endif
 
+    add r14, clock
+    add r11w, pc			; add on PC
+
+    jmp opcode_done
+
 skip:
+    if saveecx eq 1
+        pop rcx
+    endif
+
     add r14, clock
     add r11w, pc			; add on PC
 
@@ -1492,8 +1584,18 @@ dec_body macro checkvera, checkreadonly, clock, pc, saveecx
         step_io_readwrite checkvera
     endif
 
+    add r14, clock
+    add r11w, pc			; add on PC
+
+    jmp opcode_done
 
 skip:
+    if checkvera eq 1
+        if saveecx eq 1
+            pop rcx
+        endif
+    endif
+
     add r14, clock
     add r11w, pc			; add on PC
 
@@ -2006,10 +2108,25 @@ x76_ror_zpx endp
 ;
 
 and_body_end macro checkvera, clock, pc
-    and r8b, [rsi+rbx]
 
-    write_flags_r15_preservecarry
-    step_vera_read checkvera
+    if checkvera eq 1
+        movzx eax, byte ptr [rsi+rbx]
+        mov dword ptr [rdx].state.vram_data, eax 
+
+        step_vera_read checkvera
+
+        mov [rdx].state.memory_read, ebx
+
+        and r8b, byte ptr [rdx].state.vram_data
+        write_flags_r15_preservecarry
+    endif
+
+    if checkvera eq 0
+        mov [rdx].state.memory_read, ebx
+        and r8b, [rsi+rbx]
+
+        write_flags_r15_preservecarry
+    endif
 
     add r14, clock		; Clock
     add r11w, pc			; add on PC
@@ -2070,9 +2187,27 @@ x31_and_indy endp
 ;
 
 eor_body_end macro checkvera, clock, pc
-    xor r8b, [rsi+rbx]
-    write_flags_r15_preservecarry
-    step_vera_read checkvera
+
+    if checkvera eq 1
+        movzx eax, byte ptr [rsi+rbx]
+        mov dword ptr [rdx].state.vram_data, eax 
+
+        step_vera_read checkvera
+
+        mov [rdx].state.memory_read, ebx
+
+        xor r8b, byte ptr [rdx].state.vram_data
+        write_flags_r15_preservecarry
+    endif
+
+
+    if checkvera eq 0
+        mov [rdx].state.memory_read, ebx
+        xor r8b, [rsi+rbx]
+
+        write_flags_r15_preservecarry
+    endif
+
 
     add r14, clock	
     add r11w, pc
@@ -2135,9 +2270,25 @@ x51_eor_indy endp
 ;
 
 ora_body macro checkvera, clock, pc
-    or r8b, [rsi+rbx]
-    write_flags_r15_preservecarry
-    step_vera_read checkvera
+
+    if checkvera eq 1
+        movzx eax, byte ptr [rsi+rbx]
+        mov dword ptr [rdx].state.vram_data, eax 
+
+        step_vera_read checkvera
+
+        mov [rdx].state.memory_read, ebx
+
+        or r8b, byte ptr [rdx].state.vram_data
+        write_flags_r15_preservecarry
+    endif
+
+    if checkvera eq 0
+        mov [rdx].state.memory_read, ebx
+        or r8b, byte ptr [rsi+rbx]
+
+        write_flags_r15_preservecarry
+    endif
     
     add r11w, pc		; add on PC
     add r14, clock		; Clock
@@ -2206,19 +2357,24 @@ adc_body_end macro checkvera, clock, pc, preservecarry
 
     seto dil
     mov byte ptr [rdx].state.flags_overflow, dil
-    step_vera_read checkvera
-
+    
     add r14, clock			; Clock
     add r11w, pc			; add on PC
     jmp opcode_done	
 endm
 
-decimal_add macro imm
+decimal_add macro checkvera, imm
     local no_decimal_overflow, no_total_overflow
 
     mov r12, r8         
     if imm eq 0
-        movzx rcx, byte ptr [rsi+rbx]
+        if checkvera eq 0
+            movzx rcx, byte ptr [rsi+rbx]
+        endif
+
+        if checkvera eq 1
+            movzx rcx, byte ptr [rdx].state.vram_data
+        endif
     endif
     if imm eq 1
         movzx rcx, byte ptr [rsi+r11] 
@@ -2284,18 +2440,39 @@ endm
 
 adc_body macro checkvera, clock, pc
     local decimal
+
+    if checkvera eq 1
+        movzx eax, byte ptr [rsi+rbx]
+        mov dword ptr [rdx].state.vram_data, eax 
+
+        mov [rdx].state.memory_read, ebx
+
+        step_vera_read checkvera
+    endif
+
     movzx rax, byte ptr [rdx].state.flags_decimal
     test rax, rax
     jnz decimal
     read_flags_rax
 
-    adc r8b, [rsi+rbx]
+    if checkvera eq 0
+        mov [rdx].state.memory_read, ebx
+
+        adc r8b, [rsi+rbx]
+    endif
+
+    if checkvera eq 1
+        adc r8b, byte ptr [rdx].state.vram_data
+    endif
 
     adc_body_end checkvera, clock, pc, 0
 
     decimal:
 
-    decimal_add 0
+    mov [rdx].state.memory_read, ebx
+
+    decimal_add checkvera, 0
+
     adc_body_end checkvera, clock, pc, 1
 endm
 
@@ -2311,7 +2488,7 @@ x69_adc_imm proc
 
     decimal:
 
-    decimal_add 1
+    decimal_add 0, 1
     adc_body_end 0, 2, 1, 1
 x69_adc_imm endp
 
@@ -2376,12 +2553,18 @@ sbc_body_end macro checkvera, clock, pc, preservecarry
     jmp opcode_done	
 endm
 
-decimal_sub macro imm
+decimal_sub macro checkvera, imm
     local no_decimal_overflow, no_total_overflow
 
     mov rcx, r8         
     if imm eq 0
-        movzx r12, byte ptr [rsi+rbx]
+        if checkvera eq 0
+            movzx r12, byte ptr [rsi+rbx]
+        endif
+
+        if checkvera eq 1
+            movzx r12, byte ptr [rdx].state.vram_data
+        endif
     endif
     if imm eq 1
         movzx r12, byte ptr [rsi+r11] 
@@ -2451,20 +2634,41 @@ endm
 
 sbc_body macro checkvera, clock, pc
     local decimal
+
+    if checkvera eq 1
+        movzx eax, byte ptr [rsi+rbx]
+        mov dword ptr [rdx].state.vram_data, eax 
+
+        mov [rdx].state.memory_read, ebx
+
+        step_vera_read checkvera
+    endif
+
     movzx rax, byte ptr [rdx].state.flags_decimal
     test rax, rax
     jnz decimal
     read_flags_rax
 
-    cmc
-    sbb r8b, [rsi+rbx]
-    cmc
+    if checkvera eq 0
+        mov [rdx].state.memory_read, ebx
+
+        cmc
+        sbb r8b, [rsi+rbx]
+        cmc
+    endif
+
+    if checkvera eq 1
+        cmc
+        sbb r8b, byte ptr [rdx].state.vram_data
+        cmc
+    endif
+
 
     sbc_body_end checkvera, clock, pc, 0
 
     decimal:
 
-    decimal_sub 0
+    decimal_sub checkvera, 0
     sbc_body_end checkvera, clock, pc, 1
 endm
 
@@ -2482,7 +2686,7 @@ xE9_sbc_imm proc
 
     decimal:
 
-    decimal_sub 1
+    decimal_sub 0, 1
     sbc_body_end 0, 2, 1, 1
 xE9_sbc_imm endp
 
@@ -3435,7 +3639,7 @@ bit_body_end macro checkvera, clock, pc
     and r15, 1011111111111111b ; remove zero
     or r15, rax                ; map on
 
-    step_vera_read checkvera
+    ;step_vera_read checkvera
     
     add r14, clock			
     add r11w, pc			
@@ -3443,7 +3647,7 @@ bit_body_end macro checkvera, clock, pc
     jmp opcode_done
 endm
 
-bit_body_end_nochangetovn macro checkvera, clock, pc
+bit_body_end_nochangetovn macro clock, pc
     ; no call to write flags, as only Z can change.    
     ; check the zero flag, which is the and of input and the accumulator
     and dil, r8b
@@ -3453,7 +3657,7 @@ bit_body_end_nochangetovn macro checkvera, clock, pc
     and r15, 1011111111111111b ; remove zero
     or r15, rax                ; map on
 
-    step_vera_read checkvera
+    ;step_vera_read checkvera
     
     add r14, clock			
     add r11w, pc			
@@ -3463,13 +3667,28 @@ endm
 
 
 bit_body macro checkvera, clock, pc
-    movzx rdi, byte ptr [rsi+rbx]
-    bit_body_end checkvera, clock, pc
+
+    if checkvera eq 1
+        movzx eax, byte ptr [rsi+rbx]
+        mov dword ptr [rdx].state.vram_data, eax 
+
+        step_vera_read checkvera
+
+        mov [rdx].state.memory_read, ebx
+
+        mov edi, dword ptr [rdx].state.vram_data
+        bit_body_end checkvera, clock, pc
+    endif
+
+    if checkvera eq 0
+        movzx rdi, byte ptr [rsi+rbx]
+        bit_body_end checkvera, clock, pc
+    endif
 endm
 
 x89_bit_imm proc
     movzx rdi, byte ptr [rsi+r11]
-    bit_body_end_nochangetovn 0, 3, 1
+    bit_body_end_nochangetovn 3, 1
 x89_bit_imm endp
 
 x2C_bit_abs proc

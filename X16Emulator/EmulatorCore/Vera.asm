@@ -40,6 +40,10 @@ include Vera_Display.asm
 include Vera_Audio.asm
 include Vera_Render_Layers.asm
 
+VERA_BREAKPOINT_READ equ  0001b
+VERA_BREAKPOINT_WRITE equ 0010b
+VERA_BREAKPOINT_LOAD equ  0100b
+
 vera_setaddress_0 macro 
 	local search_loop, match, not_negative
 
@@ -777,7 +781,7 @@ local cannot_cache_write, cache_write, fx_4bit_pixels, no_transparancy, done, no
 	jnz cache_write
 cannot_cache_write:
 	movzx r13, byte ptr [rsi+rbx]			; get value that has been written
-	mov byte ptr [rax+rdi], r13b			; store in vram
+	mov byte ptr [rax + rdi], r13b			; store in vram
 	vera_dataupdate_stuctures
 	jmp done
 
@@ -809,7 +813,7 @@ no_multiplication:
 	push rdi
 	and rdi, 1fffch							; cache writes are 4 byte alligned
 
-	movzx r13, byte ptr [rsi+rbx]			; get value that has been written
+	movzx r13d, byte ptr [rsi+rbx]			; get value that has been written
 
 	test [rdx].state.fx_transparancy, 1
 	jz no_transparancy
@@ -1047,12 +1051,12 @@ endm
 
 ; rbx			address
 ; [rsi+rbx]		output location in main memory
+; r12			previous value
 ; 
 ; should only be called if data0\data1 is read\written.
 vera_dataaccess_body macro doublestep, write_value
-	local cache_write_0, done_0, no_transparancy_0, fx_4bit_pixels_0, cache_write_1, done_1, no_transparancy_1 ,cache_done, no_fx_step_1, polyfill_1, not_fx_1, affine_1, read_loop
+	local cache_write_0, done_0, no_transparancy_0, fx_4bit_pixels_0, cache_write_1, done_1, no_transparancy_1 ,cache_done, no_fx_step_1, polyfill_1, not_fx_1, affine_1, read_loop, no_breakpoint_0, no_breakpoint_1
 
-	mov rax, [rdx].state.vram_ptr				; get value from vram
 	push rsi
 	mov rsi, [rdx].state.memory_ptr				; we need memory context;
 
@@ -1061,9 +1065,79 @@ vera_dataaccess_body macro doublestep, write_value
 
 	mov rdi, [rdx].state.data0_address
 	
+	; check breakpoint on read data
+	if write_value eq 0
+	    mov eax, [rdx].state.stepping
+		or eax, [rdx].state.ignore_breakpoint
+		jnz no_read_breakpoint_0
+
+		; read breakpoint
+		mov r13, [rdx].state.vrambreakpoint_ptr
+		movzx r13d, byte ptr [r13 + rdi]
+		and r13d, VERA_BREAKPOINT_READ
+		shl r13d, 1								; convert 0001b into BREAKPOINT_VRAM
+		or [rdx].state.breakpoint_source, r13d
+		jz no_read_breakpoint_0
+		pop rsi
+		pop rax									; pull the return address off
+		jmp next_opcode
+		
+		no_read_breakpoint_0:
+	endif
+
 	if write_value eq 1 and doublestep eq 0
+		; check for breakpoint on write
+	    mov eax, [rdx].state.stepping
+		or eax, [rdx].state.ignore_breakpoint
+		jnz no_write_breakpoint_0
+
+		; write breakpoint
+		mov r13, [rdx].state.vrambreakpoint_ptr
+		movzx r13d, byte ptr [r13 + rdi]
+		and r13d, VERA_BREAKPOINT_WRITE			; BREAKPOINT_WRITE is the same as VERA_BREAKPOINT so no change needed
+		or [rdx].state.breakpoint_source, r13d
+		jz no_write_breakpoint_0
+
+		; breaking so reverse the change in RAM
+		mov byte ptr [rsi + rbx], r12b
+		
+		pop rsi
+		pop rax									; pull the return address off
+		jmp next_opcode
+		
+		no_write_breakpoint_0:
+		mov rax, [rdx].state.vram_ptr				; get value from vram
+
 		vera_write_dataport
 	endif
+
+	if write_value eq 1 and doublestep eq 1
+		; check for breakpoint on write
+	    mov eax, [rdx].state.stepping
+		or eax, [rdx].state.ignore_breakpoint
+		jnz no_step_write_breakpoint_0
+
+		; write breakpoint
+		mov r13, [rdx].state.vrambreakpoint_ptr
+		add rdi, [rdx].state.data0_step			; add on a step as we write to the next position
+		and rdi, 1ffffh							; mask off high bits so we wrap
+		movzx r13d, byte ptr [r13 + rdi]		
+		and r13d, VERA_BREAKPOINT_WRITE			; BREAKPOINT_WRITE is the same as VERA_BREAKPOINT so no change needed
+		or [rdx].state.breakpoint_source, r13d
+		jz no_step_write_breakpoint_0
+
+		; breaking so reverse the change in RAM
+		mov byte ptr [rsi + rbx], r12b
+
+		pop rsi
+		pop rax									; pull the return address off
+		jmp next_opcode
+		
+		no_step_write_breakpoint_0:
+		mov rdi, [rdx].state.data0_address		; restoer rdi back to the address
+	endif
+
+	mov rax, [rdx].state.vram_ptr				; get value from vram
 
 	if doublestep eq 0
 
@@ -1091,6 +1165,7 @@ vera_dataaccess_body macro doublestep, write_value
 		jnz read_loop
 
 		if write_value eq 1
+			; check for breakpoint on write
 			vera_write_dataport
 		endif
 
@@ -1132,6 +1207,27 @@ set_data0_address:
 
 step_data1:
 	mov rdi, [rdx].state.data1_address
+
+	; check for breakpoints
+	if write_value eq 0
+	    mov eax, [rdx].state.stepping
+		or eax, [rdx].state.ignore_breakpoint
+		jnz no_read_breakpoint_1
+
+		; read breakpoint
+		mov r13, [rdx].state.vrambreakpoint_ptr
+		movzx r13d, byte ptr [r13 + rdi]
+		and r13d, VERA_BREAKPOINT_READ
+		shl r13d, 1								; convert 0001b into BREAKPOINT_VRAM
+		or [rdx].state.breakpoint_source, r13d
+		jz no_read_breakpoint_1
+		pop rsi
+		pop rax									; pull the return address off
+		jmp next_opcode
+		no_read_breakpoint_1:
+	endif
+
+	mov rax, [rdx].state.vram_ptr				; get value from vram
 
 	if write_value eq 1 and doublestep eq 0
 		vera_write_dataport

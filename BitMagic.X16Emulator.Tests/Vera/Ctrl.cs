@@ -73,6 +73,6 @@ public class Ctrl
                 stp",
                 emulator);
 
-        Assert.AreEqual(0x03, emulator.Memory[0x9F25]);
+        Assert.AreEqual(0x7f, emulator.Memory[0x9F25]);
     }
 }

@@ -163,6 +163,7 @@ public class Emulator : IDisposable
         public bool Interrupt_Vsync_Hit { get => _emulator._state.Interrupt_Vsync_Hit != 0; set => _emulator._state.Interrupt_Vsync_Hit = (value ? (byte)1 : (byte)0); }
         public bool Interrupt_SpCol_Hit { get => _emulator._state.Interrupt_SpCol_Hit != 0; set => _emulator._state.Interrupt_SpCol_Hit = (value ? (byte)1 : (byte)0); }
         public UInt32 Frame_Count { get => _emulator._state.Frame_Count; }
+        public UInt32 Frame_Count_Breakpoint { get => _emulator._state.Frame_Count_Breakpoint; set => _emulator._state.Frame_Count_Breakpoint = value; }
 
         //public ushort Layer0_Config { get => _emulator._state.Layer0_Config; }
         public ushort Layer0_Tile_HShift { get => _emulator._state.Layer0_Tile_HShift; }
@@ -600,6 +601,7 @@ public class Emulator : IDisposable
 
         public uint Beam_Position = 0; // needs to be inline with the cpu clock
         public uint Frame_Count = 0;
+        public uint Frame_Count_Breakpoint = 0; // zero will never hit as we check the change.
         public uint Buffer_Render_Position = 0;
         public uint Buffer_Output_Position = 0; // so there is 1 line between the render and output
         public uint Scale_x = 0;
@@ -724,7 +726,8 @@ public class Emulator : IDisposable
     {
         Breakpoint = 0x01,
         Vram = 0x02,
-        Stack = 0x04
+        Stack = 0x04,
+        Vsync = 0x08
     }
 
     private CpuState _state;

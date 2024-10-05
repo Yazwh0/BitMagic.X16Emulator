@@ -616,7 +616,14 @@ no_render_required:
     mov byte ptr [rdx].state.display_dirty, 0
 
 vera_render_done:
-    add dword ptr [rdx].state.frame_count, 1
+    mov eax, dword ptr [rdx].state.frame_count
+    inc eax
+    mov dword ptr [rdx].state.frame_count, eax
+
+    cmp eax, dword ptr [rdx].state.frame_count_breakpoint
+    je breakpoint_exit_vsync
+
+    ;add dword ptr [rdx].state.frame_count, 1
 
     mov eax, dword ptr [rdx].state.frame_control	; 0 for no control, 1 for wait every frame -- same as control
     test eax, eax
@@ -770,6 +777,10 @@ breakpoint_exit_stack:
 
 breakpoint_exit_normal:
     or [rdx].state.breakpoint_source, BREAKPOINT
+    jmp breakpoint_exit
+
+breakpoint_exit_vsync:
+    or [rdx].state.breakpoint_source, BREAKPOINT_VSYNC
     jmp breakpoint_exit
 
 breakpoint_exit_stepback:
@@ -1100,13 +1111,13 @@ endm
 lda_body macro checkvera, clock, pc
 
     if checkvera eq 1
+        mov [rdx].state.memory_read, ebx
         movzx eax, byte ptr [rsi+rbx]
         mov dword ptr [rdx].state.vram_data, eax 
 
         step_vera_read checkvera                    ; might not return, can change the value on data ports
 
         mov r8d, dword ptr [rdx].state.vram_data
-        mov [rdx].state.memory_read, ebx
     endif
 
     if checkvera eq 0
@@ -1180,13 +1191,13 @@ endm
 
 ldx_body macro checkvera, clock, pc
     if checkvera eq 1
+        mov [rdx].state.memory_read, ebx  
         movzx eax, byte ptr [rsi+rbx]
         mov dword ptr [rdx].state.vram_data, eax 
 
         step_vera_read checkvera
 
         mov r9d, dword ptr [rdx].state.vram_data
-        mov [rdx].state.memory_read, ebx  
     endif
 
     if checkvera eq 0
@@ -1239,13 +1250,13 @@ endm
 ldy_body macro checkvera, clock, pc
 
     if checkvera eq 1
+        mov [rdx].state.memory_read, ebx
         movzx eax, byte ptr [rsi+rbx]
         mov dword ptr [rdx].state.vram_data, eax 
 
         step_vera_read checkvera
 
         mov r10d, dword ptr [rdx].state.vram_data
-        mov [rdx].state.memory_read, ebx
     endif
 
     if checkvera eq 0
@@ -1290,10 +1301,9 @@ sta_body macro checkvera, checkreadonly, clock, pc
 
     pre_write_check checkreadonly
 
+    mov [rdx].state.memory_write, ebx
     mov byte ptr [rsi + rbx], r8b
     step_io_write checkvera
-
-    mov [rdx].state.memory_write, ebx
 
 skip:
     add r14, clock
@@ -1389,11 +1399,11 @@ x92_sta_indzp endp
 stx_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
+    mov [rdx].state.memory_write, ebx
     mov byte ptr [rsi+rbx], r9b
 
     step_io_write checkvera
 
-    mov [rdx].state.memory_write, ebx
     
 skip:
     add r14, clock
@@ -1424,11 +1434,10 @@ x8E_stx_abs endp
 sty_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
+    mov [rdx].state.memory_write, ebx
     mov byte ptr [rsi+rbx], r10b
 
     step_io_write checkvera
-
-    mov [rdx].state.memory_write, ebx
     
 skip:
     add r14, clock
@@ -1459,11 +1468,11 @@ x8C_sty_abs endp
 stz_body macro checkvera, checkreadonly, clock, pc
     pre_write_check checkreadonly
 
+    mov [rdx].state.memory_write, ebx
     mov byte ptr [rsi+rbx], 0
 
     step_io_write checkvera
 
-    mov [rdx].state.memory_write, ebx
 skip:
     add r14, clock
     add r11w, pc			; add on PC
@@ -2110,12 +2119,11 @@ x76_ror_zpx endp
 and_body_end macro checkvera, clock, pc
 
     if checkvera eq 1
+        mov [rdx].state.memory_read, ebx
         movzx eax, byte ptr [rsi+rbx]
         mov dword ptr [rdx].state.vram_data, eax 
 
         step_vera_read checkvera
-
-        mov [rdx].state.memory_read, ebx
 
         and r8b, byte ptr [rdx].state.vram_data
         write_flags_r15_preservecarry
@@ -2189,12 +2197,11 @@ x31_and_indy endp
 eor_body_end macro checkvera, clock, pc
 
     if checkvera eq 1
+        mov [rdx].state.memory_read, ebx
         movzx eax, byte ptr [rsi+rbx]
         mov dword ptr [rdx].state.vram_data, eax 
 
         step_vera_read checkvera
-
-        mov [rdx].state.memory_read, ebx
 
         xor r8b, byte ptr [rdx].state.vram_data
         write_flags_r15_preservecarry
@@ -2272,12 +2279,11 @@ x51_eor_indy endp
 ora_body macro checkvera, clock, pc
 
     if checkvera eq 1
+        mov [rdx].state.memory_read, ebx
         movzx eax, byte ptr [rsi+rbx]
         mov dword ptr [rdx].state.vram_data, eax 
 
         step_vera_read checkvera
-
-        mov [rdx].state.memory_read, ebx
 
         or r8b, byte ptr [rdx].state.vram_data
         write_flags_r15_preservecarry
@@ -2745,6 +2751,7 @@ cmp_body_end macro checkvera, clock, pc
 endm
 
 cmp_body macro checkvera, clock, pc
+    mov [rdx].state.memory_read, ebx
     cmp r8b, [rsi+rbx]
     cmp_body_end checkvera, clock, pc
 endm
@@ -2799,6 +2806,7 @@ xD1_cmp_indy endp
 ;
 
 cmpx_body macro checkvera, clock, pc
+    mov [rdx].state.memory_read, ebx
     cmp r9b, [rsi+rbx]
     cmp_body_end checkvera, clock, pc
 endm
@@ -2823,6 +2831,7 @@ xE4_cmpx_zp endp
 ;
 
 cmpy_body macro checkvera, clock, pc
+    mov [rdx].state.memory_read, ebx
     cmp r10b, [rsi+rbx]
     cmp_body_end checkvera, clock, pc
 endm
@@ -3044,6 +3053,7 @@ endm
 
 bbr_body macro bitnumber
     read_zp_rbx
+    mov [rdx].state.memory_read, ebx
     movzx rax, byte ptr[rsi+rbx]
     bt ax, bitnumber
     jnc branch
@@ -3093,6 +3103,7 @@ x7F_bbr7 endp
 
 bbs_body macro bitnumber
     read_zp_rbx
+    mov [rdx].state.memory_read, ebx
     movzx rax, byte ptr[rsi+rbx]
     bt ax, bitnumber
     jc branch

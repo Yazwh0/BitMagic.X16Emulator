@@ -298,7 +298,9 @@ vera_init proc
 	;
 	mov byte ptr [rdx].state.drawing, 1
 	;mov dword ptr [rdx].state.buffer_render_position, 010000000000b
-	mov [rdx].state.frame_count, 0		; always start with 0 frames, as we use this for timing.
+
+	; removed, this will be set to zero at the start of emulation, no need to clear each time we step
+	;mov [rdx].state.frame_count, 0		; always start with 0 frames, as we use this for timing.
 
 	;
 	; DATA0\1

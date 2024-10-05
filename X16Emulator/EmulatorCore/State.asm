@@ -16,6 +16,7 @@
 BREAKPOINT			equ 000001b
 BREAKPOINT_VRAM		equ 000010b
 BREAKPOINT_STACK    equ 000100b
+BREAKPOINT_VSYNC    equ 001000b
 
 state struct 
 
@@ -307,6 +308,7 @@ state struct
 	; Rendering
 	display_position		dword ?
 	frame_count				dword ?
+	frame_count_breakpoint	dword ?
 	buffer_render_position	dword ?
 	buffer_output_position	dword ?
 	scale_x					dword ?

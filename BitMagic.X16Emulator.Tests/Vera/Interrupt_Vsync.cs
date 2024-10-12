@@ -13,7 +13,8 @@ public class Interrupt_Vsync
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = false;
+        emulator.InterruptHit = InterruptSource.None;
+        emulator.InterruptMask = InterruptSource.None;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;
@@ -52,7 +53,8 @@ public class Interrupt_Vsync
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = false;
+        emulator.InterruptHit = InterruptSource.None;
+        emulator.InterruptMask = InterruptSource.None;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;
@@ -90,7 +92,8 @@ public class Interrupt_Vsync
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = false;
+        emulator.InterruptHit = InterruptSource.None;
+        emulator.InterruptMask = InterruptSource.None;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;
@@ -130,7 +133,8 @@ public class Interrupt_Vsync
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = false;
+        emulator.InterruptHit = InterruptSource.None;
+        emulator.InterruptMask = InterruptSource.None;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;
@@ -168,7 +172,8 @@ public class Interrupt_Vsync
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = false;
+        emulator.InterruptHit = InterruptSource.None;
+        emulator.InterruptMask = InterruptSource.None;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;
@@ -207,7 +212,8 @@ public class Interrupt_Vsync
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = false;
+        emulator.InterruptHit = InterruptSource.None;
+        emulator.InterruptMask = InterruptSource.None;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;
@@ -249,7 +255,8 @@ public class Interrupt_Vsync
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = false;
+        emulator.InterruptHit = InterruptSource.None;
+        emulator.InterruptMask = InterruptSource.None;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;
@@ -290,7 +297,8 @@ public class Interrupt_Vsync
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = false;
+        emulator.InterruptHit = InterruptSource.None;
+        emulator.InterruptMask = InterruptSource.None;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;

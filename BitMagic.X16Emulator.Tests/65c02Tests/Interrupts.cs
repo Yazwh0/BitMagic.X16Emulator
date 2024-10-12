@@ -10,7 +10,8 @@ public class Interrupts
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = true;
+        emulator.InterruptHit = InterruptSource.Vsync;
+        emulator.InterruptMask = InterruptSource.Vsync;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;
@@ -34,7 +35,8 @@ public class Interrupts
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = true;
+        emulator.InterruptHit = InterruptSource.Vsync;
+        emulator.InterruptMask = InterruptSource.Vsync;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;
@@ -59,7 +61,9 @@ public class Interrupts
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = true;
+        emulator.InterruptHit = InterruptSource.Vsync;
+        emulator.InterruptMask = InterruptSource.Vsync;
+
         emulator.Carry = true;
         emulator.Zero = true;
         emulator.Decimal = true;

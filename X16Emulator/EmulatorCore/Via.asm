@@ -169,13 +169,15 @@ via_step proc
 	and cl, 7fh
 	and cl, dil
 	setnz cl							; change to 1 if non zero
-	;mov byte ptr [rdx].state.nmi, cl	; set nmi
-	mov [rdx].state.via_interrupt, ecx
-	or [rdx].state.interrupt, cl		; set interrupt but dont clobber
+	shl ecx, 4							; adjust to INTERRUPT_VIA
+	;mov [rdx].state.via_interrupt, ecx
+	mov eax, dword ptr [rdx].state.interrupt_hit
+	and eax, 0ffffffefh					; ~INTERRUPT_VIA 
+	or eax, ecx
+	mov dword ptr [rdx].state.interrupt_hit, eax		
 
-	and dil, 7fh		; mask of irq bits
+	and dil, 7fh						; mask of irq bits
 	mov rax, 80h
-;	test rcx, rcx
 	cmovz rax, rbx
 	or dil, al
 

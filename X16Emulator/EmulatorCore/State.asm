@@ -183,6 +183,7 @@ state struct
 
 	pcm_bufferread			dword ?
 	pcm_bufferwrite			dword ?
+	pcm_buffercount			dword ?
 	pcm_samplerate			dword ?
 	pcm_mode				dword ?
 	pcm_count				dword ?
@@ -196,7 +197,7 @@ state struct
 
 	ym_cpu_partial			dword ?
 
-	via_interrupt			dword ?
+	;via_interrupt			dword ?
 
 	rom_bank				dword ?
 
@@ -232,6 +233,9 @@ state struct
 
 	; End FX
 
+	interrupt_mask			dword ?
+	interrupt_hit			dword ?
+
 	register_pc				word ?
 	stackpointer			word ?
 
@@ -247,7 +251,8 @@ state struct
 	flags_zero				byte ?
 	flags_interruptDisable	byte ?
 
-	interrupt				byte ?
+	spacer_d				byte ?
+	;interrupt				byte ?	; used for flags
 	nmi						byte ?
 	nmi_previous			byte ?
 
@@ -295,14 +300,18 @@ state struct
 	layer1_tileWidth		byte ?
 
 	interrupt_linenum		word ?
-	interrupt_aflow			byte ?
-	interrupt_spcol			byte ?
-	interrupt_line			byte ?
-	interrupt_vsync			byte ?
+	;interrupt_aflow			byte ?
+	;interrupt_spcol			byte ?
+	;interrupt_line			byte ?
+	;interrupt_vsync			byte ?
 
-	interrupt_line_hit		byte ? ; todo: remove hit parameters
-	interrupt_vsync_hit		byte ?
-	interrupt_spcol_hit		byte ?
+	;interrupt_line_hit		byte ? ; todo: remove hit parameters
+	;interrupt_vsync_hit		byte ?
+	;interrupt_spcol_hit		byte ?
+
+	spacer_a				byte ?
+	spacer_b				byte ?
+	spacer_c				byte ?
 	drawing					byte ?
 
 	; Rendering

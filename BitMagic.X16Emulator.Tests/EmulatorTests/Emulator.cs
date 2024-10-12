@@ -104,7 +104,8 @@ public class EmulatorTests
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = true;
+        emulator.InterruptHit = InterruptSource.Vsync;
+        emulator.InterruptMask = InterruptSource.Vsync;
 
         // set interrupt vector to $900
         emulator.RomBank[0x3ffe] = 0x00;
@@ -128,7 +129,8 @@ public class EmulatorTests
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = true;
+        emulator.InterruptHit = InterruptSource.Vsync;
+        emulator.InterruptMask = InterruptSource.Vsync;
         emulator.Decimal = true;
 
         // set interrupt vector to $900
@@ -203,7 +205,8 @@ public class EmulatorTests
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = false;
+        emulator.InterruptHit = InterruptSource.Vsync;
+        emulator.InterruptMask = InterruptSource.Vsync;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -224,8 +227,9 @@ public class EmulatorTests
     {
         var emulator = new Emulator();
 
-        emulator.Interrupt = true;
-    
+        emulator.InterruptHit = InterruptSource.Vsync;
+        emulator.InterruptMask = InterruptSource.Vsync;
+
         // always uses rom bank 0 for interrupts
 
         emulator.RomBank[0x4000 * 5 + 0x3ffe] = 0x00;
@@ -280,7 +284,8 @@ public class EmulatorTests
         var emulator = new Emulator();
 
         emulator.Nmi = true;
-        emulator.Interrupt = true;
+        emulator.InterruptHit = InterruptSource.Vsync;
+        emulator.InterruptMask = InterruptSource.Vsync;
 
         // set interrupt vector to $900
         emulator.RomBank[0x3ffa] = 0x00;

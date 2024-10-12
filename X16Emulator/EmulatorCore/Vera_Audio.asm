@@ -151,15 +151,19 @@ local donothing, render_done, right, done, no_noise_change
 	sub ecx, 32
 
 	imul ecx, [rsi].psg_voice.volume		; apply volume
+	
+	sar ecx, 3
+	;shl ecx, 11								; convert to 32bit net of >> 3 << 14
+
 	test ebx, 1
 	je right
 
-	add r12, rcx
-	and ebx, 2
+	add r12d, ecx
+	;and ebx, 2 ??
 	je done
 
 	right:
-	add r13, rcx
+	add r13d, ecx
 
 	done:
 	mov [rsi].psg_voice.value, ecx			; store for debugging
@@ -220,12 +224,23 @@ pcm_modes:
 	qword pcm_16bit_stereo - pcm_modes
 
 pcm_8bit_mono:
+	xor eax, eax
+	mov ecx, [rdx].state.pcm_buffercount
+	sub ecx, 1
+	jb no_data
+
+	mov [rdx].state.pcm_buffercount, ecx
+	mov ebx, 040h
+	cmovz eax, ebx		; if zero is set from the above sub, then we're empty
+
+	mov rsi, [rdx].state.memory_ptr
+	and byte ptr [rsi + AUDIO_CTRL], 03fh	; clear full bit and empty bit
+	or byte ptr [rsi + AUDIO_CTRL], al		; set buffer empty if necessary
+
 	mov eax, [rdx].state.pcm_bufferread
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je no_data
 
 	mov rsi, [rdx].state.pcm_ptr
-	movsx r12, byte ptr [rsi + rax]
+	movsx r12d, byte ptr [rsi + rax]
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
@@ -233,171 +248,154 @@ pcm_8bit_mono:
 
 	shl r12d, 8								; convert to 16bit space
 
-	mov ecx, [rdx].state.pcm_volume
 	imul r12d, [rdx].state.pcm_volume		; apply volume
 	sar r12d, 6								; only conisder top bits
+
 	mov [rdx].state.pcm_value_l, r12d
 	mov [rdx].state.pcm_value_r, r12d
-	mov r13, r12	
-
-	; check if now empty and set flag if so
-	mov rsi, [rdx].state.memory_ptr
-	mov ebx, 040h
-	xor ecx, ecx
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	cmovne ebx, ecx
-	and byte ptr [rsi + AUDIO_CTRL], 03fh	; clear full bit and empty bit
-	or byte ptr [rsi + AUDIO_CTRL], bl		; set buffer empty if necessary
+	mov r13d, r12d
 
 	jmp vera_step_psg
 
 pcm_8bit_stereo:
-	mov eax, [rdx].state.pcm_bufferread
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je no_data
+	xor eax, eax
+	mov ecx, [rdx].state.pcm_buffercount
+	sub ecx, 2
+	jb no_data
+
+	mov [rdx].state.pcm_buffercount, ecx
+	mov ebx, 040h
+	cmovz eax, ebx		; if zero is set from the above sub, then we're empty
+
+	mov rsi, [rdx].state.memory_ptr
+	and byte ptr [rsi + AUDIO_CTRL], 03fh	; clear full bit and empty bit
+	or byte ptr [rsi + AUDIO_CTRL], al		; set buffer empty if necessary
+
+ 	mov eax, [rdx].state.pcm_bufferread
 
 	mov rsi, [rdx].state.pcm_ptr
-	movsx r12, byte ptr [rsi + rax]
+	movsx r12d, byte ptr [rsi + rax]
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
 
+	mov ebx, [rdx].state.pcm_volume
+
 	shl r12d, 8								; convert to 16bit space
-	imul r12d, [rdx].state.pcm_volume		; apply volume
+	imul r12d, ebx							; apply volume
 	sar r12d, 6								; only conisder top bits
-	mov [rdx].state.pcm_value_l, r12d
 
-	mov r13, r12							; if fifo is empty, then we use previous read
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je no_data
-
-	movzx r13, byte ptr [rsi + rax]
+	movsx r13d, byte ptr [rsi + rax]
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
 
 	shl r13d, 8								; convert to 16bit space
-	imul r13d, [rdx].state.pcm_volume		; apply volume
+	imul r13d, ebx							; apply volume
 	sar r13d, 6								; only conisder top bits
 
-pcm_8bit_stereo_r_done:
+	mov [rdx].state.pcm_value_l, r12d
 	mov [rdx].state.pcm_value_r, r13d
 
 	mov [rdx].state.pcm_bufferread, eax
-
-	; check if now empty and set flag if so
-	mov rsi, [rdx].state.memory_ptr
-	mov ebx, 040h
-	xor ecx, ecx
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	cmovne ebx, ecx
-	and byte ptr [rsi + AUDIO_CTRL], 03fh	; clear full bit and empty bit
-	or byte ptr [rsi + AUDIO_CTRL], bl		; set buffer empty if necessary
-
+	
 	jmp vera_step_psg
 
 pcm_16bit_mono:
+	xor eax, eax
+	mov ecx, [rdx].state.pcm_buffercount
+	sub ecx, 2
+	jb no_data
+
+	mov [rdx].state.pcm_buffercount, ecx
+	mov ebx, 040h
+	cmovz eax, ebx		; if zero is set from the above sub, then we're empty
+
+	mov rsi, [rdx].state.memory_ptr
+	and byte ptr [rsi + AUDIO_CTRL], 03fh	; clear full bit and empty bit
+	or byte ptr [rsi + AUDIO_CTRL], al		; set buffer empty if necessary
+
 	mov eax, [rdx].state.pcm_bufferread
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je no_data
 
 	mov rsi, [rdx].state.pcm_ptr
-	movzx r12, byte ptr [rsi + rax]			; first byte is the low part
+	movzx r12d, byte ptr [rsi + rax]			; first byte is the low part
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
-
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je no_data
 	
-	movsx rbx, byte ptr [rsi + rax]			; second byte is the high part
+	movsx ebx, byte ptr [rsi + rax]			; second byte is the high part
 	shl ebx, 8
 	or r12d, ebx
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
 
-pcm_16bit_mono_setval:
-	mov [rdx].state.pcm_bufferread, eax
-	
-	; check if now empty and set flag if so
-	mov rsi, [rdx].state.memory_ptr
-	mov ebx, 040h
-	xor ecx, ecx
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	cmovne rbx, rcx
-	and byte ptr [rsi + AUDIO_CTRL], 03fh	; clear full bit and empty bit
-	or byte ptr [rsi + AUDIO_CTRL], bl		; set buffer empty if necessary
-
-	movsx r12, r12w
+	movsx r12d, r12w
 	imul r12d, [rdx].state.pcm_volume		; apply volume
 	sar r12d, 6								; only conisder top bits
+
+
 	mov [rdx].state.pcm_value_l, r12d
 	mov [rdx].state.pcm_value_r, r12d
-	mov r13, r12	
+	mov r13d, r12d
+
+	mov [rdx].state.pcm_bufferread, eax
 
 	jmp vera_step_psg
 
 pcm_16bit_stereo:
+	xor eax, eax
+	mov ecx, [rdx].state.pcm_buffercount
+	sub ecx, 4
+	jb no_data
+
+	mov [rdx].state.pcm_buffercount, ecx
+	mov ebx, 040h
+	cmovz eax, ebx		; if zero is set from the above sub, then we're empty
+
+	mov rsi, [rdx].state.memory_ptr
+	and byte ptr [rsi + AUDIO_CTRL], 03fh	; clear full bit and empty bit
+	or byte ptr [rsi + AUDIO_CTRL], al		; set buffer empty if necessary
+
 	mov eax, [rdx].state.pcm_bufferread
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je no_data
 
 	mov rsi, [rdx].state.pcm_ptr
-	movzx r12, byte ptr [rsi + rax]
+	movzx r12d, byte ptr [rsi + rax]
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
-	
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je no_data
-	
-	movsx rbx, byte ptr [rsi + rax]
+		
+	movsx ebx, byte ptr [rsi + rax]
 	shl ebx, 8
 	or r12d, ebx
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
 		
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je no_data
-
-	movzx r13, byte ptr [rsi + rax]
+	movzx r13d, byte ptr [rsi + rax]
 	
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
 		
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	je no_data
-
-	movzx rbx, byte ptr [rsi + rax]
+	movsx ebx, byte ptr [rsi + rax]
 	shl ebx, 8
 	or r13d, ebx
 
 	inc eax									; step on read
 	and eax, VERA_BUFFER_MASK
 
-	jmp pcm_16bit_stereo_setval
-
-
-pcm_16bit_stereo_setval:
-
-	imul r12d, [rdx].state.pcm_volume		; apply volume
+	mov ebx, [rdx].state.pcm_volume
+	
+	imul r12d, ebx							; apply volume
 	sar r12d, 6								; only conisder top bits
-	mov [rdx].state.pcm_value_l, r12d
-	imul r13d, [rdx].state.pcm_volume		; apply volume
+
+	imul r13d, ebx							; apply volume
 	sar r13d, 6								; only conisder top bits
+
+	mov [rdx].state.pcm_value_l, r12d
 	mov [rdx].state.pcm_value_r, r13d
 
-	; check if now empty and set flag if so
 	mov [rdx].state.pcm_bufferread, eax
-	mov rsi, [rdx].state.memory_ptr
-	mov ebx, 040h
-	xor rcx, rcx
-	cmp eax, [rdx].state.pcm_bufferwrite	; if bufferread = bufferwrite then the buffer is empty
-	cmovne rbx, rcx
-	and byte ptr [rsi + AUDIO_CTRL], 03fh	; clear full bit and empty bit
-	or byte ptr [rsi + AUDIO_CTRL], bl		; set buffer empty if necessary
 
 	jmp vera_step_psg
 
@@ -407,6 +405,9 @@ no_data:
 	mov [rdx].state.pcm_value_l, r12d
 	mov [rdx].state.pcm_value_r, r13d
 
+	;and byte ptr [rsi + AUDIO_CTRL], 03fh		; clear full bit and empty bit
+	or byte ptr [rsi + AUDIO_CTRL], 01000000b	; set buffer empty
+
 	jmp vera_step_psg
 
 vera_step_psg_init:
@@ -414,33 +415,27 @@ vera_step_psg_init:
 	mov r13d, [rdx].state.pcm_value_r		; Step PCM always sets these
 
 vera_step_psg:
+	mov rsi, [rdx].state.memory_ptr
+
 	; AFLOW
-	mov eax, [rdx].state.pcm_bufferwrite
-	mov ebx, [rdx].state.pcm_bufferread
-
-	; need to sign extend these from 12bit to 16bit.
-	shl eax, 4
-	shl ebx, 4
-	sar ax, 4
-	sar bx, 4
-
-	sub ax, bx
-
-	;and eax, 0fffh
+	mov eax, [rdx].state.pcm_buffercount
 
 	xor ebx, ebx
-	mov rcx, 01000b					; AFLOW flag
-	and ax, 0c00h
-	cmovnz ecx, ebx					; clear if greater
+	mov rcx, INTERRUPT_AFLOW		; AFLOW flag
+    cmp eax, 0400h
+	cmova ecx, ebx					; clear if greater
+
+	mov eax, dword ptr [rdx].state.interrupt_hit
+    and eax, 0ffffffffh - INTERRUPT_AFLOW
+    or eax, ecx
+    mov dword ptr [rdx].state.interrupt_hit, eax
+
+	and eax, INTERRUPT_AFLOW		; isolate Aflow bit
+
 	movzx rbx, byte ptr [rsi+ISR]
 	and ebx, 011110111b				; clear
-	or ebx, ecx						; set if neccesary
+	or ebx, eax						; set if neccesary
 	mov byte ptr [rsi+ISR], bl		; write
-
-	movzx rbx, byte ptr[rsi+IEN]
-	and ecx, ebx
-	shr ecx, 3
-	or byte ptr [rdx].state.interrupt, cl
 
 	; now process the PSG voices
 	mov rsi, [rdx].state.psg_ptr
@@ -473,6 +468,7 @@ vera_write_audiodata:
 
 	; pull in YM data and mix in
 	mov ecx, [rdx].state.ym_left
+
 	add r12w, cx
 	mov ecx, [rdx].state.ym_right
 	add r13w, cx
@@ -713,6 +709,16 @@ pcm_volume_old:
 	dword 128
 
 psg_volume:
+	dword 0, 4, 8, 12, 16, 17, 18, 20
+	dword 21, 22, 23, 25, 26, 28, 30, 31
+	dword 33, 35, 37, 40, 42, 45, 47, 50
+	dword 53, 56, 60, 63, 67, 71, 75, 80
+	dword 85, 90, 95, 101, 107, 113, 120, 127
+	dword 135, 143, 151, 160, 170, 180, 191, 202
+	dword 214, 227, 241, 255, 270, 286, 303, 321
+	dword 341, 361, 382, 405, 429, 455, 482, 511
+
+psg_volume_old:
 	dword 0
 	dword 1
 	dword 1

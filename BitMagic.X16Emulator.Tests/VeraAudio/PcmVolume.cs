@@ -37,7 +37,7 @@ public class PcmVolume
                 stp",
                 emulator);
 
-        Assert.AreEqual(2u, emulator.VeraAudio.PcmVolume);
+        Assert.AreEqual(1u, emulator.VeraAudio.PcmVolume);
     }
 
     [TestMethod]
@@ -54,7 +54,7 @@ public class PcmVolume
                 stp",
                 emulator);
 
-        Assert.AreEqual(128u, emulator.VeraAudio.PcmVolume);
+        Assert.AreEqual(64u, emulator.VeraAudio.PcmVolume);
     }
 
     [TestMethod]
@@ -71,6 +71,6 @@ public class PcmVolume
                 stp",
                 emulator);
 
-        Assert.AreEqual(2u, emulator.VeraAudio.PcmVolume);
+        Assert.AreEqual(1u, emulator.VeraAudio.PcmVolume);
     }
 }

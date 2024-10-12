@@ -41,14 +41,21 @@ EXIT_SMC_RESET equ 7
 
 readonly_memory equ 0c000h - 1		; stop all writes above this location
 
-BREAKPOINT_MASK     equ 000001011b      ; breakpoint, debugger breakpoint and exception
-NOSTOP_MASK         equ      0100b               ; locations where we dont want the debugger to stop
+BREAKPOINT_MASK     equ 000001011b          ; breakpoint, debugger breakpoint and exception
+NOSTOP_MASK         equ      0100b          ; locations where we dont want the debugger to stop
 EXCEPTION           equ     01000b
 MEMORY_WRITTEN      equ    010000b          ; used by the debugger to see where write activity has occured, can be cleared on demand.
 MEMORY_PROTECTION   equ   0100000b          ; used to indicate where memory has been written to in the life time of the session.
 MEMORY_WRITE_VALUE  equ   0110000b          ; write this everytime
 MEMORY_EXECUTION    equ  01000000b          ; execution points
 MEMORY_READ         equ 010000000b          ; read this session
+
+INTERRUPT_VSYNC     equ 000000001b
+INTERRUPT_LINE      equ 000000010b
+INTERRUPT_SPCOL     equ 000000100b
+INTERRUPT_AFLOW     equ 000001000b
+INTERRUPT_VIA       equ 000010000b
+INTERRUPT_YM        equ 000100000b
 
 
 ; rax  : scratch
@@ -236,6 +243,8 @@ clock_done:
 
     mov dword ptr [rdx].state.initial_startup, 0
 
+    or dword ptr [rdx].state.interrupt_mask, 0fffffff0h ; only four interrupts can be disabled
+
     jmp skip_stepping
 main_loop::
     mov rbx, qword ptr [rdx].state.breakpoint_ptr
@@ -344,8 +353,11 @@ cpu_running:
     jne handle_nmi
 nmi_already_set:
 
-    cmp byte ptr [rdx].state.interrupt, 0
-    jne handle_interrupt
+    mov eax, dword ptr [rdx].state.interrupt_hit
+    and eax, dword ptr [rdx].state.interrupt_mask
+
+    ;cmp byte ptr [rdx].state.interrupt, 0
+    jnz handle_interrupt
 
 
     test rcx, rcx
@@ -537,7 +549,12 @@ no_read:
 
     call ym_render_audio
     mov eax, [rdx].state.ym_interrupt
-    or [rdx].state.interrupt, al
+    shl eax, 5                           ; INTERRUPT_YM
+
+    mov ebx, dword ptr [rdx].state.interrupt_hit
+    and ebx, 0ffffffdfh
+    or ebx, eax
+    mov dword ptr [rdx].state.interrupt_hit, ebx
     
     no_ym_audio:
     ;popf
@@ -580,8 +597,8 @@ not_dc_sel0:
 line_check:
     ;mov rsi, [rdx].state.memory_ptr
     ; check for line IRQ
-    movzx rcx, byte ptr [rdx].state.interrupt_line
-    test cl, cl
+    mov ecx, dword ptr [rdx].state.interrupt_mask
+    and ecx, INTERRUPT_LINE
     jz main_loop
     
     mov cx, word ptr [rdx].state.interrupt_linenum
@@ -592,9 +609,10 @@ line_check:
     ;test cl, cl
     ;jnz main_loop
 
-    or byte ptr [rsi+ISR], 2							; set bit in memory
-    mov byte ptr [rdx].state.interrupt_line_hit, 1		; record that its been hit
-    mov byte ptr [rdx].state.interrupt, 1				; cpu interrupt
+    or byte ptr [rsi+ISR], INTERRUPT_LINE				; set bit in memory
+    or dword ptr [rdx].state.interrupt_hit, INTERRUPT_LINE
+    ;mov byte ptr [rdx].state.interrupt_line_hit, 1		; record that its been hit
+    ;mov byte ptr [rdx].state.interrupt, 1				; cpu interrupt
 
     jmp main_loop
 vsync:
@@ -690,39 +708,42 @@ no_cpu_reset:
     ; check and fire sprite collision IRQ
     ; if IRQ hit, bump display_dirty to ensure a re-render
 
-    movzx rbx, byte ptr [rsi+ISR]
-    and rbx, 0fh
-
-    movzx rcx, byte ptr [rdx].state.interrupt_spcol
-    test cl, cl
+    mov ecx, dword ptr [rdx].state.interrupt_mask
+    and ecx, INTERRUPT_SPCOL
     jz vsync_test
 
     movzx rcx, byte ptr [rdx].state.frame_sprite_collision
     test rcx, rcx
     jz vsync_test
 
+    movzx rbx, byte ptr [rsi+ISR]
+    and rbx, 0fh
     shl rcx, 4
-    or rcx, 4		; set spcol bit for ISR
-    or rbx, rcx		; or on our new flags into ISR
+    or rcx, INTERRUPT_SPCOL		    ; set spcol bit for ISR
+    or rbx, rcx		                ; or on our new flags into ISR
 
-    mov byte ptr [rsi+ISR], bl
-    mov byte ptr [rdx].state.interrupt_spcol_hit, 1
-    mov byte ptr [rdx].state.interrupt, 1
+    or byte ptr [rsi+ISR], bl       ; set the spcol mask
+
+    or dword ptr [rdx].state.interrupt_hit, INTERRUPT_SPCOL
+
     mov byte ptr [rdx].state.display_dirty, 1
 
 vsync_test:
     mov dword ptr [rdx].state.frame_sprite_collision, 0	; clear mask
 
     ; fire vsync IRQ
-    movzx rcx, byte ptr [rdx].state.interrupt_vsync
-    test cl, cl
+    mov ecx, dword ptr [rdx].state.interrupt_mask
+    and ecx, INTERRUPT_VSYNC
+    ;test cl, cl
     jz main_loop
 
     ; set vsync
     ; todo: use rbx from above??
-    or byte ptr [rsi+ISR], 1
-    mov byte ptr [rdx].state.interrupt_vsync_hit, 1
-    mov byte ptr [rdx].state.interrupt, 1
+    or byte ptr [rsi+ISR], INTERRUPT_VSYNC
+
+    or dword ptr [rdx].state.interrupt_hit, INTERRUPT_VSYNC
+    ;mov byte ptr [rdx].state.interrupt_vsync_hit, 1
+    ;mov byte ptr [rdx].state.interrupt, 1
 
     jmp main_loop
 

@@ -49,6 +49,18 @@ public enum FrameControl : uint
     Synced
 }
 
+[Flags]
+public enum InterruptSource : uint
+{
+    None = 0,
+    Vsync = 1,
+    Line = 2,
+    Spcol = 4,
+    Aflow = 8,
+    Via = 16,
+    Ym = 32
+}
+
 public struct Sprite // 64 bytes
 {
     public uint Address { get; set; }  // actual address in memory
@@ -150,18 +162,18 @@ public class Emulator : IDisposable
         public ushort Layer1_VScroll { get => _emulator._state.Layer1_VScroll; set => _emulator._state.Layer1_VScroll = value; }
 
         public ushort Interrupt_LineNum { get => _emulator._state.Interrupt_LineNum; set => _emulator._state.Interrupt_LineNum = value; }
-        public bool Interrupt_AFlow { get => _emulator._state.Interrupt_AFlow != 0; set => _emulator._state.Interrupt_AFlow = (value ? (byte)1 : (byte)0); }
-        public bool Interrupt_SpCol { get => _emulator._state.Interrupt_SpCol != 0; set => _emulator._state.Interrupt_SpCol = (value ? (byte)1 : (byte)0); }
-        public bool Interrupt_Line { get => _emulator._state.Interrupt_Line != 0; set => _emulator._state.Interrupt_Line = (value ? (byte)1 : (byte)0); }
-        public bool Interrupt_VSync { get => _emulator._state.Interrupt_VSync != 0; set => _emulator._state.Interrupt_VSync = (value ? (byte)1 : (byte)0); }
+        public bool Interrupt_AFlow { get => (_emulator._state.Interrupt_Mask & (uint)InterruptSource.Aflow) != 0; set => SetBit(ref _emulator._state.Interrupt_Mask, (uint)InterruptSource.Aflow, value); }
+        public bool Interrupt_SpCol { get => (_emulator._state.Interrupt_Mask & (uint)InterruptSource.Spcol) != 0; set => SetBit(ref _emulator._state.Interrupt_Mask, (uint)InterruptSource.Spcol, value); }
+        public bool Interrupt_Line { get => (_emulator._state.Interrupt_Mask & (uint)InterruptSource.Line) != 0; set => SetBit(ref _emulator._state.Interrupt_Mask, (uint)InterruptSource.Line, value); }
+        public bool Interrupt_VSync { get => (_emulator._state.Interrupt_Mask & (uint)InterruptSource.Vsync) != 0; set => SetBit(ref _emulator._state.Interrupt_Mask, (uint)InterruptSource.Vsync, value); }
 
         public ushort Beam_X { get => (ushort)(_emulator._state.Beam_Position % 800); }
         public ushort Beam_Y { get => (ushort)Math.Floor(_emulator._state.Beam_Position / 800.0); }
         public UInt32 Beam_Position { get => _emulator._state.Beam_Position; set => _emulator._state.Beam_Position = value; }
 
-        public bool Interrupt_Line_Hit { get => _emulator._state.Interrupt_Line_Hit != 0; set => _emulator._state.Interrupt_Line_Hit = (value ? (byte)1 : (byte)0); }
-        public bool Interrupt_Vsync_Hit { get => _emulator._state.Interrupt_Vsync_Hit != 0; set => _emulator._state.Interrupt_Vsync_Hit = (value ? (byte)1 : (byte)0); }
-        public bool Interrupt_SpCol_Hit { get => _emulator._state.Interrupt_SpCol_Hit != 0; set => _emulator._state.Interrupt_SpCol_Hit = (value ? (byte)1 : (byte)0); }
+        public bool Interrupt_Line_Hit { get => (_emulator._state.Interrupt_Hit & (uint)InterruptSource.Line) != 0; set => SetBit(ref _emulator._state.Interrupt_Hit, (uint)InterruptSource.Line, value); }
+        public bool Interrupt_Vsync_Hit { get => (_emulator._state.Interrupt_Hit & (uint)InterruptSource.Vsync) != 0; set => SetBit(ref _emulator._state.Interrupt_Hit, (uint)InterruptSource.Vsync, value); }
+        public bool Interrupt_SpCol_Hit { get => (_emulator._state.Interrupt_Hit & (uint)InterruptSource.Spcol) != 0; set => SetBit(ref _emulator._state.Interrupt_Hit, (uint)InterruptSource.Spcol, value); }
         public UInt32 Frame_Count { get => _emulator._state.Frame_Count; }
         public UInt32 Frame_Count_Breakpoint { get => _emulator._state.Frame_Count_Breakpoint; set => _emulator._state.Frame_Count_Breakpoint = value; }
 
@@ -185,6 +197,17 @@ public class Emulator : IDisposable
         public uint Sprite_Y { get => _emulator._state.Sprite_Y; }
         public uint Sprite_Depth { get => _emulator._state.Sprite_Depth; }
         public uint Sprite_CollisionMask { get => _emulator._state.Sprite_CollisionMask; }
+
+        private static void SetBit(ref uint dest, uint data, bool set)
+        {
+            if (set)
+            {
+                dest |= data;
+                return;
+            }
+
+            dest &= ~data;
+        }
     }
 
     public class VeraAudioState
@@ -197,6 +220,7 @@ public class Emulator : IDisposable
 
         public uint PcmBufferRead { get => _emulator._state.PcmBufferRead; set => _emulator._state.PcmBufferRead = value; }
         public uint PcmBufferWrite { get => _emulator._state.PcmBufferWrite; set => _emulator._state.PcmBufferWrite = value; }
+        public uint PcmBufferCount { get => _emulator._state.PcmBufferCount; set => _emulator._state.PcmBufferCount = value; }
         public uint PcmVolume { get => _emulator._state.PcmVolume; set => _emulator._state.PcmVolume = value; }
         public uint PcmMode { get => _emulator._state.PcmMode; set => _emulator._state.PcmMode = value; }
         public uint PcmSampleRate { get => _emulator._state.PcmSampleRate; set => _emulator._state.PcmSampleRate = value; }
@@ -226,7 +250,8 @@ public class Emulator : IDisposable
         public byte CacheIndex
         {
             get => (byte)_emulator._state.FxCacheIndex;
-            set {
+            set
+            {
                 var v = (byte)(value & 0b111);
                 _emulator._state.FxCacheIndex = v;
                 _emulator._state.FxCacheFillShift = (uint)(v >> 1) << 3;
@@ -274,6 +299,7 @@ public class Emulator : IDisposable
         public byte Register_A_OutValue { get => _emulator._state.Via_Register_A_OutValue; set => _emulator._state.Via_Register_A_OutValue = value; }
         public byte Register_A_InValue { get => _emulator._state.Via_Register_A_InValue; set => _emulator._state.Via_Register_A_InValue = value; }
         public byte Register_A_Direction { get => _emulator._state.Via_Register_A_Direction; set => _emulator._state.Via_Register_A_Direction = value; }
+        public bool Interrupt { get => (_emulator._state.Interrupt_Hit & (uint)InterruptSource.Via) != 0; }
     }
 
     public class I2cState
@@ -474,6 +500,7 @@ public class Emulator : IDisposable
 
         public uint PcmBufferRead = 0;
         public uint PcmBufferWrite = 0;
+        public uint PcmBufferCount = 0;
         public uint PcmSampleRate = 0;
         public uint PcmMode = 0;
         public uint PcmCount = 0;
@@ -487,7 +514,7 @@ public class Emulator : IDisposable
 
         public uint YmCpuPartial = 0;
 
-        public uint Via_Interrupt = 0;
+        //public uint Via_Interrupt = 0;
 
         public uint RomBank = 0;
         public uint MemoryRead = 0xffffffff;
@@ -523,6 +550,9 @@ public class Emulator : IDisposable
 
         public uint HistoryLogMask = (0x400 * 16) - 1; // 1024 entries
 
+        public uint Interrupt_Mask = 0;
+        public uint Interrupt_Hit = 0;
+
         public ushort Pc = 0;
         public ushort StackPointer = 0x1fd; // apparently
 
@@ -538,7 +568,8 @@ public class Emulator : IDisposable
         public byte Zero = 0;
         public byte InterruptDisable = 0;
 
-        public byte Interrupt = 0;
+        public byte SpacerD = 0;
+        //public byte Interrupt = 0; // used for flags
         public byte Nmi = 0;
         public byte Nmi_Previous = 0;
 
@@ -587,14 +618,18 @@ public class Emulator : IDisposable
         public byte Layer1_TileWidth = 0;
 
         public ushort Interrupt_LineNum = 0;
-        public byte Interrupt_AFlow = 0;
-        public byte Interrupt_SpCol = 0;
-        public byte Interrupt_Line = 0;
-        public byte Interrupt_VSync = 0;
+        //public byte Interrupt_AFlow = 0;
+        //public byte Interrupt_SpCol = 0;
+        //public byte Interrupt_Line = 0;
+        //public byte Interrupt_VSync = 0;
 
-        public byte Interrupt_Line_Hit = 0;
-        public byte Interrupt_Vsync_Hit = 0;
-        public byte Interrupt_SpCol_Hit = 0;
+        //public byte Interrupt_Line_Hit = 0;
+        //public byte Interrupt_Vsync_Hit = 0;
+        //public byte Interrupt_SpCol_Hit = 0;
+
+        public byte SpacerA = 0;
+        public byte SpacerB = 0;
+        public byte SpacerC = 0;
 
         // Rendering data
         public byte Drawing = 0;
@@ -748,7 +783,11 @@ public class Emulator : IDisposable
     public bool BreakFlag { get => _state.BreakFlag != 0; set => _state.BreakFlag = (byte)(value ? 0x01 : 0x00); }
     public bool Overflow { get => _state.Overflow != 0; set => _state.Overflow = (byte)(value ? 0x01 : 0x00); }
     public bool Negative { get => _state.Negative != 0; set => _state.Negative = (byte)(value ? 0x01 : 0x00); }
-    public bool Interrupt { get => _state.Interrupt != 0; set => _state.Interrupt = (byte)(value ? 0x01 : 0x00); }
+    public bool Interrupt { get => (_state.Interrupt_Hit & _state.Interrupt_Mask) != 0; } // set => _state.Interrupt_Hit = (byte)(value ? 0x01 : 0x00); }
+    
+    public InterruptSource InterruptHit { get => (InterruptSource)_state.Interrupt_Hit; set => _state.Interrupt_Hit = (uint)value; }
+    public InterruptSource InterruptMask { get => (InterruptSource)_state.Interrupt_Mask; set => _state.Interrupt_Mask = (uint)value; }
+
     public bool Nmi { get => _state.Nmi != 0; set => _state.Nmi = (byte)(value ? 0x01 : 0x00); }
     public ulong HistoryPosition => _state.History_Pos / 16;
     public uint RomBankAct => _state.RomBank;

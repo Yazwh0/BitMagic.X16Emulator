@@ -35,6 +35,7 @@ public class PcmPlay
         emulator.VeraAudio.PcmSampleRate = 0x80; // max
         emulator.VeraAudio.PcmVolume = 0x01;
         emulator.VeraAudio.PcmBuffer[0] = 0xab;
+        emulator.VeraAudio.PcmBufferCount = 1;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -44,8 +45,8 @@ public class PcmPlay
                 stp",
                 emulator);
 
-        Assert.AreEqual(0xab * 2, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0xab * 2, emulator.AudioOutputBuffer[1]);
+        Assert.AreEqual(0xab * 1, emulator.AudioOutputBuffer[0]);
+        Assert.AreEqual(0xab * 1, emulator.AudioOutputBuffer[1]);
     }
 
     [TestMethod]
@@ -55,8 +56,9 @@ public class PcmPlay
 
         emulator.VeraAudio.PcmBufferWrite = 1;
         emulator.VeraAudio.PcmSampleRate = 0x80; // max
-        emulator.VeraAudio.PcmVolume = 128;    // max volume
+        emulator.VeraAudio.PcmVolume = 64;    // max volume
         emulator.VeraAudio.PcmBuffer[0] = 0xab;
+        emulator.VeraAudio.PcmBufferCount = 1;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -78,7 +80,7 @@ public class PcmPlay
 
         emulator.VeraAudio.PcmBufferWrite = 0;
         emulator.VeraAudio.PcmSampleRate = 0x80; // max
-        emulator.VeraAudio.PcmVolume = 128;    // max volume
+        emulator.VeraAudio.PcmVolume = 64;    // max volume
         emulator.A = 0xab;
         emulator.Clock_AudioNext = 10;
 

@@ -12,6 +12,7 @@ public class PcmPlayFlags
 
         emulator.VeraAudio.PcmBufferWrite = 2;
         emulator.VeraAudio.PcmSampleRate = 0x80; // max
+        emulator.VeraAudio.PcmBufferCount = 2;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -32,6 +33,7 @@ public class PcmPlayFlags
 
         emulator.VeraAudio.PcmBufferWrite = 1;
         emulator.VeraAudio.PcmSampleRate = 0x80; // max
+        emulator.VeraAudio.PcmBufferCount = 1;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -42,6 +44,7 @@ public class PcmPlayFlags
                 emulator);
 
         Assert.AreEqual(1u, emulator.VeraAudio.PcmBufferRead);
+        Assert.AreEqual(0u, emulator.VeraAudio.PcmBufferCount);
         Assert.AreEqual((byte)0b01000000, emulator.Memory[0x9f3b]);
     }
 

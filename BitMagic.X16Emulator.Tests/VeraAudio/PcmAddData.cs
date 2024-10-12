@@ -26,7 +26,7 @@ public class PcmData
         Assert.AreEqual(1u, emulator.VeraAudio.PcmBufferWrite); // one write
         Assert.AreEqual(0u, emulator.VeraAudio.PcmBufferRead); // not yet read
         Assert.AreEqual(0xab, emulator.VeraAudio.PcmBuffer[0]);
-        Assert.AreEqual(0x00, emulator.Memory[AUDIO_CTRL]);
+        Assert.AreEqual(0x00, emulator.Memory[AUDIO_CTRL]); 
     }
 
     [TestMethod]
@@ -91,6 +91,7 @@ public class PcmData
 
         emulator.A = 0xab;
         emulator.VeraAudio.PcmBufferRead = 1;
+        emulator.VeraAudio.PcmBufferCount = 4096 - 1;
         emulator.Clock_AudioNext = 10000;
 
         await X16TestHelper.Emulate(@"
@@ -116,6 +117,7 @@ public class PcmData
 
         emulator.A = 0xab;
         emulator.VeraAudio.PcmBufferRead = 2;
+        emulator.VeraAudio.PcmBufferCount = 4096 - 2;
         emulator.Clock_AudioNext = 10000;
 
         await X16TestHelper.Emulate(@"

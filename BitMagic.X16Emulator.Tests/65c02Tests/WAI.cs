@@ -11,7 +11,8 @@ public class WAI
         var emulator = new Emulator();
 
         emulator.InterruptDisable = false;
-        emulator.Interrupt = false;
+        emulator.InterruptHit = InterruptSource.None;
+        emulator.InterruptMask = InterruptSource.None;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;
@@ -40,7 +41,8 @@ public class WAI
         var emulator = new Emulator();
 
         emulator.InterruptDisable = true;
-        emulator.Interrupt = false;
+        emulator.InterruptHit = InterruptSource.None;
+        emulator.InterruptMask = InterruptSource.None;
 
         emulator.RomBank[0x3ffe] = 0x00;
         emulator.RomBank[0x3fff] = 0x09;

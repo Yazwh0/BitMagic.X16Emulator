@@ -77,6 +77,7 @@ public unsafe class SdCard : IDisposable
         }
     }
 
+
     internal void SetCsdRegister(Emulator emulator)
     {
         ulong reg_0 = 0;
@@ -205,6 +206,8 @@ public unsafe class SdCard : IDisposable
     public ulong Size => _size - 512; // take off VHD header
 
     public ulong MemoryPtr => _memoryPtr;
+
+    public unsafe Span<byte> Image => new Span<byte>((void*)_memoryPtr, (int)Size);
 
     public void Dispose()
     {

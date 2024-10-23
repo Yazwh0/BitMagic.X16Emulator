@@ -334,14 +334,14 @@ render_pixel_data macro mask, shift, pixeladd
 	ja dont_draw
 	
 	; can only write on pixels that are the same depth or lower
-	movzx rax, byte ptr [rsi + r13 + pixeladd + BUFFER_SPRITE_DEPTH]
-	cmp r8d, eax
-	jl sprite_collision
+	cmp r8b, byte ptr [rsi + r13 + pixeladd + BUFFER_SPRITE_DEPTH]
+	jle sprite_collision
 
+	; the overwriting is handled by the equality in the jump above
 	; if there is something written, dont overwrite
-	movzx rax, byte ptr [rsi + r13 + pixeladd + BUFFER_SPRITE_VALUE]
-	test eax, eax
-	jnz sprite_collision
+	;movzx eax, byte ptr [rsi + r13 + pixeladd + BUFFER_SPRITE_VALUE]
+	;test eax, eax
+	;jnz sprite_collision
 
 	lea eax, [r14 + r10] ; colour if we apply palette shift
 	lea ebx, [r14 - 1]	 ; 0-16 -> -1-15, so we can test on 0-15.
@@ -354,7 +354,7 @@ render_pixel_data macro mask, shift, pixeladd
 	sprite_collision:
 	; sprite collision
 	; or on the collision to the line buffer
-	movzx rax, byte ptr [rsi + r13 + pixeladd + BUFFER_SPRITE_COL]
+	movzx eax, byte ptr [rsi + r13 + pixeladd + BUFFER_SPRITE_COL]
 	mov ebx, eax
 
 	; write the or'd value to the frame buffer

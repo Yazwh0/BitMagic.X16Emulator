@@ -2678,14 +2678,16 @@ vera_update_isr proc
 
     and r13b, 0111b             ; mask off what can be disabled
     xor r13d, 0ffffffffh
-    mov eax, dword ptr [rdx].state.interrupt_hit
-    and eax, r13d
-    mov dword ptr [rdx].state.interrupt_hit, eax
+    ;mov eax, dword ptr [rdx].state.interrupt_hit
+    ;and eax, r13d
+    and dword ptr [rdx].state.interrupt_hit, r13d
 
     and r12d, 0f0h				    ; mask out lower four bits from previous value
-    and eax, 1111b                  ; clear bottom three bits for whats been hit
+    and eax, 0111b                  ; clear bottom three bits for whats been hit
     or r12d, eax                    ; set back whast been hit
     mov byte ptr [rsi+rbx], r12b    ; store
+
+
 
     ;bt r13, 0
     ;jnc check_line

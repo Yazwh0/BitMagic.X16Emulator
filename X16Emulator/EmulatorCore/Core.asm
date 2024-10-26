@@ -597,19 +597,24 @@ not_dc_sel0:
 line_check:
     ;mov rsi, [rdx].state.memory_ptr
     ; check for line IRQ
-    mov ecx, dword ptr [rdx].state.interrupt_mask
-    and ecx, INTERRUPT_LINE
-    jz main_loop
+
     
     mov cx, word ptr [rdx].state.interrupt_linenum
     cmp cx, bx
     jne main_loop
 
-    ;mov cl, byte ptr [rdx].state.interrupt_line_hit
-    ;test cl, cl
-    ;jnz main_loop
+    ; this was commented out
+    ;;;mov cl, byte ptr [rdx].state.interrupt_line_hit
+    ;;;test cl, cl
+    ;;;jnz main_loop
 
     or byte ptr [rsi+ISR], INTERRUPT_LINE				; set bit in memory
+
+    ; used to be enabled
+    ;mov ecx, dword ptr [rdx].state.interrupt_mask
+    ;and ecx, INTERRUPT_LINE
+    ;jz main_loop
+;
     or dword ptr [rdx].state.interrupt_hit, INTERRUPT_LINE
     ;mov byte ptr [rdx].state.interrupt_line_hit, 1		; record that its been hit
     ;mov byte ptr [rdx].state.interrupt, 1				; cpu interrupt
@@ -740,7 +745,6 @@ vsync_test:
     ; set vsync
     ; todo: use rbx from above??
     or byte ptr [rsi+ISR], INTERRUPT_VSYNC
-
     or dword ptr [rdx].state.interrupt_hit, INTERRUPT_VSYNC
     ;mov byte ptr [rdx].state.interrupt_vsync_hit, 1
     ;mov byte ptr [rdx].state.interrupt, 1

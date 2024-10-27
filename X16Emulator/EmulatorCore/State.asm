@@ -166,6 +166,7 @@ state struct
 	spi_previouscommand		dword ?
 	spi_writeblock			dword ?
 	spi_sdcardsize			dword ?
+	spi_sectorread			dword ?
 	;spi_replyready			dword ?
 
 	joypad_count			dword ?

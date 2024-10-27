@@ -338,6 +338,18 @@ public class Emulator : IDisposable
         public uint Led { get => _emulator._state.SmcLed; set => _emulator._state.SmcLed = value; }
     }
 
+    public class SpiState
+    {
+        private readonly Emulator _emulator;
+
+        public SpiState(Emulator emulator)
+        {
+            _emulator = emulator;
+        }
+
+        public uint LastRead => _emulator.State.SpiSectorRead;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct CpuState
     {
@@ -484,6 +496,7 @@ public class Emulator : IDisposable
         public uint SpiPreviousCommand = 0;
         public uint SpiWriteBlock = 0;
         public uint SpiSdCardSize = 0;
+        public uint SpiSectorRead = 0;
         //public uint SpiDeplyReady = 0;
 
         public uint JoypadCount = 0;
@@ -784,7 +797,7 @@ public class Emulator : IDisposable
     public bool Overflow { get => _state.Overflow != 0; set => _state.Overflow = (byte)(value ? 0x01 : 0x00); }
     public bool Negative { get => _state.Negative != 0; set => _state.Negative = (byte)(value ? 0x01 : 0x00); }
     public bool Interrupt { get => (_state.Interrupt_Hit & _state.Interrupt_Mask) != 0; } // set => _state.Interrupt_Hit = (byte)(value ? 0x01 : 0x00); }
-    
+
     public InterruptSource InterruptHit { get => (InterruptSource)_state.Interrupt_Hit; set => _state.Interrupt_Hit = (uint)value; }
     public InterruptSource InterruptMask { get => (InterruptSource)_state.Interrupt_Mask; set => _state.Interrupt_Mask = (uint)value; }
 
@@ -829,6 +842,9 @@ public class Emulator : IDisposable
 
     private readonly VeraFxState _veraFx;
     public VeraFxState VeraFx => _veraFx;
+
+    private readonly SpiState _spiState;
+    public SpiState Spi => _spiState;
 
     public uint Keyboard_ReadPosition => _state.Keyboard_ReadPosition;
     public uint Keyboard_WritePosition { get => _state.Keyboard_WritePosition; set => _state.Keyboard_WritePosition = value; }
@@ -960,6 +976,7 @@ public class Emulator : IDisposable
         _smc = new SmcState(this);
         _veraAudio = new VeraAudioState(this);
         _veraFx = new VeraFxState(this);
+        _spiState = new SpiState(this);
 
         SetPointers();
 

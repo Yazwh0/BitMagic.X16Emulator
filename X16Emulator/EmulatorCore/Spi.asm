@@ -290,6 +290,8 @@ spi_read_single_block proc
 	shl rbx, 8
 	mov bl, byte ptr [rax + 4]
 
+	mov dword ptr [rdx].state.spi_sectorread, ebx
+
 	mov r13d, dword ptr [rdx].state.spi_sdcardsize
 	cmp rbx, r13
 	jg spi_do_nothing ; not sure what to do if we exceed the disk size

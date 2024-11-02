@@ -200,6 +200,7 @@ state struct
 
 	;via_interrupt			dword ?
 
+	ram_bank				dword ?
 	rom_bank				dword ?
 
 	memory_read				dword ?

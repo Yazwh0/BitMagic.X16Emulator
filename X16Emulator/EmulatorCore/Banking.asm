@@ -22,17 +22,39 @@
 ; 0x210000 - 0x610000-1 ; 4Meg, banked rom
 ; Breakpoints are only copied from the banks, never to. That is a concern of the debugger.
 
+; called as part of the sideeffects when writing to memory
 switch_rambank proc
+	; move current memory back to the bank
 	mov rax, [rdx].state.memory_ptr
 	add rax, 0a000h						; source
 	
 	mov rbx, [rdx].state.current_bank_address	; memory address of current rambank, this is our dest
 	call copy_8k						; call copy
-switch_rambank endp						; fall through to rambank copy
+	;jmp skip
+	; breakpoints
+	mov rax, [rdx].state.breakpoint_ptr	
+	mov ebx, [rdx].state.ram_bank		; ram bank
+	shl rbx, 13	+ 2						; bank * 8k
+	lea rbx, [rax + rbx + 010000h * 4]	; add and adjust to start of ram breakpoint block
 
+	add rax, 0a000h	* 4					; destination, still rax so breakpoint ptr
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						; this proc is call'd, so jmp as copy_8k as a ret.
+switch_rambank endp						; fall through to rambank copy
+; FALLS THROUGH
+; ALSO called by the initialisation code
 copy_rambank_to_memory proc
 	mov rbx, [rdx].state.rambank_ptr	
 	movzx rax, byte ptr [rsi]			; ram, 0x0000 is bank number
+	mov [rdx].state.ram_bank, eax		; store
 	shl rax, 13							; bank * 8k
 	add rax, rbx						; source
 	mov [rdx].state.current_bank_address, rax			; store memory address of the new rambank
@@ -60,12 +82,30 @@ copy_rambank_to_memory proc
 	jmp copy_8k							; this proc is call'd, so jmp as copy_8k as a ret.
 copy_rambank_to_memory endp
 
+; called when storing state
 preserve_current_rambank proc
 	mov rax, [rdx].state.memory_ptr
 	add rax, 0a000h						; source
 	
 	mov rbx, [rdx].state.current_bank_address			; memory address of current rambank, this is our dest
-	jmp copy_8k							; call copy
+	call copy_8k							; call copy
+
+	mov rax, [rdx].state.breakpoint_ptr	
+	mov ebx, [rdx].state.ram_bank		; ram bank
+	shl rbx, 13	+ 2						; bank * 8k
+	lea rbx, [rax + rbx + 010000h * 4]	; add and adjust to start of ram breakpoint block
+
+	add rax, 0a000h	* 4					; destination, still rax so breakpoint ptr
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	call copy_8k						
+	add rbx, 02000h						; next dest and source
+	add rax, 02000h
+	jmp copy_8k						; this proc is call'd, so jmp as copy_8k as a ret.
 preserve_current_rambank endp
 
 copy_rombank_to_memory proc

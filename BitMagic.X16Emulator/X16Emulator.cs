@@ -529,6 +529,7 @@ public class Emulator : IDisposable
 
         //public uint Via_Interrupt = 0;
 
+        public uint RamBank = 0;
         public uint RomBank = 0;
         public uint MemoryRead = 0xffffffff;
         public uint MemoryReadPtr = 0xffffffff;

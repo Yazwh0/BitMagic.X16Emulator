@@ -130,7 +130,7 @@ public class Snapshot
             toReturn.Add(new ValueChange() { Name = "Clock", OriginalValue = _clock, NewValue = _emulator.Clock });
 
 
-        toReturn.AddRange(CompareMemory(MemoryAreas.Ram, 0, _mainRam, _emulator.Memory.ToArray()));
+        toReturn.AddRange(CompareMemory(MemoryAreas.Ram, 0, _mainRam, _emulator.Memory.ToArray(), 0xa000));
         toReturn.AddRange(CompareMemory(MemoryAreas.Vram, 0, _vram, _emulator.Vera.Vram.ToArray()));
         toReturn.AddRange(CompareMemory(MemoryAreas.BankedRam, 0, _bankedRam, _emulator.RamBank.ToArray()));
         toReturn.AddRange(CompareMemory(MemoryAreas.NVram, 0, _nvram, _emulator.RtcNvram.ToArray()));
@@ -147,15 +147,16 @@ public class Snapshot
             _ => null
         };
 
-    public static IEnumerable<ISnapshotChange> CompareMemory(MemoryAreas memoryArea, int baseAddress, byte[] originalValues, byte[] newValues)
+    public static IEnumerable<ISnapshotChange> CompareMemory(MemoryAreas memoryArea, int baseAddress, byte[] originalValues, byte[] newValues, int maxLength = 0)
     {
         var ignoredChanges = IgnoredAreas(memoryArea);
         var index = 0;
+        var length = maxLength == 0 ? originalValues.Length : maxLength;
 
         if (originalValues.Length != newValues.Length)
             throw new Exception($"Array sizes are different for {memoryArea}");
 
-        while (index < originalValues.Length)
+        while (index < length)
         {
             if (originalValues[index] == newValues[index])
             {
@@ -167,15 +168,15 @@ public class Snapshot
             var done = false;
             while (!done)
             {
-                if (newIndex + 1 >= originalValues.Length)
+                if (newIndex + 1 >= length)
                 {
-                    newIndex = originalValues.Length - 1;
+                    newIndex = length - 1;
                     break;
                 }
 
                 // look forward UnchangeSpanSize ahead and then backward for a missmatch.
                 bool missmatch = false;
-                for (var i = Math.Min(UnchangedSpanSize, originalValues.Length - newIndex - 1); i > 0; i--)
+                for (var i = Math.Min(UnchangedSpanSize, length - newIndex - 1); i > 0; i--)
                 {
                     if (originalValues[newIndex + i] != newValues[newIndex + i])
                     {

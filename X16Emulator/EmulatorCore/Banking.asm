@@ -20,7 +20,6 @@
 ; 0x000000 -  0x10000-1 ; 64k, this the area checked for hitting a breakpoint
 ; 0x010000 - 0x210000-1 ; 2Meg, banked ram
 ; 0x210000 - 0x610000-1 ; 4Meg, banked rom
-; Breakpoints are only copied from the banks, never to. That is a concern of the debugger.
 
 ; called as part of the sideeffects when writing to memory
 switch_rambank proc

@@ -475,6 +475,12 @@ no_break:
     mov ax, word ptr [rdx].state.stackpointer
     mov byte ptr [rdi+11], al       ; SP
     pop rbx
+
+
+    mov rcx, [rdx].state.history_pos
+    add rcx, 16
+    and ecx, [rdx].state.history_log_mask
+    mov [rdx].state.history_pos, rcx
     ;--------------------------- END DEBUG CAPTURE ------------------------
     add r11w, 1						; PC+1
 
@@ -486,21 +492,16 @@ no_break:
 
     ; Jump table
     lea rax, [instructions_table]				; start of jump table
-    pushf
-    add rax, [rax + rbx*8]
-    popf
+ ;   pushf
+    add rax, [rax + rbx * 8]
+    clc                                         ; todo: move this to the instruction macros?
+;    popf
     jmp rax                                     ; jump to opcode
 
 cpu_is_waiting:
     add r14, 1
 opcode_done::
     mov [rdx].state.ignore_breakpoint, 0        ; do this after the opcode has been processed as things like vram reads need to trigger a breakpoint
-
-    mov rcx, [rdx].state.history_pos
-    add rcx, 16
-    ;and rcx, (1024*16)-1
-    and ecx, [rdx].state.history_log_mask
-    mov [rdx].state.history_pos, rcx
 
     mov rcx, [rdx].state.breakpoint_ptr
     ;pushf
@@ -525,14 +526,10 @@ no_write:
     and eax, 0ffffh
     or dword ptr [rcx + rax * 4], MEMORY_READ
 no_read:
-
-    ;popf
-    mov rdi, [rdx].state.debug_pos
-
+    
     call via_step	; todo: change to macro call
 
     ; ----------------------- AUDIO
-    ;pushf
     mov rax, [rdx].state.clock_audionext    ; rax is a parameter to vera_render_audio
     cmp r14, rax
     jl no_vera_audio

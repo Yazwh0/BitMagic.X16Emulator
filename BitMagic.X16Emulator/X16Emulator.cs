@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using BitMagic.Common;
+using Silk.NET.Windowing;
 
 namespace BitMagic.X16Emulator;
 
@@ -922,6 +923,8 @@ public class Emulator : IDisposable
 
     public SdCard? SdCard { get; private set; }
 
+    public double WindowScale { get; private set; }
+
     public void LoadSdCard(SdCard sdCard)
     {
         SdCard = sdCard;
@@ -938,6 +941,8 @@ public class Emulator : IDisposable
 
         if (Options.HistorySize == 0 || (Options.HistorySize & (Options.HistorySize - 1)) != 0)
             throw new Exception("History size must be a multiple of 2 and not zero");
+
+        WindowScale = Options.WindowScale;
 
         _state = new CpuState();
 
@@ -1182,6 +1187,8 @@ public class Emulator : IDisposable
 
         Options = options;
 
+        WindowScale = options.WindowScale;
+
         if (oldOptions.HistorySize != options.HistorySize)
         {
             if (Options.HistorySize == 0 || (Options.HistorySize & (Options.HistorySize - 1)) != 0)
@@ -1248,4 +1255,5 @@ public class Emulator : IDisposable
 public class EmulatorOptions
 {
     public int HistorySize { get; set; } = 0x400;
+    public double WindowScale { get; set; } = 1;
 }

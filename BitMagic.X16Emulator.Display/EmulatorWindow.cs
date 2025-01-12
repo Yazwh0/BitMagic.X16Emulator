@@ -96,7 +96,9 @@ public static class EmulatorWindow
         _images[4] = new X16EImage(_emulator, 4);
         _images[5] = new X16EImage(_emulator, 5);
 
-        _window.Size = new Silk.NET.Maths.Vector2D<int> { X = (int)(640 * emulator.WindowScale), Y = (int)(480 * emulator.WindowScale) };
+        var scale = emulator.WindowScale > 0.1 ? emulator.WindowScale : 1;
+
+        _window.Size = new Silk.NET.Maths.Vector2D<int> { X = (int)(640 * scale), Y = (int)(480 * scale) };
         _window.Title = "BitMagic! X16E";
         _window.WindowBorder = WindowBorder.Fixed;
 

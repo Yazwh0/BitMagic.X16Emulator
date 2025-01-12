@@ -9,6 +9,8 @@ using Silk.NET.Core;
 using Silk.NET.Input;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Xml.Linq;
 //using Silk.NET.SDL;
 
 namespace BitMagic.X16Emulator.Display;
@@ -24,6 +26,25 @@ public class ControlKeyPressedEventArgs : EventArgs
 
 public static class EmulatorWindow
 {
+#if OS_WINDOWS
+    [DllImport("dwmapi.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute, ref int pvAttribute, int cbAttribute);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetAncestor(IntPtr hwnd, GetAncestorFlags gaFlags);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    public enum GetAncestorFlags
+    {
+        GetParent = 1,
+        GetRoot = 2,
+        GetRootOwner = 3
+    }
+
+#endif
+
     private static GL? _gl;
     private static IWindow? _window;
     private static IInputContext _input;
@@ -75,7 +96,7 @@ public static class EmulatorWindow
         _images[4] = new X16EImage(_emulator, 4);
         _images[5] = new X16EImage(_emulator, 5);
 
-        _window.Size = new Silk.NET.Maths.Vector2D<int> { X = 800, Y = 525 };
+        _window.Size = new Silk.NET.Maths.Vector2D<int> { X = 640, Y = 480 };
         _window.Title = "BitMagic! X16E";
         _window.WindowBorder = WindowBorder.Fixed;
 
@@ -239,10 +260,15 @@ public static class EmulatorWindow
                 var rawIcon = new RawImage(icon.Width, icon.Height, new Memory<byte>(silkIcon));
 
                 _window.SetWindowIcon(ref rawIcon);
-
             }
         }
 
+        var pvAttribute = 1; // do not round
+        var handle = _window.Native?.DXHandle;
+        if (handle.HasValue)
+        {
+            DwmSetWindowAttribute(handle.Value, 33, ref pvAttribute, Marshal.SizeOf(pvAttribute));
+        }
 #endif
     }
 

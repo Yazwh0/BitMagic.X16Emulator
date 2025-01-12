@@ -1,10 +1,4 @@
-﻿using BitMagic.Common;
-using Silk.NET.OpenGL;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Silk.NET.OpenGL;
 
 namespace BitMagic.X16Emulator.Display;
 
@@ -19,9 +13,9 @@ internal class GlObject : IDisposable
     private static readonly float[] Vertices =
 {
         //X    Y      Z     U   V
-         1.0f,  1.0f, 0.0f, 1f, 0f,
-         1.0f, -1.0f, 0.0f, 1f, 1f,
-        -1.0f, -1.0f, 0.0f, 0f, 1f,
+         1.0f,  1.0f, 0.0f, 640/800f, 0f,
+         1.0f, -1.0f, 0.0f, 640/800f, 480/525f,
+        -1.0f, -1.0f, 0.0f, 0f, 480/525f,
         -1.0f,  1.0f, 0.0f, 0f, 0f
     };
 

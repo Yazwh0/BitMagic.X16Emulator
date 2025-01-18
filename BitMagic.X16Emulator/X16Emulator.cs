@@ -948,7 +948,7 @@ public class Emulator : IDisposable
 
         _state = new CpuState();
 
-        _state.HistoryLogMask = (uint)(Options.HistorySize * 16 - 1);
+        _state.HistoryLogMask = (uint)(Options.HistorySize * 32 - 1);
 
         _memory_ptr = (ulong)NativeMemory.Alloc(RamSize + _rounding);
         _memory_ptr_rounded = RoundMemoryPtr(_memory_ptr);

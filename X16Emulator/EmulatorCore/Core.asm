@@ -1567,9 +1567,9 @@ inc_body macro checkvera, checkreadonly, clock, pc, saveecx
         if saveecx eq 0
             mov ecx, 1
         endif
-
-        step_io_readwrite checkvera
     endif
+
+    step_io_readwrite checkvera ; also does bank switching
 
     add r14, clock
     add r11w, pc			; add on PC
@@ -1612,8 +1612,8 @@ dec_body macro checkvera, checkreadonly, clock, pc, saveecx
             mov ecx, 1
         endif
 
-        step_io_readwrite checkvera
     endif
+    step_io_readwrite checkvera ; also does bank switching
 
     add r14, clock
     add r11w, pc			; add on PC

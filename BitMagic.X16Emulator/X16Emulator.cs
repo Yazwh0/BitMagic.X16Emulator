@@ -19,6 +19,8 @@ public struct EmulatorHistory
     public byte SP;
     public ushort Unused1;
     public ushort Unused2;
+    public ulong Clock;
+    public ulong Unused3;
 }
 
 public struct PsgVoice
@@ -572,7 +574,7 @@ public class Emulator : IDisposable
 
         public uint VramData = 0;
 
-        public uint HistoryLogMask = (0x400 * 16) - 1; // 1024 entries
+        public uint HistoryLogMask = (0x400 * 32) - 1; // 1024 entries
 
         public uint Interrupt_Mask = 0;
         public uint Interrupt_Hit = 0;
@@ -813,7 +815,7 @@ public class Emulator : IDisposable
     public InterruptSource InterruptMask { get => (InterruptSource)_state.Interrupt_Mask; set => _state.Interrupt_Mask = (uint)value; }
 
     public bool Nmi { get => _state.Nmi != 0; set => _state.Nmi = (byte)(value ? 0x01 : 0x00); }
-    public ulong HistoryPosition => _state.History_Pos / 16;
+    public ulong HistoryPosition => _state.History_Pos / 32;
     public uint RomBankAct => _state.RomBank;
     public uint RamBankAct => Memory[0];
 
@@ -1136,7 +1138,7 @@ public class Emulator : IDisposable
     public unsafe Span<byte> DisplayRaw => new Span<byte>((void*)_display_ptr, DisplaySize);
     public unsafe Span<PixelRgba> Palette => new Span<PixelRgba>((void*)_palette_ptr, PaletteSize / 4);
     public unsafe Span<Sprite> Sprites => new Span<Sprite>((void*)_sprite_ptr, 128);
-    public unsafe Span<EmulatorHistory> History => new Span<EmulatorHistory>((void*)_history_ptr, ((int)State.HistoryLogMask + 1) / 16);
+    public unsafe Span<EmulatorHistory> History => new Span<EmulatorHistory>((void*)_history_ptr, ((int)State.HistoryLogMask + 1) / 32);
     public unsafe Span<byte> KeyboardBuffer => new Span<byte>((void*)_smcKeyboard_ptr, SmcKeyboardBufferSize);
     public unsafe Span<byte> MouseBuffer => new Span<byte>((void*)_smcMouse_ptr, SmcMouseBufferSize);
     public unsafe Span<uint> Breakpoints => new Span<uint>((void*)_breakpoint_ptr_rounded, BreakpointSize);
@@ -1196,7 +1198,7 @@ public class Emulator : IDisposable
 
             NativeMemory.Free((void*)_history_ptr);
 
-            _state.HistoryLogMask = (uint)(Options.HistorySize * 16 - 1);
+            _state.HistoryLogMask = (uint)(Options.HistorySize * 32 - 1);
 
             _history_ptr = (ulong)NativeMemory.Alloc(State.HistoryLogMask + 1);
             _state.HistoryPtr = _history_ptr;

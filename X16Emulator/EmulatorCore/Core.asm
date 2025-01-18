@@ -421,6 +421,7 @@ dont_test_breakpoint:
     mov byte ptr [rdi+5], r8b		; A
     mov byte ptr [rdi+6], r9b		; X
     mov byte ptr [rdi+7], r10b		; Y
+    mov qword ptr [rdi+16], r14     ; Clock
 
     mov	al, 00100000b ; bits that are always set
 
@@ -470,7 +471,7 @@ no_decimal:
     or al, 00010000b
 no_break:
     ; -------OK TO HERE
-    mov byte ptr [rdi+10], al   ; falgs
+    mov byte ptr [rdi+10], al   ; flags
 
     mov ax, word ptr [rdx].state.stackpointer
     mov byte ptr [rdi+11], al       ; SP
@@ -478,7 +479,7 @@ no_break:
 
 
     mov rcx, [rdx].state.history_pos
-    add rcx, 16
+    add rcx, 32     ; history size
     and ecx, [rdx].state.history_log_mask
     mov [rdx].state.history_pos, rcx
     ;--------------------------- END DEBUG CAPTURE ------------------------

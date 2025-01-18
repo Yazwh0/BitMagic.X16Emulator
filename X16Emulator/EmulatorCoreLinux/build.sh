@@ -1,1 +1,2 @@
-gcc -shared -fno-pie -o EmulatorCore.so -fPIC core.cpp core.obj -Wall -g -m64 -z noexecstack --version
+gcc --version
+gcc -shared -fno-pie -o EmulatorCore.so -fPIC core.cpp core.obj -Wall -g -m64 -z noexecstack

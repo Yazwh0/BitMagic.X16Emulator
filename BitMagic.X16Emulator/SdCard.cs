@@ -293,9 +293,7 @@ public unsafe class SdCard : IDisposable
         {
             var actName = GetFilename(filename);
 
-            var idx = filename.IndexOf('/');
-            if (idx == -1)
-                idx = filename.IndexOf('\\');
+            var idx = filename.LastIndexOfAny(['\\', '/']);
 
             var destFolder = "";
 

@@ -291,7 +291,24 @@ public unsafe class SdCard : IDisposable
     {
         lock (Lock)
         {
-            var actName = FixFilename(filename);
+            var actName = GetFilename(filename);
+
+            var idx = filename.IndexOf('/');
+            if (idx == -1)
+                idx = filename.IndexOf('\\');
+
+            var destFolder = "";
+
+            if (idx != -1)
+            {
+                destFolder = filename[..idx];
+                filename = filename[(idx+1)..];
+
+                EnsureDirectoryExists(destFolder);
+
+                actName = $"{destFolder}\\{actName}";
+            }
+
             _logger.LogLine($"[PC] >> [16] Creating : {actName}");
 
             using var file = FileSystem.OpenFile(actName, FileMode.CreateNew, FileAccess.Write);
@@ -305,7 +322,7 @@ public unsafe class SdCard : IDisposable
     {
         lock (Lock)
         {
-            var actName = FixFilename(filename);
+            var actName = GetFilename(filename);
 
             if (!destFolder.EndsWith('\\'))
                 actName = $"{destFolder}\\{actName}";
@@ -378,7 +395,7 @@ public unsafe class SdCard : IDisposable
     {
         lock (Lock)
         {
-            var actName = FixFilename(filename);
+            var actName = GetFilename(filename);
             if (FileUpdates.Contains(actName))
             {
                 _logger.LogLine($"[PC] >> [16] Skipping : {actName}");
@@ -415,7 +432,7 @@ public unsafe class SdCard : IDisposable
         Console.ResetColor();
     }
 
-    private static string FixFilename(string filename)
+    private static string GetFilename(string filename)
     {
         return Path.GetFileName(filename.ToUpper());
         //filename = filename.ToUpper().Replace(" ", "");

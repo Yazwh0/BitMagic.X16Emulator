@@ -3976,7 +3976,7 @@ xEA_nop endp
 ;
 
 xCB_wai proc
-    add r14, 2	; Clock	
+    add r14, 3	; Clock	
     mov [rdx].state.cpu_waiting, 1
     jmp opcode_done	
 xCB_wai endp

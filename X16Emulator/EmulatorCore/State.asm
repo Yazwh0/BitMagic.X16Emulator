@@ -62,6 +62,7 @@ state struct
 	rtc_nvram_ptr			qword ?
 	pcm_ptr					qword ?
 	audiooutput_ptr			qword ?
+	debug_sprites_colours_ptr qword ?
 
 	current_bank_address	qword ?
 
@@ -237,6 +238,8 @@ state struct
 
 	interrupt_mask			dword ?
 	interrupt_hit			dword ?
+
+	debug_sprites			dword ?
 
 	register_pc				word ?
 	stackpointer			word ?

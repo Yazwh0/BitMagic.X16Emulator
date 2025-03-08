@@ -1,6 +1,5 @@
 ﻿using System.Runtime.InteropServices;
 using BitMagic.Common;
-using Silk.NET.Windowing;
 
 namespace BitMagic.X16Emulator;
 
@@ -405,7 +404,7 @@ public class Emulator : IDisposable
         public ulong RtcNvram_ptr = 0;
         public ulong PcmPtr = 0;
         public ulong AudioOutputPtr = 0;
-
+        public ulong DebugSpriteColoursPtr = 0;
 
         public ulong CurrentBankAddress = 0;
 
@@ -579,6 +578,8 @@ public class Emulator : IDisposable
         public uint Interrupt_Mask = 0;
         public uint Interrupt_Hit = 0;
 
+        public uint DebugSprites = 0;
+
         public ushort Pc = 0;
         public ushort StackPointer = 0x1fd; // apparently
 
@@ -741,7 +742,7 @@ public class Emulator : IDisposable
             ulong display, ulong palette, ulong sprite, ulong displayBuffer, ulong history, ulong i2cBuffer,
             ulong smcKeyboardPtr, ulong smcMousePtr, ulong spiHistoryPtr, ulong spiInboundBufferPtr, ulong spiOutbandBufferPtr,
             ulong breakpointPtr, ulong stackInfoPtr, ulong stackBreakpointPtr, ulong rtcNvramPtr, ulong pcmPtr,
-            ulong audioOutputPtr, ulong psgPtr, ulong vramBreakpoint_ptr)
+            ulong audioOutputPtr, ulong psgPtr, ulong vramBreakpoint_ptr, ulong debugSpriteColoursPtr)
         {
             MemoryPtr = memory;
             RomPtr = rom;
@@ -766,6 +767,7 @@ public class Emulator : IDisposable
             AudioOutputPtr = audioOutputPtr;
             PsgPtr = psgPtr;
             VramBreakpointPtr = vramBreakpoint_ptr;
+            DebugSpriteColoursPtr = debugSpriteColoursPtr;
         }
     }
 
@@ -898,14 +900,15 @@ public class Emulator : IDisposable
     private readonly ulong _pcm_Ptr;
     private readonly ulong _audioOutput_ptr;
     private readonly ulong _psg_ptr;
+    private readonly ulong _debug_sprite_colours_ptr;
 
     public const int RamSize = 0x10000;
     public const int RomSize = 0x4000 * 256; // was 32, now 256 for cartridge
     public const int BankedRamSize = 0x2000 * 256;
     public const int VramSize = 0x20000;
-    public const int DisplaySize = 800 * 525 * 4 * 6; // *6 for each layer
+    public const int DisplaySize = 800 * 525 * 4 * 7; // *6 for each layer + debug layer
     public const int PaletteSize = 256 * 4;
-    public const int DisplayBufferSize = 2048 * 2 * 5; // Pallette index for two lines * 4 for each layers 0, 1, sprite value, sprite depth, sprite collision - one line being rendered, one being output, 2048 to provide enough space so scaling of $ff works
+    public const int DisplayBufferSize = 2048 * 2 * 6; // Pallette index for two lines * 4 for each layers 0, 1, sprite value, sprite depth, sprite collision, sprite debug - one line being rendered, one being output, 2048 to provide enough space so scaling of $ff works
     //public const int HistorySize = 16 * 1024;
     public const int SpriteSize = 64 * 128;
     public const int I2cBufferSize = 1024;
@@ -917,6 +920,8 @@ public class Emulator : IDisposable
     public const int BreakpointSize = 0x10000 + 0x2000 * 256 + 0x4000 * 256; // base ram, rambanks, rombanks. 256 rom banks for carts.
     public const int StackInfoSize = 256 * 4;
     public const int StackBreakpointSize = 256;
+    public const int DebugSpriteColourCount = 129;
+    public const int DebugSpriteColoursSize = 4 * DebugSpriteColourCount;
     public const int RtcNvramSize = 64;
     private const int PcmSize = 1024 * 4;
     public const int AudioOutputSize = 1024 * 1024 * 2; // 2meg for both Left and Right
@@ -986,6 +991,7 @@ public class Emulator : IDisposable
         _audioOutput_ptr = (ulong)NativeMemory.Alloc(AudioOutputSize);
         _psg_ptr = (ulong)NativeMemory.Alloc(PsgSize);
 
+        _debug_sprite_colours_ptr = (ulong)NativeMemory.Alloc(DebugSpriteColoursSize);
 
         _vera = new VeraState(this);
         _via = new ViaState(this);
@@ -1077,6 +1083,10 @@ public class Emulator : IDisposable
         for (var i = 0; i < AudioOutputSize / 2; i++)
             audioOutput_span[i] = 0;
 
+        var debugSpriteColours_span = new Span<uint>((void*)_debug_sprite_colours_ptr, DebugSpriteColourCount);
+        for (var i = 0; i < DebugSpriteColourCount; i++)
+            debugSpriteColours_span[i] = 0;
+
         // set defaults
         var sprite_act_span = new Span<Sprite>((void*)_sprite_ptr, 128);
         for (var i = 0; i < 128; i++)
@@ -1127,7 +1137,7 @@ public class Emulator : IDisposable
     private void SetPointers() => _state.SetPointers(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,
             _sprite_ptr, _display_buffer_ptr_rounded, _history_ptr, _i2cBuffer_ptr, _smcKeyboard_ptr, _smcMouse_ptr, _spiHistory_ptr,
             _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded, _stackInfo_Ptr, _stackBreakpoint_Ptr, _rtcNvram_Ptr,
-            _pcm_Ptr, _audioOutput_ptr, _psg_ptr, _vramBreakpoint_ptr);
+            _pcm_Ptr, _audioOutput_ptr, _psg_ptr, _vramBreakpoint_ptr, _debug_sprite_colours_ptr);
 
     public ulong DisplayPtr => _display_ptr;
 
@@ -1150,6 +1160,7 @@ public class Emulator : IDisposable
     public unsafe Span<byte> SpiInboundBuffer => new Span<byte>((void*)_spiInboundBufferPtr, SpiInboundBufferPtrSize);
     public unsafe Span<byte> SpiOutboundBuffer => new Span<byte>((void*)_spiOutboundBufferPtr, SpiOutboundBufferPtrSize);
     public unsafe Span<short> AudioOutputBuffer => new Span<short>((void*)_audioOutput_ptr, AudioOutputSize / 2);
+    public unsafe Span<uint> DebugSpriteColours => new Span<uint>((void*)_debug_sprite_colours_ptr, DebugSpriteColourCount);
     public ulong AudioOutputPtr => _audioOutput_ptr;
     public SmcBuffer SmcBuffer { get; }
     public EmulatorResult Result { get; internal set; }
@@ -1251,6 +1262,7 @@ public class Emulator : IDisposable
         NativeMemory.Free((void*)_pcm_Ptr);
         NativeMemory.Free((void*)_audioOutput_ptr);
         NativeMemory.Free((void*)_psg_ptr);
+        NativeMemory.Free((void*)_debug_sprite_colours_ptr);
     }
 }
 

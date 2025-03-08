@@ -387,6 +387,8 @@ render_sprite macro bpp, inp_height, inp_width, vflip, hflip
 	shl r10, 4	; todo: should be stored in this form.
 	mov edi, dword ptr [rdi + rax].sprite.collision_mask
 
+	shr rax, 6	 ; we need it later
+
 	mov r8d, dword ptr [rdx].state.sprite_depth
 
 	; calculate offset
@@ -488,6 +490,25 @@ render_sprite macro bpp, inp_height, inp_width, vflip, hflip
 	movsxd r13, dword ptr [rdx].state.sprite_x
 	add r13, rbx
 	add r13, r15		; add offset in buffer
+	
+	inc rax				; 1 based
+	; need to preseve the sprite index
+	if bpp eq 0		
+		mov byte ptr [rsi + r13 + 0 + BUFFER_SPRITE_DEBUG], al
+		mov byte ptr [rsi + r13 + 1 + BUFFER_SPRITE_DEBUG], al
+		mov byte ptr [rsi + r13 + 2 + BUFFER_SPRITE_DEBUG], al
+		mov byte ptr [rsi + r13 + 3 + BUFFER_SPRITE_DEBUG], al
+		mov byte ptr [rsi + r13 + 4 + BUFFER_SPRITE_DEBUG], al
+		mov byte ptr [rsi + r13 + 5 + BUFFER_SPRITE_DEBUG], al
+		mov byte ptr [rsi + r13 + 6 + BUFFER_SPRITE_DEBUG], al
+		mov byte ptr [rsi + r13 + 7 + BUFFER_SPRITE_DEBUG], al
+	endif
+	if bpp eq 1
+		mov byte ptr [rsi + r13 + 0 + BUFFER_SPRITE_DEBUG], al
+		mov byte ptr [rsi + r13 + 1 + BUFFER_SPRITE_DEBUG], al
+		mov byte ptr [rsi + r13 + 2 + BUFFER_SPRITE_DEBUG], al
+		mov byte ptr [rsi + r13 + 3 + BUFFER_SPRITE_DEBUG], al
+	endif
 
 	push rdi
 	mov rdi, qword ptr [rdx].state.vram_ptr

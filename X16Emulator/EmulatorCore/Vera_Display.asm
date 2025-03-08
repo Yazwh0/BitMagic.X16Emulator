@@ -47,6 +47,7 @@ LAYER0				equ SCREEN_BUFFER_SIZE * 2
 SPRITE_L2			equ SCREEN_BUFFER_SIZE * 3
 LAYER1				equ SCREEN_BUFFER_SIZE * 4
 SPRITE_L3			equ SCREEN_BUFFER_SIZE * 5
+SPRITE_DEBUG		equ SCREEN_BUFFER_SIZE * 6
 
 VISIBLE_WIDTH		equ 640
 VISIBLE_HEIGHT		equ 480
@@ -60,6 +61,7 @@ BUFFER_LAYER1		equ BUFFER_SIZE * 1
 BUFFER_SPRITE_VALUE	equ BUFFER_SIZE * 2
 BUFFER_SPRITE_DEPTH	equ BUFFER_SIZE * 3
 BUFFER_SPRITE_COL	equ BUFFER_SIZE * 4
+BUFFER_SPRITE_DEBUG equ BUFFER_SIZE * 5
 
 STATE_WAIT_START		equ 0
 STATE_FETCH_MAP			equ 1
@@ -607,7 +609,14 @@ layer1_done:
 
 	xor rbx, rbx
 	test rax, rax
-	cmovnz ebx, dword ptr [r8 + rax * 4]
+	cmovnz ebx, dword ptr [r8 + rax * 4]					; gets actual colour for the pixel -- RGBA
+
+	movzx r11d, byte ptr [rsi + r11 + BUFFER_SPRITE_DEBUG]	
+	mov rax, [rdx].state.debug_sprites_colours_ptr
+	mov r11d, dword ptr [rax + r11 * 4]
+;	test r11d, r11d											; sprite present?
+;	mov r11d, 0500000ffh									; transparaent red
+;	cmovz r11d, eax											; clear debug colour if no value
 
 	xor rax, rax
 
@@ -627,21 +636,25 @@ sprites_not_enabled:										; rax will be zero, so no write
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L1], eax
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L2], eax
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L3], eax
+	mov dword ptr [rdi + r9 * 4 + SPRITE_DEBUG], r11d
 	jmp sprite_render_done
 depth_1:
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L1], ebx
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L2], eax
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L3], eax
+	mov dword ptr [rdi + r9 * 4 + SPRITE_DEBUG], r11d
 	jmp sprite_render_done
 depth_2:
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L1], eax
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L2], ebx
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L3], eax
+	mov dword ptr [rdi + r9 * 4 + SPRITE_DEBUG], r11d
 	jmp sprite_render_done
 depth_3:
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L1], eax
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L2], eax
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L3], ebx
+	mov dword ptr [rdi + r9 * 4 + SPRITE_DEBUG], r11d
 
 sprite_render_done:
 	;pop r13
@@ -1083,6 +1096,30 @@ clear:
 	vmovdqa ymmword ptr [rsi + 240h], ymm0
 	vmovdqa ymmword ptr [rsi + 260h], ymm0
 	
+	add rsi, BUFFER_SIZE
+
+	vmovdqa ymmword ptr [rsi + 000h], ymm0
+	vmovdqa ymmword ptr [rsi + 020h], ymm0
+	vmovdqa ymmword ptr [rsi + 040h], ymm0
+	vmovdqa ymmword ptr [rsi + 060h], ymm0
+	vmovdqa ymmword ptr [rsi + 080h], ymm0
+	vmovdqa ymmword ptr [rsi + 0a0h], ymm0
+	vmovdqa ymmword ptr [rsi + 0c0h], ymm0
+	vmovdqa ymmword ptr [rsi + 0e0h], ymm0
+	vmovdqa ymmword ptr [rsi + 100h], ymm0
+	vmovdqa ymmword ptr [rsi + 120h], ymm0
+
+	vmovdqa ymmword ptr [rsi + 140h], ymm0
+	vmovdqa ymmword ptr [rsi + 160h], ymm0
+	vmovdqa ymmword ptr [rsi + 180h], ymm0
+	vmovdqa ymmword ptr [rsi + 1a0h], ymm0
+	vmovdqa ymmword ptr [rsi + 1c0h], ymm0
+	vmovdqa ymmword ptr [rsi + 1e0h], ymm0
+	vmovdqa ymmword ptr [rsi + 200h], ymm0
+	vmovdqa ymmword ptr [rsi + 220h], ymm0
+	vmovdqa ymmword ptr [rsi + 240h], ymm0
+	vmovdqa ymmword ptr [rsi + 260h], ymm0
+
 	add rsi, BUFFER_SIZE
 
 	vmovdqa ymmword ptr [rsi + 000h], ymm0

@@ -88,13 +88,14 @@ public static class EmulatorWindow
 
         _window = Window.Create(options);
 
-        _images = new X16EImage[6];
+        _images = new X16EImage[7];
         _images[0] = new X16EImage(_emulator, 0);
         _images[1] = new X16EImage(_emulator, 1);
         _images[2] = new X16EImage(_emulator, 2);
         _images[3] = new X16EImage(_emulator, 3);
         _images[4] = new X16EImage(_emulator, 4);
         _images[5] = new X16EImage(_emulator, 5);
+        _images[6] = new X16EImage(_emulator, 6);
 
         var scale = emulator.WindowScale > 0.1 ? emulator.WindowScale : 1;
 
@@ -280,8 +281,8 @@ public static class EmulatorWindow
         if (obj || !_hasMouse)
             return;
 
-        var input = _window.CreateInput();
-        input.Mice[0].Cursor.CursorMode = CursorMode.Normal;
+        //var input = _window.CreateInput();
+        _input.Mice[0].Cursor.CursorMode = CursorMode.Normal;
         _hasMouse = false;
         _mouseTimer?.Dispose();
     }
@@ -292,8 +293,8 @@ public static class EmulatorWindow
         if (_hasMouse)
             return;
 
-        var input = _window.CreateInput();
-        input.Mice[0].Cursor.CursorMode = CursorMode.Raw;
+        //var input = _window.CreateInput();
+        _input.Mice[0].Cursor.CursorMode = CursorMode.Raw;
         _hasMouse = true;
         _mouse = arg1;
         _mouseTimer = new Timer(CheckMouseMove, null, 20, 20);

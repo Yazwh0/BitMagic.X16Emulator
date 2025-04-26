@@ -355,6 +355,7 @@ public class Emulator : IDisposable
         public bool AutoTx { get => _emulator._state.SpiAutoTx != 0; set => _emulator._state.SpiAutoTx = value ? 0u : 1u; }
         public uint ReceiveCount { get => _emulator._state.SpiReceiveCount; set => _emulator._state.SpiReceiveCount = value; }
         public uint SendCount { get => _emulator._state.SpiSendCount; set => _emulator._state.SpiSendCount = value; }
+        public uint SendLength { get => _emulator._state.SpiSendLength; set => _emulator._state.SpiSendLength = value; }
         public bool Idle { get => _emulator._state.SpiIdle != 0; set => _emulator._state.SpiIdle = value ? 0u : 1u; }
         // public uint CommandNext { get => _emulator._state.SpiCommandNext; set => _emulator._state.SpiCommandNext = value; }
         public uint PreviousValue { get => _emulator._state.SpiPreviousValue; set => _emulator._state.SpiPreviousValue = value; }

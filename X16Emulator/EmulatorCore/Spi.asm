@@ -123,6 +123,10 @@ vera_afterread_spidata proc
 	test eax, eax
 	jz not_autotx
 
+	mov ebx, dword ptr [rdx].state.spi_sendlength
+	test rbx, rbx
+	jz spi_do_nothing
+
 	; if autotx is on, then place the next byte on the dataport
 	; put data into reply
 	mov ebx, dword ptr [rdx].state.spi_sendcount

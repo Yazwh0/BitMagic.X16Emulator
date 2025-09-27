@@ -3,7 +3,7 @@ using BitMagic.Common;
 
 namespace BitMagic.X16Emulator;
 
-[StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct EmulatorHistory
 {
     public ushort PC;
@@ -22,6 +22,7 @@ public struct EmulatorHistory
     public ulong Unused3;
 }
 
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct PsgVoice
 {
     public ulong GenerationPtr;
@@ -63,6 +64,7 @@ public enum InterruptSource : uint
     Ym = 32
 }
 
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct Sprite // 64 bytes
 {
     public uint Address { get; set; }  // actual address in memory
@@ -362,7 +364,7 @@ public class Emulator : IDisposable
         public uint PreviousCommand { get => _emulator._state.SpiPreviousCommand; set => _emulator._state.SpiPreviousCommand = value; }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct CpuState
     {
         // C wrapper

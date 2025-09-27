@@ -9,6 +9,7 @@ using BitMagic.X16Emulator.Snapshot;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace BitMagic.X16Emulator.TestHelper;
 
@@ -89,39 +90,45 @@ public static class X16TestHelper
 
         if (displayOutput)
         {
-            Console.WriteLine($"Time:\t{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}.{(ts.Milliseconds / 10):00}");
-
-            Console.WriteLine($"A:   \t${emulator.A:X2}");
-            Console.WriteLine($"X:   \t${emulator.X:X2}");
-            Console.WriteLine($"Y:   \t${emulator.Y:X2}");
-            Console.WriteLine($"PC:  \t${emulator.Pc:X4}");
-            Console.WriteLine($"SP:  \t${emulator.StackPointer:X4}");
-
-            Console.WriteLine($"Ticks:\t${emulator.Clock:X4}");
-
-            Console.Write("Flags:\t[");
-            Console.Write(emulator.Negative ? "N" : " ");
-            Console.Write(emulator.Overflow ? "V" : " ");
-            Console.Write(" ");
-            Console.Write(emulator.BreakFlag ? "B" : " ");
-            Console.Write(emulator.Decimal ? "D" : " ");
-            Console.Write(emulator.InterruptDisable ? "I" : " ");
-            Console.Write(emulator.Zero ? "Z" : " ");
-            Console.Write(emulator.Carry ? "C]" : " ]");
-            Console.WriteLine();
-            Console.WriteLine($"Speed:\t{emulator.Clock / ts.TotalSeconds / 1000000.0:0.00}Mhz");
-            Console.WriteLine();
-            Console.WriteLine($"D0 Adr:\t${emulator.Vera.Data0_Address:X5} (step ${emulator.Vera.Data0_Step:X2})");
-            Console.WriteLine($"D1 Adr:\t${emulator.Vera.Data1_Address:X5} (step ${emulator.Vera.Data1_Step:X2})");
-            Console.WriteLine();
-            Console.WriteLine($"Beam:\t{emulator.Vera.Beam_X}, {emulator.Vera.Beam_Y} ({emulator.Vera.Beam_Position})");
-            Console.WriteLine();
+            emulator.DisplayState(ts);
         }
 
         if (emulateResult != expectedResult)
             Assert.Fail($"Emulate Result is not from a {expectedResult}. Actual: {emulateResult}");
 
         return (emulator, snapshot);
+    }
+
+    public static void DisplayState(this Emulator emulator, TimeSpan? ts = null)
+    {
+        if (ts != null)
+            Console.WriteLine($"Time:\t{ts.Value.Hours:00}:{ts.Value.Minutes:00}:{ts.Value.Seconds:00}.{(ts.Value.Milliseconds / 10):00}");
+        Console.WriteLine($"A:   \t${emulator.A:X2}");
+        Console.WriteLine($"X:   \t${emulator.X:X2}");
+        Console.WriteLine($"Y:   \t${emulator.Y:X2}");
+        Console.WriteLine($"PC:  \t${emulator.Pc:X4}");
+        Console.WriteLine($"SP:  \t${emulator.StackPointer:X4}");
+
+        Console.WriteLine($"Ticks:\t${emulator.Clock:X4}");
+
+        Console.Write("Flags:\t[");
+        Console.Write(emulator.Negative ? "N" : " ");
+        Console.Write(emulator.Overflow ? "V" : " ");
+        Console.Write(" ");
+        Console.Write(emulator.BreakFlag ? "B" : " ");
+        Console.Write(emulator.Decimal ? "D" : " ");
+        Console.Write(emulator.InterruptDisable ? "I" : " ");
+        Console.Write(emulator.Zero ? "Z" : " ");
+        Console.Write(emulator.Carry ? "C]" : " ]");
+        Console.WriteLine();
+        if (ts != null)
+            Console.WriteLine($"Speed:\t{emulator.Clock / ts.Value.TotalSeconds / 1000000.0:0.00}Mhz");
+        Console.WriteLine();
+        Console.WriteLine($"D0 Adr:\t${emulator.Vera.Data0_Address:X5} (step ${emulator.Vera.Data0_Step:X2})");
+        Console.WriteLine($"D1 Adr:\t${emulator.Vera.Data1_Address:X5} (step ${emulator.Vera.Data1_Step:X2})");
+        Console.WriteLine();
+        Console.WriteLine($"Beam:\t{emulator.Vera.Beam_X}, {emulator.Vera.Beam_Y} ({emulator.Vera.Beam_Position})");
+        Console.WriteLine();
     }
 
     public static void AssertState(this Emulator emulator, byte? A = null, byte? X = null, byte? Y = null, ushort? Pc = null, ulong? Clock = null, uint? stackPointer = null)

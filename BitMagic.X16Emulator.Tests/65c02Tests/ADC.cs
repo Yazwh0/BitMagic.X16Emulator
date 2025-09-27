@@ -439,6 +439,28 @@ public class ADC
     }
 
     [TestMethod]
+    public async Task AbsY_Overflow()
+    {
+        var emulator = new Emulator();
+
+        emulator.A = 0xfe;
+        emulator.Y = 0x04;
+        emulator.Memory[0x1234] = 0xfe;
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                adc $1230, y
+                stp",
+                emulator);
+
+        // emulation
+        //emulator.DisplayState();
+        emulator.AssertState(0xfc, 0x00, 0x04, 0x814, 4);
+        emulator.AssertFlags(false, true, false, true);
+    }
+
+    [TestMethod]
     public async Task AbsY_NegativeOverflow()
     {
         var emulator = new Emulator();

@@ -99,9 +99,9 @@ io_registers_read:
 	vera_r_9f23 qword vera_afterread - io_registers_read
 	vera_r_9f24 qword vera_afterread - io_registers_read
 	vera_r_9f25 qword io_r_readmemory - io_registers_read
-	vera_r_9f26 qword io_r_readmemory - io_registers_read
+	vera_r_9f26 qword io_r_readmemory - io_registers_read ; todo: add scaline read
 	vera_r_9f27 qword io_r_readmemory - io_registers_read
-	vera_r_9f28 qword io_r_readmemory - io_registers_read
+	vera_r_9f28 qword io_r_readmemory - io_registers_read ; todo: add scaline read
 	vera_r_9f29 qword vera_afterread_9f29 - io_registers_read
 	vera_r_9f2a qword vera_afterread_9f2a - io_registers_read
 	vera_r_9f2b qword io_r_readmemory - io_registers_read

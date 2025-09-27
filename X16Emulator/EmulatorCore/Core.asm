@@ -795,7 +795,7 @@ step_exit:
     ret
 
 breakpoint_exit_stack:
-    or [rdx].state.breakpoint_source, BREAKPOINT_STACK
+    or [rdx].state.breakpoint_source, BREAKPOINT_STACK  ; these set the actual value, need to set the value from the actual breakpoint
     jmp breakpoint_exit
 
 breakpoint_exit_normal:
@@ -895,7 +895,7 @@ done:
 
 endm
 
-; Expects r13b to be set only if one of the Data registers have been read from.
+; Expects r13b to be set only if one of the Data registers have been read from. -- no longer true, now set for all the io range
 ; also checks for rom\ram bank switches for writes
 step_vera_read macro checkvera
     local skip

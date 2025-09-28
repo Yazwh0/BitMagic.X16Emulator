@@ -574,7 +574,7 @@ public class Emulator : IDisposable
 
         // End FX
 
-        public uint VramData = 0;
+        public uint VramData = 0; // used to pass data between the IO and the opcode thats reading from memory
 
         public uint HistoryLogMask = (0x400 * 32) - 1; // 1024 entries
 

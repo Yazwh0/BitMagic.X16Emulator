@@ -1402,6 +1402,39 @@ done:
     ret
 vera_afterread_9f2a endp
 
+; add on the high bit of the scanline to vram_data
+vera_afterread_9f28 proc
+    call vera_render_display
+
+    movzx eax, word ptr [rdx].state.display_y
+    mov ecx, 0ffh
+    cmp eax, 512
+    cmovge eax, ecx
+    and eax, 0ffh
+    mov dword ptr [rdx].state.vram_data, eax
+
+    ret
+vera_afterread_9f28 endp
+
+; set the vram_data to the scanline
+vera_afterread_9f26 proc
+    call vera_render_display
+
+    movzx ecx, word ptr [rdx].state.display_y
+    mov eax, 100h
+    cmp ecx, 512
+    cmovge ecx, eax
+
+    mov eax, dword ptr [rdx].state.vram_data    ; get existing value and mask off bit 6
+    and ecx, 0100h
+    and eax, 10111111b
+    shr ecx, 2  
+    or  eax, ecx                                ; put the high bit of the scanline on
+    mov dword ptr [rdx].state.vram_data, eax
+
+    ret
+vera_afterread_9f26 endp
+
 ;
 ; Update procs for vera registers
 ;

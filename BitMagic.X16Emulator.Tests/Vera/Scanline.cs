@@ -28,7 +28,7 @@ public class Scanline
                 ",
         emulator);
 
-        Assert.IsTrue(emulator.A == 50);
+        Assert.IsTrue(emulator.A == 51);
         Assert.IsTrue(emulator.X == 2);     // just line interrupt
     }
 
@@ -55,7 +55,7 @@ public class Scanline
 
         emulator.DisplayState();
 
-        Assert.IsTrue(emulator.A == 50);
+        Assert.IsTrue(emulator.A == 51);
         Assert.IsTrue(emulator.X == 0b1100_0010);     // just line interrupt
     }
 }

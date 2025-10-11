@@ -1038,25 +1038,36 @@ endm
 
 read_indx_rbx macro check_allvera
     movzx rbx, byte ptr [rsi+r11]	; Address in ZP
-    add bl, r9b			; Add on X. Byte operation so it wraps.
-    movzx rbx, word ptr [rsi+rbx]	; Address at location
+    add bl, r9b			            ; Add on X. Byte operation so it wraps.
+
+    movzx r12, byte ptr [rsi+rbx]	; Address at location - low byte
+    inc bl                          ; next byte that wraps
+    movzx rbx, byte ptr [rsi+rbx]   ; Address at location - high byte
+    shl rbx, 8
+    or rbx, r12
+
     check_vera_access check_allvera
 endm
 
-read_ind_rbx macro check_allvera
-    movzx rbx, word ptr [rsi+r11]	; Get 16bit value in memory.
+;read_ind_rbx macro check_allvera
+    ;movzx rbx, word ptr [rsi+r11]	; Get 16bit value in memory.
     ;check_vera_access check_allvera	; Get value its pointing at
-    push r11
-    mov r11w, bx					; reads use r11, so save and copy value
+    ;push r11
+    ;mov r11w, bx					; reads use r11, so save and copy value
 
-    check_vera_access check_allvera
-    pop r11
-endm
+    ;check_vera_access check_allvera
+    ;pop r11
+;endm
 
 read_indy_rbx_pagepenalty macro
     local no_overflow
     movzx rbx, byte ptr [rsi+r11]	; Address in ZP
-    movzx rbx, word ptr [rsi+rbx]	; Address pointed at in ZP
+
+    movzx r12, byte ptr [rsi+rbx]	; Address at location - low byte
+    inc bl                          ; next byte that wraps
+    movzx rbx, byte ptr [rsi+rbx]   ; Address at location - high byte
+    shl rbx, 8
+    or rbx, r12
 
     add bl, r10b		; Add Y to the lower address byte
     jnc no_overflow
@@ -1071,14 +1082,26 @@ endm
 read_indy_rbx macro check_allvera
     local no_overflow
     movzx rbx, byte ptr [rsi+r11]	; Address in ZP
-    movzx rbx, word ptr [rsi+rbx]	; Address pointed at in ZP
+
+    movzx r12, byte ptr [rsi+rbx]	; Address at location - low byte
+    inc bl                          ; next byte that wraps
+    movzx rbx, byte ptr [rsi+rbx]   ; Address at location - high byte
+    shl rbx, 8
+    or rbx, r12
+
     add bx, r10w		            ; Add Y to the address
     check_vera_access check_allvera
 endm
 
 read_indzp_rbx macro check_allvera
     movzx rbx, byte ptr [rsi+r11]	; Address in ZP
-    movzx rbx, word ptr [rsi+rbx]	; Address at location
+
+    movzx r12, byte ptr [rsi+rbx]	; Address at location - low byte
+    inc bl                          ; next byte that wraps
+    movzx rbx, byte ptr [rsi+rbx]   ; Address at location - high byte
+    shl rbx, 8
+    or rbx, r12
+
     check_vera_access check_allvera
 endm
 

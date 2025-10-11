@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using BitMagic.X16Emulator.Snapshot;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BitMagic.X16Emulator.Tests;
 
@@ -494,7 +495,7 @@ public class LDA
     {
         var emulator = new Emulator();
 
-        emulator.Memory[0x4a0+0xf0] = 0x44;
+        emulator.Memory[0x4a0 + 0xf0] = 0x44;
         emulator.Memory[0xa0] = 0xa0;
         emulator.Memory[0xa1] = 0x04;
         emulator.Y = 0xf0;
@@ -536,5 +537,104 @@ public class LDA
         // emulation
         emulator.AssertState(0x44, 0x00, 0x00, 0x813, 5);
         emulator.AssertFlags(false, false, false, false);
+    }
+
+    [TestMethod]
+    public async Task IndirectX_WrapAddress()
+    {
+        var emulator = new Emulator();
+
+        // test addresses
+        emulator.Memory[0x0ff] = 0x12;
+        emulator.Memory[0x100] = 0x34;
+        emulator.Memory[0x000] = 0x01;
+
+        emulator.Memory[0x3412] = 0x02; // wrong
+        emulator.Memory[0x0112] = 0x01; // correct
+
+        emulator.X = 0;
+        emulator.A = 0xff;
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                stp
+                lda ($ff, X)
+                stp"
+                , emulator);
+
+        var snapshot = emulator.Snapshot();
+
+        emulator.Emulate();
+
+        snapshot.Compare().IgnoreVia()
+            .Is(Registers.A, 0x01)
+            .AssertNoOtherChanges();
+    }
+
+    [TestMethod]
+    public async Task Indirect_WrapAddress()
+    {
+        var emulator = new Emulator();
+
+        // test addresses
+        emulator.Memory[0x0ff] = 0x12;
+        emulator.Memory[0x100] = 0x34;
+        emulator.Memory[0x000] = 0x01;
+
+        emulator.Memory[0x3412] = 0x02; // wrong
+        emulator.Memory[0x0112] = 0x01; // correct
+
+        emulator.X = 0;
+        emulator.A = 0xff;
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                stp
+                lda ($ff)
+                stp"
+                , emulator);
+
+        var snapshot = emulator.Snapshot();
+
+        emulator.Emulate();
+
+        snapshot.Compare().IgnoreVia()
+            .Is(Registers.A, 0x01)
+            .AssertNoOtherChanges();
+    }
+
+    [TestMethod]
+    public async Task IndirectY_WrapAddress()
+    {
+        var emulator = new Emulator();
+
+        // test addresses
+        emulator.Memory[0x0ff] = 0x12;
+        emulator.Memory[0x100] = 0x34;
+        emulator.Memory[0x000] = 0x01;
+
+        emulator.Memory[0x3412] = 0x02; // wrong
+        emulator.Memory[0x0112] = 0x01; // correct
+
+        emulator.Y = 0;
+        emulator.A = 0xff;
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                stp
+                lda ($ff), y
+                stp"
+                , emulator);
+
+        var snapshot = emulator.Snapshot();
+
+        emulator.Emulate();
+
+        snapshot.Compare().IgnoreVia()
+            .Is(Registers.A, 0x01)
+            .AssertNoOtherChanges();
     }
 }

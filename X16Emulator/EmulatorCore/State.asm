@@ -115,6 +115,7 @@ state struct
 	joypad_newmask			qword ?
 
 	base_ticks				qword ?
+	spi_nextcpuread			qword ?
 
 	ignore_breakpoint		dword ?
 

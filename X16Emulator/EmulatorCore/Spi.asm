@@ -123,6 +123,10 @@ vera_afterread_spidata proc
 	test eax, eax
 	jz not_autotx
 
+	; check if 7 cpu ticks have elapsed since last byte sent
+	cmp qword ptr [rdx].state.spi_nextcpuread, r14
+	jg return_previous
+
 	mov ebx, dword ptr [rdx].state.spi_sendlength
 	test rbx, rbx
 	jz spi_do_nothing
@@ -146,11 +150,21 @@ vera_afterread_spidata proc
 	cmove rbx, rax									; if done clear sendlength and sendcount
 	cmove r13, rax									
 
+	mov rax, r14									; store next cpu that a read can occur
+	add rax, 7
+	mov qword ptr [rdx].state.spi_nextcpuread, rax
+
 	mov dword ptr [rdx].state.spi_sendcount, ebx
 	mov dword ptr [rdx].state.spi_sendlength, r13d
 
 not_autotx:
 	ret
+
+return_previous:
+	mov r13d, dword ptr [rdx].state.spi_previousvalue
+
+	ret
+
 vera_afterread_spidata endp
 
 spi_do_nothing proc
@@ -196,6 +210,11 @@ spi_send_data proc
 
 	cmove rbx, rax									; if done clear sendlength and sendcount
 	cmove r13, rax									
+
+	mov rax, r14									; store next cpu that a read can occur
+	add rax, 7
+	mov qword ptr [rdx].state.spi_nextcpuread, rax
+
 
 	mov dword ptr [rdx].state.spi_sendcount, ebx
 	mov dword ptr [rdx].state.spi_sendlength, r13d

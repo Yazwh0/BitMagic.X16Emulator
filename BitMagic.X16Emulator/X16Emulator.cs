@@ -458,6 +458,7 @@ public class Emulator : IDisposable
         public ulong JoypadNewMask = 0;
 
         public ulong BaseTicks = 0;
+        public ulong SpiNextCpuRead = 0; // cpu tick when the next read can occur
 
         public uint IgnoreBreakpoint = 0;
 

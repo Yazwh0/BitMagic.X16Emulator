@@ -1039,6 +1039,7 @@ public class Vera_Initialise
         var emulator = new Emulator();
 
         emulator.Vera.Interrupt_VSync = true;
+        emulator.InterruptDisable = true; // prevent actual interrupt handling
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1056,6 +1057,7 @@ public class Vera_Initialise
         var emulator = new Emulator();
 
         emulator.Vera.Interrupt_Line = true;
+        emulator.InterruptDisable = true; // prevent actual interrupt handling
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1073,6 +1075,7 @@ public class Vera_Initialise
         var emulator = new Emulator();
 
         emulator.Vera.Interrupt_SpCol = true;
+        emulator.InterruptDisable = true; // prevent actual interrupt handling
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1090,6 +1093,7 @@ public class Vera_Initialise
         var emulator = new Emulator();
 
         emulator.Vera.Interrupt_AFlow = true;
+        emulator.InterruptDisable = true; // prevent actual interrupt handling
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1107,6 +1111,7 @@ public class Vera_Initialise
         var emulator = new Emulator();
 
         emulator.Vera.Interrupt_LineNum = 0x1ff;
+        emulator.InterruptDisable = true; // prevent actual interrupt handling
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

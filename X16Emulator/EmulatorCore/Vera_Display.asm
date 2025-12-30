@@ -339,7 +339,12 @@ renderstep_next_line proc
 	; check for vstart
 	movzx rax, word ptr [rdx].state.dc_vstart
 	cmp rax, r12
-	jge no_y_inc_vstart
+	jg no_y_inc_vstart
+
+	; check for vstop
+	movzx rax, word ptr [rdx].state.dc_vstop
+	cmp rax, r12
+	jle no_y_inc_vstart
 
 	; Add line to scaled y
 	mov r12d, dword ptr [rdx].state.scale_y

@@ -588,10 +588,7 @@ check_line_type:
     mov byte ptr [rsi+DC_VIDEO], cl
 not_dc_sel0:
 
-    mov [rdx].state.cpu_posy, rbx
-    cmp rbx, VBLANK
-    jg main_loop
-    je vsync
+
 line_check:
     ;mov rsi, [rdx].state.memory_ptr
     ; check for line IRQ
@@ -599,7 +596,7 @@ line_check:
     
     mov cx, word ptr [rdx].state.interrupt_linenum
     cmp cx, bx
-    jne main_loop
+    jne vsync_check
 
     ; this was commented out
     ;;;mov cl, byte ptr [rdx].state.interrupt_line_hit
@@ -617,7 +614,15 @@ line_check:
     ;mov byte ptr [rdx].state.interrupt_line_hit, 1		; record that its been hit
     ;mov byte ptr [rdx].state.interrupt, 1				; cpu interrupt
 
-    jmp main_loop
+    ;jmp main_loop
+vsync_check:
+
+    mov [rdx].state.cpu_posy, rbx
+    cmp rbx, VBLANK
+    jne main_loop
+    ;jg main_loop
+    ;je vsync
+
 vsync:
     ; only draw the screen if there is an update!
     movzx rax, byte ptr [rdx].state.display_dirty

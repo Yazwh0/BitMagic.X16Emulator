@@ -8,8 +8,6 @@ using BitMagic.Compiler.Files;
 using BitMagic.X16Emulator.Snapshot;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using System;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace BitMagic.X16Emulator.TestHelper;
 
@@ -57,7 +55,7 @@ public static class X16TestHelper
 
     private static async Task<(Emulator Emulator, Snapshot.Snapshot Snapshot)> Emulate(Project project, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode, bool displayOutput = true)
     {
-        var compiler = new Compiler.Compiler(project, new NullLogger()); // code, new NullLogger());
+        var compiler = new Compiler.Compiler(project, new(), new NullLogger()); // code, new NullLogger());
 
         emulator ??= new Emulator();
 

@@ -16,7 +16,7 @@ public struct EmulatorHistory
     public ushort Params;
     public byte Flags;
     public byte SP;
-    public ushort Unused1;
+    public ushort CpuY;
     public ushort Unused2;
     public ulong Clock;
     public ulong Unused3;
@@ -1272,6 +1272,6 @@ public class Emulator : IDisposable
 
 public class EmulatorOptions
 {
-    public int HistorySize { get; set; } = 0x400;
+    public int HistorySize { get; set; } = 0x80000;
     public double WindowScale { get; set; } = 1;
 }

@@ -415,6 +415,7 @@ public static class EmulatorWindow
 
     private static void OnClose()
     {
+        Console.WriteLine("OnClose");
         lock (_lock)
         {
             _closing = true;
@@ -450,6 +451,7 @@ public static class EmulatorWindow
 
     public static void Stop()
     {
+        Console.WriteLine("STOP called");
         _closing = true;
         _window?.Close();
     }

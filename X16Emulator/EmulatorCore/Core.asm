@@ -57,6 +57,24 @@ INTERRUPT_AFLOW     equ 000001000b
 INTERRUPT_VIA       equ 000010000b
 INTERRUPT_YM        equ 000100000b
 
+cpu_history struct 
+
+    pc          word ?
+    opcode      byte ?
+    rombank     byte ?
+    rambank     byte ?
+    reg_a       byte ?
+    reg_x       byte ?
+    reg_y       byte ?
+    params      word ?
+    flags       byte ?
+    reg_sp      byte ?
+    cpu_y       word ?
+    unused_b    word ?
+    clock       qword ?
+    unused_c    qword ?
+
+cpu_history ends
 
 ; rax  : scratch
 ; rbx  : scratch -- used to pass address on opcodes around
@@ -409,19 +427,36 @@ dont_test_breakpoint:
     ; moved history pos to after opcode
     mov [rdx].state.debug_pos, rdi
 
-    mov word ptr [rdi], r11w		; PC
-    mov byte ptr [rdi+2], bl		; Opcode
+    mov word ptr [rdi].cpu_history.pc, r11w		    ; PC
+    mov byte ptr [rdi].cpu_history.opcode, bl		; Opcode
     mov al, byte ptr [rsi+1]
-    mov byte ptr [rdi+3], al		; store rom
+    mov byte ptr [rdi].cpu_history.rambank, al		; store rom
     mov al, byte ptr [rsi+0]
-    mov byte ptr [rdi+4], al		; store ram
+    mov byte ptr [rdi].cpu_history.rombank, al		; store ram
     mov ax, word ptr [rsi + r11 + 1]
-    mov word ptr [rdi+8], ax        ; parameters
+    mov word ptr [rdi].cpu_history.params, ax       ; parameters
 
-    mov byte ptr [rdi+5], r8b		; A
-    mov byte ptr [rdi+6], r9b		; X
-    mov byte ptr [rdi+7], r10b		; Y
-    mov qword ptr [rdi+16], r14     ; Clock
+    mov byte ptr [rdi].cpu_history.reg_a, r8b		; A
+    mov byte ptr [rdi].cpu_history.reg_x, r9b		; X
+    mov byte ptr [rdi].cpu_history.reg_y, r10b		; Y
+    mov qword ptr [rdi].cpu_history.clock, r14      ; Clock
+
+    mov ax, word ptr [rdx].state.cpu_posy
+    mov word ptr [rdi].cpu_history.cpu_y, ax        ; CPU Y
+
+;    mov byte ptr [rdi+2], bl		; Opcode
+    ;mov al, byte ptr [rsi+1]
+    ;mov byte ptr [rdi+3], al		; store rom
+    ;mov al, byte ptr [rsi+0]
+    ;mov byte ptr [rdi+4], al		; store ram
+    ;mov ax, word ptr [rsi + r11 + 1]
+    ;mov word ptr [rdi+8], ax        ; parameters
+
+    ;mov byte ptr [rdi+5], r8b		; A
+    ;mov byte ptr [rdi+6], r9b		; X
+    ;mov byte ptr [rdi+7], r10b		; Y
+    ;mov qword ptr [rdi+16], r14     ; Clock
+
 
     mov	al, 00100000b ; bits that are always set
 
@@ -563,7 +598,7 @@ no_read:
     mov rax, r14
     and rax, 0ffffffffffffff00h		; mask off lower bytes - 0xff * 3.125 is 800 dots.
     mov rbx, [rdx].state.last_cpulineclock
-    cmp rax, rbx
+    cmp rax, rbx                    ; Check that the line has changed, only check vsync and line interrupts if it has.
     je main_loop
 
     mov [rdx].state.last_cpulineclock, rax			; store for next time

@@ -345,15 +345,19 @@ static class Program
             syncThread.Start();
         }
 
+        var window = new EmulatorWindow();
+
         EmulatorWork.Emulator = emulator;
+        EmulatorWork.Window = window;
+
         EmulatorThread = new Thread(EmulatorWork.DoWork);
 
-        EmulatorWindow.ControlKeyPressed += EmulatorWindow_ControlKeyPressed;
+        window.ControlKeyPressed += EmulatorWindow_ControlKeyPressed;
 
         EmulatorThread.Priority = System.Threading.ThreadPriority.Highest;
         EmulatorThread.Start();
 
-        EmulatorWindow.Run(emulator);
+        window.Run(emulator);
 
         EmulatorThread.Join();
 
@@ -363,6 +367,7 @@ static class Program
             syncThread.Join();
         }
 
+        window.Dispose();
         Console.WriteLine($"Emulator finished with return '{EmulatorWork.Return}'.");
 
         // once emulation is over write sdcard if requested
@@ -404,7 +409,8 @@ static class Program
     public static class EmulatorWork
     {
         public static Emulator.EmulatorResult Return { get; set; }
-        public static Emulator? Emulator { get; set; }
+        public static Emulator? Emulator { get; set; } = null;
+        public static EmulatorWindow? Window { get; set; } = null;
 
         public static void DoWork()
         {
@@ -511,7 +517,7 @@ static class Program
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("*** Close emulator window to exit ***");
-                EmulatorWindow.PauseAudio();
+                Window?.PauseAudio();
             }
             Console.ResetColor();
         }

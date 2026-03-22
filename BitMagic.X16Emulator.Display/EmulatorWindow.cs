@@ -1,7 +1,5 @@
-﻿using Silk.NET.GLFW;
-using Silk.NET.OpenGL;
+﻿using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
-using System;
 using System.Diagnostics;
 using System.Reflection;
 using Image = SixLabors.ImageSharp.Image;
@@ -10,8 +8,6 @@ using Silk.NET.Input;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Xml.Linq;
-//using Silk.NET.SDL;
 
 namespace BitMagic.X16Emulator.Display;
 
@@ -24,7 +20,7 @@ public class ControlKeyPressedEventArgs : EventArgs
     }
 }
 
-public static class EmulatorWindow
+public class EmulatorWindow : IDisposable
 {
 #if OS_WINDOWS
     [DllImport("dwmapi.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
@@ -42,47 +38,43 @@ public static class EmulatorWindow
         GetRoot = 2,
         GetRootOwner = 3
     }
-
 #endif
 
-    private static GL? _gl;
-    private static IWindow? _window;
-    private static IInputContext _input;
-    private static Shader? _shader;
-    private static X16EImage[]? _images;
+    private GL? _gl;
+    private IWindow? _window;
+    private IInputContext? _input;
+    private Shader? _shader;
+    private X16EImage[]? _images;
 
-    private static GlObject[]? _layers;
-    private static UInt32 _lastCount;
-    private static long _lastTicks;
-    private static double _speed = 0;
-    private static double _fps = 0;
-    private static Stopwatch _stopwatch = new Stopwatch();
-    private static Emulator? _emulator;
-    private static bool _closing = false;
-    private static bool _hasMouse = false;
-    private static Vector2 _lastMousePosition;
-    private static IGamepad[]? _joysticks;
+    private GlObject[]? _layers;
+    private uint _lastCount;
+    private long _lastTicks;
+    private double _speed = 0;
+    private double _fps = 0;
+    private readonly Stopwatch _stopwatch = new Stopwatch();
+    private Emulator? _emulator;
+    private bool _closing = false;
+    private bool _hasMouse = false;
+    private Vector2 _lastMousePosition;
+    private IGamepad[]? _joysticks;
 
-    private static IMouse? _mouse = null;
-    private static int _mouseX = 0;
-    private static int _mouseY = 0;
-    private static Timer? _mouseTimer = null;
+    private IMouse? _mouse = null;
+    private int _mouseX = 0;
+    private int _mouseY = 0;
+    private Timer? _mouseTimer = null;
 
-    private static bool _waitingOnSync = false;
-    public static event EventHandler<ControlKeyPressedEventArgs>? ControlKeyPressed;
+    public event EventHandler<ControlKeyPressedEventArgs>? ControlKeyPressed;
 
-    private static EmulatorAudio? _audio;
-    private static readonly object _lock = new();
+    private EmulatorAudio? _audio;
+    private readonly object _lock = new();
 
-    public static void Run(Emulator emulator)
+    public void Run(Emulator emulator)
     {
         _closing = false;
         _emulator = emulator;
 
         var options = WindowOptions.Default;
 
-        //options.UpdatesPerSecond = 59.523809 * 4;
-        //options.FramesPerSecond = 59.523809;
         options.VSync = false;
         options.ShouldSwapAutomatically = true;
 
@@ -115,7 +107,7 @@ public static class EmulatorWindow
         _window.Run();
     }
 
-    private static void EmulatorWindow_KeyUp(IKeyboard arg1, Key arg2, int arg3)
+    private void EmulatorWindow_KeyUp(IKeyboard arg1, Key arg2, int arg3)
     {
         if (_emulator == null) return;
         if (arg2 == Key.S && arg1.IsKeyPressed(Key.ControlLeft))
@@ -125,7 +117,7 @@ public static class EmulatorWindow
         _emulator!.SmcBuffer.KeyUp(arg2);
     }
 
-    private static void EmulatorWindow_KeyDown(IKeyboard arg1, Key arg2, int arg3)
+    private void EmulatorWindow_KeyDown(IKeyboard arg1, Key arg2, int arg3)
     {
         if (_emulator == null) return;
         if (arg1.IsKeyPressed(Key.Menu) && arg1.IsKeyPressed(Key.ControlLeft))
@@ -143,7 +135,7 @@ public static class EmulatorWindow
     //    Console.WriteLine($"Rec {(byte)arg2:X2}");
     //}
 
-    private static unsafe void OnLoad()
+    private unsafe void OnLoad()
     {
         if (_window == null) throw new Exception("_window not set");
         if (_images == null) throw new Exception("_images not set");
@@ -276,7 +268,7 @@ public static class EmulatorWindow
     }
 
     // If we lose focus, then stop capturing the mouse
-    private static void _window_FocusChanged(bool obj)
+    private void _window_FocusChanged(bool obj)
     {
         if (obj || !_hasMouse)
             return;
@@ -288,7 +280,7 @@ public static class EmulatorWindow
     }
 
     // If we click then we capture the mouse and pass movement to the emulator.
-    private static void EmulatorWindow_Click(IMouse arg1, Silk.NET.Input.MouseButton arg2, System.Numerics.Vector2 arg3)
+    private void EmulatorWindow_Click(IMouse arg1, Silk.NET.Input.MouseButton arg2, System.Numerics.Vector2 arg3)
     {
         if (_hasMouse)
             return;
@@ -302,7 +294,7 @@ public static class EmulatorWindow
         _mouseX = 1;
     }
 
-    private static void EmulatorWindow_MouseMove(IMouse arg1, System.Numerics.Vector2 position)
+    private void EmulatorWindow_MouseMove(IMouse arg1, System.Numerics.Vector2 position)
     {
         if (!_hasMouse)
             return;
@@ -321,29 +313,29 @@ public static class EmulatorWindow
         }
     }
 
-    private static void EmulatorWindow_MouseDown(IMouse arg1, Silk.NET.Input.MouseButton arg2)
+    private void EmulatorWindow_MouseDown(IMouse arg1, Silk.NET.Input.MouseButton arg2)
     {
         if (!_hasMouse)
             return;
 
-       // _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
+        // _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
     }
 
-    private static void EmulatorWindow_MouseUp(IMouse arg1, Silk.NET.Input.MouseButton arg2)
+    private void EmulatorWindow_MouseUp(IMouse arg1, Silk.NET.Input.MouseButton arg2)
     {
         if (!_hasMouse)
             return;
 
-     //   _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
+        //   _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
     }
 
-    private static SmcBuffer.MouseButtons GetButtons(IMouse mouse) =>
+    private SmcBuffer.MouseButtons GetButtons(IMouse mouse) =>
         (SmcBuffer.MouseButtons)((mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Left) ? (int)SmcBuffer.MouseButtons.Left : 0) +
             (mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Right) ? (int)SmcBuffer.MouseButtons.Right : 0) +
             (mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Middle) ? (int)SmcBuffer.MouseButtons.Middle : 0));
 
 
-    private static void CheckMouseMove(Object? stateInfo)
+    private void CheckMouseMove(Object? stateInfo)
     {
         if (_mouseX == 0 && _mouseY == 0)
             return;
@@ -353,10 +345,10 @@ public static class EmulatorWindow
         _mouseY = 0;
     }
 
-    private static unsafe void OnRender(double deltaTime)
+    private unsafe void OnRender(double deltaTime)
     {
-        lock (_lock)
-        {
+        //lock (_lock)
+        //{
             if (_closing) return;
             if (_gl == null) throw new ArgumentNullException(nameof(_gl));
             if (_shader == null) throw new ArgumentNullException(nameof(_shader));
@@ -399,60 +391,69 @@ public static class EmulatorWindow
                 _lastCount = thisCount;
                 _lastTicks = thisTicks;
             }
-        }
+       // }
         //_emulator.Control = Control.Run;
     }
 
-    public static void PauseAudio()
+    public void PauseAudio()
     {
         _audio?.StopPlayback();
     }
 
-    public static void ContinueAudio()
+    public void ContinueAudio()
     {
         _audio?.StartPlayback();
     }
 
-    private static void OnClose()
+    private void OnClose()
     {
         Console.WriteLine("OnClose");
-        lock (_lock)
-        {
-            _closing = true;
-            _audio?.StopPlayback();
-            _gl?.Dispose();
-            _shader?.Dispose();
-            if (_layers != null)
-            {
-                foreach (var i in _layers)
-                {
-                    i.Dispose();
-                }
-            }
-            _emulator!.Control = Control.Stop;
+        _closing = true;
+    }
 
+    public void Stop()
+    {
+        Console.WriteLine("STOP called");
+        _closing = true;
+        _window?.Close();
+    }
+
+    public void Dispose()
+    {
+        if (_layers != null)
+        {
+            foreach (var i in _layers)
+            {
+                i.Dispose();
+            }
+        }
+        _emulator!.Control = Control.Stop;
+
+        if (_input != null)
+        {
             _input.Keyboards[0].KeyUp -= EmulatorWindow_KeyUp;
             _input.Keyboards[0].KeyDown -= EmulatorWindow_KeyDown;
             _input.Mice[0].DoubleClick -= EmulatorWindow_Click;
             _input.Mice[0].MouseUp -= EmulatorWindow_MouseUp;
             _input.Mice[0].MouseDown -= EmulatorWindow_MouseDown;
             _input.Mice[0].MouseMove -= EmulatorWindow_MouseMove;
-
-            _gl = null;
-            _window = null;
-            _shader = null;
-            _images = null;
-            _layers = null;
-            _emulator = null;
-            _mouseTimer?.Dispose();
-            _audio?.Dispose();
         }
-    }
 
-    public static void Stop()
-    {
-        Console.WriteLine("STOP called");
-        _closing = true;
-        _window?.Close();
+        _gl?.Dispose();
+        _gl = null;
+        _window?.Dispose();
+        _window = null;
+        _shader?.Dispose();
+        _shader = null;
+        _images = null;
+        _layers = null;
+        _emulator = null;
+        _input?.Dispose();
+        _input = null;
+        _joysticks = null;
+        _audio?.StopPlayback();
+        _audio?.Dispose();
+        _audio = null;
+        _mouseTimer?.Dispose();
     }
 }

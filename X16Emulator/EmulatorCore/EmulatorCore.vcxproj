@@ -306,6 +306,23 @@
       <Outputs>_temp.txt</Outputs>
       <VerifyInputsAndOutputsExist>false</VerifyInputsAndOutputsExist>
     </Text>
+    <Text Include="ZiModem.asm">
+      <FileType>Document</FileType>
+      <Command>copy /b Core.asm +,,</Command>
+      <Outputs>_temp.txt</Outputs>
+      <VerifyInputsAndOutputsExist>false</VerifyInputsAndOutputsExist>
+    </Text>
+    <Text Include="Uart.asm">
+      <FileType>Document</FileType>
+      <Command>copy /b Core.asm +,,</Command>
+      <Outputs>_temp.txt</Outputs>
+      <VerifyInputsAndOutputsExist>false</VerifyInputsAndOutputsExist>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\External\BitMagic.ZiModem\native\ZiModemHost.vcxproj">
+      <Project>{7e3eff57-92d4-4994-8681-7d99b3f5a5a1}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

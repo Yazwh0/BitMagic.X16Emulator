@@ -42,6 +42,8 @@ state struct
 
 	wrapper_flags			qword ?
 	
+	uart					qword ?
+
 	; arrays
 	memory_ptr				qword ?
 	rom_ptr					qword ?

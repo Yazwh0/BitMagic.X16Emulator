@@ -364,6 +364,16 @@ public class Emulator : IDisposable
         public uint PreviousCommand { get => _emulator._state.SpiPreviousCommand; set => _emulator._state.SpiPreviousCommand = value; }
     }
 
+    public struct ZiModem
+    {
+    }
+
+    public struct Uart
+    {
+        public unsafe ZiModem* ZiModem;
+    }
+
+
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct CpuState
     {
@@ -386,6 +396,8 @@ public class Emulator : IDisposable
         // end of C wrapper
 
         public ulong WrapperFlags = 0;  // used by the linux wrapper to see if these calls have had their handlers injected.
+
+        public unsafe Uart* Uart;
 
         // arrays
         public ulong MemoryPtr = 0;
@@ -797,7 +809,15 @@ public class Emulator : IDisposable
         Vsync = 0x08
     }
 
-    private CpuState _state;
+    // Pinned rather than a plain field: native code (ym_wrapper) caches a raw state*
+    // pointer beyond the lifetime of any single P/Invoke call, so this struct's address
+    // must never move under a GC compaction. A single-element array pinned for the
+    // lifetime of this object gives a stable address while `_state` keeps behaving like
+    // an ordinary field everywhere it's already used (assignment, `ref` passing, etc.)
+    // via this ref-returning property.
+    private readonly CpuState[] _stateStorage = new CpuState[1];
+    private GCHandle _stateHandle;
+    private ref CpuState _state => ref _stateStorage[0];
     public CpuState State => _state;
 
     public bool DebugMode { get; set; } // lets users of the enumlator know the application is in debug mode.
@@ -954,6 +974,8 @@ public class Emulator : IDisposable
             throw new Exception("History size must be a multiple of 2 and not zero");
 
         WindowScale = Options.WindowScale;
+
+        _stateHandle = GCHandle.Alloc(_stateStorage, GCHandleType.Pinned);
 
         _state = new CpuState();
 
@@ -1267,6 +1289,9 @@ public class Emulator : IDisposable
         NativeMemory.Free((void*)_audioOutput_ptr);
         NativeMemory.Free((void*)_psg_ptr);
         NativeMemory.Free((void*)_debug_sprite_colours_ptr);
+
+        if (_stateHandle.IsAllocated)
+            _stateHandle.Free();
     }
 }
 

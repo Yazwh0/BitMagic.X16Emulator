@@ -33,7 +33,28 @@
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
   </ItemGroup>
-  
+
+  <!-- ZiModem host C ABI lib. Single-config Ninja build => one fixed output dir, not $(Configuration)-qualified. -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <Content Include="..\..\External\BitMagic.ZiModem\build\native\bin\zimodem_host.dll" Link="zimodem_host.dll">
+      <CopyToOutput>true</CopyToOutput>
+      <PackageFlatten>false</PackageFlatten>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <Content Include="..\..\External\BitMagic.ZiModem\build\native\bin\libzimodem_host.so" Link="libzimodem_host.so">
+      <CopyToOutput>true</CopyToOutput>
+      <PackageFlatten>false</PackageFlatten>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\BitMagic.Libraries\BitMagic.Common\BitMagic.Common.csproj" />
     <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Core\BitMagic.DiscUtils.Core.csproj" />
@@ -44,6 +65,14 @@
 
   <ItemGroup Condition=" '$(Configuration)' != 'Release' ">
     <ProjectReference Include="..\X16Emulator\EmulatorCore\EmulatorCore.vcxproj" />
+    <!-- Build-order only: runs the ZiModem CMake/Ninja build so the zimodem_host.dll picked up
+         by the <Content> item above exists. Not linked, not copied (Content handles the copy).
+         Gated out of Release like EmulatorCore.vcxproj so `dotnet build -c Release` stays clean;
+         Release builds ZiModemHost.vcxproj separately (see CLAUDE.md). -->
+    <ProjectReference Include="..\..\External\BitMagic.ZiModem\native\ZiModemHost.vcxproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="none"
+                      Private="false" />
   </ItemGroup>
 
   <ItemGroup>

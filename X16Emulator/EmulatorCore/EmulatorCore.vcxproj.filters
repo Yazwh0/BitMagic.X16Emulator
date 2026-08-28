@@ -129,5 +129,11 @@
     <Text Include="Ym.asm">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="ZiModem.asm">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="Uart.asm">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

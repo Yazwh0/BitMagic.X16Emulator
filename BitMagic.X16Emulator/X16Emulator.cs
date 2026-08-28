@@ -1,5 +1,8 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using BitMagic.Common;
+
+#pragma warning disable S6640 // unsafe bocks
 
 namespace BitMagic.X16Emulator;
 
@@ -352,7 +355,7 @@ public class Emulator : IDisposable
         }
 
         public uint LastRead => _emulator.State.SpiSectorRead;
-        public uint Position { get => _emulator._state.SpiPosition ; set => _emulator._state.SpiPosition = value; }
+        public uint Position { get => _emulator._state.SpiPosition; set => _emulator._state.SpiPosition = value; }
         public bool ChipSelect { get => _emulator._state.SpiChipSelect != 0; set => _emulator._state.SpiChipSelect = value ? 0u : 1u; }
         public bool AutoTx { get => _emulator._state.SpiAutoTx != 0; set => _emulator._state.SpiAutoTx = value ? 0u : 1u; }
         public uint ReceiveCount { get => _emulator._state.SpiReceiveCount; set => _emulator._state.SpiReceiveCount = value; }
@@ -364,15 +367,45 @@ public class Emulator : IDisposable
         public uint PreviousCommand { get => _emulator._state.SpiPreviousCommand; set => _emulator._state.SpiPreviousCommand = value; }
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct ZiModem
     {
+        public ulong Handle;
+        public ulong DataDir;
+
+        public ulong zimodem_host_create;
+        public ulong zimodem_host_set_callbacks;
+        public ulong zimodem_host_start;
+        public ulong zimodem_host_write_serial;
+        public ulong zimodem_host_rx_available;
+        public ulong zimodem_host_rx_read;
+        public ulong zimodem_host_set_pin;
+        public ulong zimodem_host_destroy;
+
+
+        public uint DataAvailable;
+        public uint DataTx;
+        public uint DataTxError;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct Uart
     {
         public unsafe ZiModem* ZiModem;
-    }
+        public uint ReadIndex;
+        public uint WriteIndex;
 
+        public unsafe fixed byte Buffer[16];
+        public unsafe fixed byte BufferError[16];
+
+        public uint StopBits;
+        public uint Parity;
+        public uint BaudRate;
+
+        public uint Empty;
+
+        public uint CpuTicks;
+    }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct CpuState
@@ -1136,6 +1169,37 @@ public class Emulator : IDisposable
         }
 
         SmcBuffer = new SmcBuffer(this);
+
+        SetupZiModem();
+    }
+
+    private unsafe void SetupZiModem()
+    {
+        var zimodemLib = NativeLibrary.Load(
+            OperatingSystem.IsWindows() ? "zimodem_host.dll" : "libzimodem_host.so");
+
+        // Reached by the core as raw pointers (state->uart->zimodem), so they can't be
+        // on the managed heap. AllocZeroed => indices/Empty/Handle start at 0; the core's
+        // uart_init sets Empty=1 and CpuTicks=64 and calls zimodem_init.
+        var zimodemPtr = _state.Uart->ZiModem;
+
+        // data_dir doubles as the zimodem_host_config* passed to create() -- that native
+        // struct is just { const char* data_dir; }, so &zimodem.DataDir must hold a
+        // NUL-terminated string pointer that stays alive for the modem's lifetime.
+        var _zimodemDataDir = Marshal.StringToCoTaskMemUTF8(Options.ZiModemFolder ?? ".");
+        zimodemPtr->DataDir = (ulong)_zimodemDataDir;
+
+        // The eight entry points the core calls through (zimodem.asm: `call [r13].zimodem.zimodem_host_*`)
+        zimodemPtr->zimodem_host_create = Export("zimodem_host_create");
+        zimodemPtr->zimodem_host_set_callbacks = Export("zimodem_host_set_callbacks");
+        zimodemPtr->zimodem_host_start = Export("zimodem_host_start");
+        zimodemPtr->zimodem_host_write_serial = Export("zimodem_host_write_serial");
+        zimodemPtr->zimodem_host_rx_available = Export("zimodem_host_rx_available");
+        zimodemPtr->zimodem_host_rx_read = Export("zimodem_host_rx_read");
+        zimodemPtr->zimodem_host_set_pin = Export("zimodem_host_set_pin");
+        zimodemPtr->zimodem_host_destroy = Export("zimodem_host_destroy");
+
+        ulong Export(string name) => (ulong)NativeLibrary.GetExport(zimodemLib, name);
     }
 
     public unsafe void FillMemory(byte memoryFillValue)
@@ -1265,6 +1329,25 @@ public class Emulator : IDisposable
 
     protected virtual unsafe void Dispose(bool disposing)
     {
+        // ZiModem: SetupZiModem populated the core-owned zimodem struct (reached via
+        // _state.Uart->ZiModem) and marshalled the data_dir string into zimodem->DataDir.
+        // If zimodem_init started the background thread, destroy() joins it first --
+        // otherwise the next on_serial_out callback writes into a torn-down struct. Then
+        // free the marshalled string. The uart/zimodem structs are core-owned (not
+        // allocated here), and the zimodem_host library is left loaded for the process.
+        if (_state.Uart != null)
+        {
+            var zimodemPtr = _state.Uart->ZiModem;
+            if (zimodemPtr != null)
+            {
+                if (zimodemPtr->Handle != 0 && zimodemPtr->zimodem_host_destroy != 0)
+                    ((delegate* unmanaged<nint, void>)zimodemPtr->zimodem_host_destroy)((nint)zimodemPtr->Handle);
+
+                Marshal.FreeCoTaskMem((nint)zimodemPtr->DataDir);
+                zimodemPtr->DataDir = 0;
+            }
+        }
+
         NativeMemory.Free((void*)_memory_ptr);
         NativeMemory.Free((void*)_rom_ptr);
         NativeMemory.Free((void*)_ram_ptr);
@@ -1299,4 +1382,5 @@ public class EmulatorOptions
 {
     public int HistorySize { get; set; } = 0x80000;
     public double WindowScale { get; set; } = 1;
+    public string ZiModemFolder { get; set; } = Path.Combine(Path.GetTempPath(), "ZiModem");
 }

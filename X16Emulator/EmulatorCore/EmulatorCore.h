@@ -29,7 +29,12 @@ extern "C"
 {
 	struct zimodem
 	{
-
+		// Mirrors zimodem_state in zimodem.asm field-for-field (order + size, not names --
+		// see that file for the write_serial/tx_byte/rx_available/rx_byte contract).
+		void (* write_serial)();
+		uint8_t tx_byte;
+		uint8_t rx_available;
+		uint8_t rx_byte;
 	};
 
 	struct uart

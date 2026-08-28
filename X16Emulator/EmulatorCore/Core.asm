@@ -28,6 +28,7 @@ include Spi.asm
 include Rtc.asm
 include Joypad.asm
 include Ym.asm
+include Uart.asm
 
 EXIT_NOTSUPPORTED equ -1
 EXIT_NORMAL equ 0
@@ -231,6 +232,8 @@ asm_func proc state_ptr:QWORD
     mov ebx, [rdx].state.initial_startup
     test ebx, ebx
     jz set_adjustment
+
+    call uart_init
 
     mov [rdx].state.base_ticks, rax
 

@@ -57,6 +57,35 @@ io_cantwrite proc
 	ret	
 io_cantwrite endp
 
+uart_write_00 proc
+	push rdx
+
+	mov rdx, [rdx].state.uart
+	call uart_write
+
+	pop rdx
+	ret
+uart_write_00 endp
+
+uart_read_00 proc
+	push rdx
+
+	mov rdx, [rdx].state.uart
+	call uart_after_read
+
+	pop rdx
+
+	; eax now contains the next byte.
+
+	ret
+uart_read_00 endp
+
+uart_read_write_00 proc
+
+	ret
+
+uart_read_write_00 endp
+
 io_registers_read:
 	io_r_9f00 qword io_r_readmemory - io_registers_read
 	io_r_9f01 qword io_r_readmemory - io_registers_read
@@ -286,7 +315,9 @@ io_registers_read:
 	io_r_9fdd qword io_r_readmemory - io_registers_read
 	io_r_9fde qword io_r_readmemory - io_registers_read
 	io_r_9fdf qword io_r_readmemory - io_registers_read
-	io_r_9fe0 qword io_r_readmemory - io_registers_read
+
+	; WIFI Card
+	io_r_9fe0 qword uart_read_00 - io_registers_read
 	io_r_9fe1 qword io_r_readmemory - io_registers_read
 	io_r_9fe2 qword io_r_readmemory - io_registers_read
 	io_r_9fe3 qword io_r_readmemory - io_registers_read
@@ -294,6 +325,7 @@ io_registers_read:
 	io_r_9fe5 qword io_r_readmemory - io_registers_read
 	io_r_9fe6 qword io_r_readmemory - io_registers_read
 	io_r_9fe7 qword io_r_readmemory - io_registers_read
+
 	io_r_9fe8 qword io_r_readmemory - io_registers_read
 	io_r_9fe9 qword io_r_readmemory - io_registers_read
 	io_r_9fea qword io_r_readmemory - io_registers_read
@@ -302,6 +334,7 @@ io_registers_read:
 	io_r_9fed qword io_r_readmemory - io_registers_read
 	io_r_9fee qword io_r_readmemory - io_registers_read
 	io_r_9fef qword io_r_readmemory - io_registers_read
+
 	io_r_9ff0 qword io_r_readmemory - io_registers_read
 	io_r_9ff1 qword io_r_readmemory - io_registers_read
 	io_r_9ff2 qword io_r_readmemory - io_registers_read
@@ -551,7 +584,9 @@ io_registers_readwrite:
 	io_rw_9fdd qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9fde qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9fdf qword io_rw_readmemory -  io_registers_readwrite
-	io_rw_9fe0 qword io_rw_readmemory -  io_registers_readwrite
+
+	; WIFI Card
+	io_rw_9fe0 qword uart_read_write_00 -  io_registers_readwrite
 	io_rw_9fe1 qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9fe2 qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9fe3 qword io_rw_readmemory -  io_registers_readwrite
@@ -559,6 +594,7 @@ io_registers_readwrite:
 	io_rw_9fe5 qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9fe6 qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9fe7 qword io_rw_readmemory -  io_registers_readwrite
+
 	io_rw_9fe8 qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9fe9 qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9fea qword io_rw_readmemory -  io_registers_readwrite
@@ -567,6 +603,7 @@ io_registers_readwrite:
 	io_rw_9fed qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9fee qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9fef qword io_rw_readmemory -  io_registers_readwrite
+
 	io_rw_9ff0 qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9ff1 qword io_rw_readmemory -  io_registers_readwrite
 	io_rw_9ff2 qword io_rw_readmemory -  io_registers_readwrite
@@ -814,7 +851,9 @@ io_registers_write:
 	io_w_9fdd qword io_w_unsupported - io_registers_write
 	io_w_9fde qword io_w_unsupported - io_registers_write
 	io_w_9fdf qword io_w_unsupported - io_registers_write
-	io_w_9fe0 qword io_w_unsupported - io_registers_write
+
+	; WIFI Card
+	io_w_9fe0 qword uart_write - io_registers_write
 	io_w_9fe1 qword io_w_unsupported - io_registers_write
 	io_w_9fe2 qword io_w_unsupported - io_registers_write
 	io_w_9fe3 qword io_w_unsupported - io_registers_write
@@ -822,6 +861,7 @@ io_registers_write:
 	io_w_9fe5 qword io_w_unsupported - io_registers_write
 	io_w_9fe6 qword io_w_unsupported - io_registers_write
 	io_w_9fe7 qword io_w_unsupported - io_registers_write
+
 	io_w_9fe8 qword io_w_unsupported - io_registers_write
 	io_w_9fe9 qword io_w_unsupported - io_registers_write
 	io_w_9fea qword io_w_unsupported - io_registers_write
@@ -830,6 +870,7 @@ io_registers_write:
 	io_w_9fed qword io_w_unsupported - io_registers_write
 	io_w_9fee qword io_w_unsupported - io_registers_write
 	io_w_9fef qword io_w_unsupported - io_registers_write
+
 	io_w_9ff0 qword io_w_unsupported - io_registers_write
 	io_w_9ff1 qword io_w_unsupported - io_registers_write
 	io_w_9ff2 qword io_w_unsupported - io_registers_write

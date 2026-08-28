@@ -392,6 +392,8 @@ public class Emulator : IDisposable
     public struct Uart
     {
         public unsafe ZiModem* ZiModem;
+        public ulong MemoryOutput;
+
         public uint ReadIndex;
         public uint WriteIndex;
 
@@ -431,6 +433,7 @@ public class Emulator : IDisposable
         public ulong WrapperFlags = 0;  // used by the linux wrapper to see if these calls have had their handlers injected.
 
         public unsafe Uart* Uart;
+        public ulong ClockUart = 0;
 
         // arrays
         public ulong MemoryPtr = 0;
@@ -1178,16 +1181,19 @@ public class Emulator : IDisposable
         var zimodemLib = NativeLibrary.Load(
             OperatingSystem.IsWindows() ? "zimodem_host.dll" : "libzimodem_host.so");
 
-        // Reached by the core as raw pointers (state->uart->zimodem), so they can't be
-        // on the managed heap. AllocZeroed => indices/Empty/Handle start at 0; the core's
-        // uart_init sets Empty=1 and CpuTicks=64 and calls zimodem_init.
-        var zimodemPtr = _state.Uart->ZiModem;
+        // state->uart and state->uart->zimodem both start null. Allocate them in native
+        // memory and chain them off state; those pointers are the only handles -- Dispose
+        // reads them back to free them.
+        _state.Uart = (Uart*)NativeMemory.AllocZeroed((nuint)sizeof(Uart));
+
+        var zimodemPtr = (ZiModem*)NativeMemory.AllocZeroed((nuint)sizeof(ZiModem));
+        _state.Uart->ZiModem = zimodemPtr;
 
         // data_dir doubles as the zimodem_host_config* passed to create() -- that native
-        // struct is just { const char* data_dir; }, so &zimodem.DataDir must hold a
-        // NUL-terminated string pointer that stays alive for the modem's lifetime.
-        var _zimodemDataDir = Marshal.StringToCoTaskMemUTF8(Options.ZiModemFolder ?? ".");
-        zimodemPtr->DataDir = (ulong)_zimodemDataDir;
+        // struct is just { const char* data_dir; }, so DataDir must hold a NUL-terminated
+        // string pointer that stays alive for the modem's lifetime. Freed via this same
+        // DataDir field in Dispose.
+        zimodemPtr->DataDir = (ulong)Marshal.StringToCoTaskMemUTF8(Options.ZiModemFolder ?? ".");
 
         // The eight entry points the core calls through (zimodem.asm: `call [r13].zimodem.zimodem_host_*`)
         zimodemPtr->zimodem_host_create = Export("zimodem_host_create");
@@ -1329,12 +1335,11 @@ public class Emulator : IDisposable
 
     protected virtual unsafe void Dispose(bool disposing)
     {
-        // ZiModem: SetupZiModem populated the core-owned zimodem struct (reached via
-        // _state.Uart->ZiModem) and marshalled the data_dir string into zimodem->DataDir.
-        // If zimodem_init started the background thread, destroy() joins it first --
-        // otherwise the next on_serial_out callback writes into a torn-down struct. Then
-        // free the marshalled string. The uart/zimodem structs are core-owned (not
-        // allocated here), and the zimodem_host library is left loaded for the process.
+        // ZiModem: SetupZiModem allocated state->uart and state->uart->zimodem and
+        // marshalled the data_dir string into zimodem->DataDir. If zimodem_init started the
+        // background thread, destroy() joins it first -- otherwise the next on_serial_out
+        // callback writes into freed memory -- then free the string, the zimodem struct and
+        // the uart struct. The zimodem_host library is left loaded for the process.
         if (_state.Uart != null)
         {
             var zimodemPtr = _state.Uart->ZiModem;
@@ -1344,8 +1349,11 @@ public class Emulator : IDisposable
                     ((delegate* unmanaged<nint, void>)zimodemPtr->zimodem_host_destroy)((nint)zimodemPtr->Handle);
 
                 Marshal.FreeCoTaskMem((nint)zimodemPtr->DataDir);
-                zimodemPtr->DataDir = 0;
+                NativeMemory.Free(zimodemPtr);
             }
+
+            NativeMemory.Free(_state.Uart);
+            _state.Uart = null;
         }
 
         NativeMemory.Free((void*)_memory_ptr);

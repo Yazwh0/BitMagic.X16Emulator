@@ -16,6 +16,7 @@
 uart struct
 
 	zimodem			qword ?			; pointer to a zimodem struct instance (see zimodem.asm)
+	memory_output	qword ?			; pointer to where a byte should be written in the emulated memory
 
 	read_index		dword ?
 	write_index		dword ?
@@ -36,6 +37,8 @@ include zimodem.asm	; must come after uart struct above
 
 uart_init proc
 	
+	mov [rdx].uart.memory_output, rax	; address of 0x9fe0
+
 	; set a default for now
 	mov [rdx].uart.cpu_ticks, 64
 
@@ -50,24 +53,39 @@ uart_init endp
 
 uart_tick proc
 
+	push r12
+	push r13
+
 	mov r12, rdx
 	mov r13, [r12].uart.zimodem
 	cmp [r13].zimodem.data_available, 0
-	jz fast_exit
+	jz fast_exit						; nothing queued from the modem
 
+	cmp [r12].uart.empty, 0
+	jne slow_path						; empty -> guaranteed room
+
+	mov eax, [r12].uart.write_index
+	cmp eax, [r12].uart.read_index
+	je fast_exit						; not empty & write==read -> full, retry next tick
+
+slow_path:
+	push rbp
+	mov  rbp, rsp
+	and  rsp, -16
+
+	push rbx
+	push rcx
 	push rdx
-	push r12 ; has to be even
-	sub  rsp, 28h
+	push rdi
+	push r8
+	push r9
+	push r10
+	push r11
+
+	sub  rsp, 20h
 
 	mov ebx, [r12].uart.write_index
 
-	cmp [r12].uart.empty, 0
-	jne do_read
-
-	cmp ebx, [r12].uart.read_index
-	je exit		; we're full
-
-do_read:
 	; read a byte into the buffer
 	mov rcx, [r13].zimodem.handle
 	call [r13].zimodem.zimodem_host_rx_read	
@@ -79,6 +97,14 @@ do_read:
 
 	mov byte ptr [r12].uart.buffer[rbx], al
 	mov [r12].uart.write_index, edi
+
+	cmp [r12].uart.empty, 1
+	jne skip_output
+
+	mov rcx, [r12].uart.memory_output
+	mov byte ptr [rcx], al
+
+skip_output:
 	mov [r12].uart.empty, 0
 
 no_data:
@@ -91,11 +117,24 @@ no_data:
 	mov [r13].zimodem.data_available, 1 ; needs to be a constant to avoid race
 
 exit:
-	add rsp, 28h
-	pop r12
+	add rsp, 20h
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rdi
 	pop rdx
+	pop rcx
+	pop rbx
+
+	mov  rsp, rbp
+	pop  rbp
 
 fast_exit:
+
+	pop r13
+	pop r12
+
 	mov eax, [rdx].uart.cpu_ticks
 	ret
 
@@ -127,25 +166,27 @@ uart_write endp
 uart_after_read proc
 
 	cmp [rdx].uart.empty, 0
-	je exit
+	jne nothing_todo					; empty == 1 -> FIFO already empty, nothing to advance
 
-	mov r12d, [rdx].uart.read_index
-	mov al, [[rdx].uart.buffer + r12]
+	; advance past the byte the CPU just consumed
+	mov ecx, [rdx].uart.read_index
+	inc ecx
+	and ecx, 16-1
+	mov [rdx].uart.read_index, ecx
 
-	inc r12
-	and r12, 16-1
-	mov [rdx].uart.read_index, r12d
-	cmp r12d, [rdx].uart.write_index
-	jne exit
+	cmp ecx, [rdx].uart.write_index
+	je went_empty						; caught up to write -> now empty
 
-	mov [rdx].uart.empty, 1
+	; still data: present buffer[read_index] at the mapped register
+	mov al, byte ptr [rdx].uart.buffer[rcx]
+	mov rcx, [rdx].uart.memory_output
+	mov byte ptr [rcx], al
 
-exit:
-	; need to set the value in memory
 	ret
 
-empty:
-	; should write empty value???
+went_empty:
+	mov [rdx].uart.empty, 1
+nothing_todo:
 	ret
 
 uart_after_read endp

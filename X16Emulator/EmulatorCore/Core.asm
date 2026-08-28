@@ -233,9 +233,14 @@ asm_func proc state_ptr:QWORD
     test ebx, ebx
     jz set_adjustment
 
-    call uart_init
-
     mov [rdx].state.base_ticks, rax
+    
+    mov rax, [rdx].state.memory_ptr
+    add rax, 9fe0h
+    push rdx
+    mov rdx, [rdx].state.uart
+    call uart_init
+    pop rdx
 
     jmp clock_done
 
@@ -577,7 +582,7 @@ no_read:
     call vera_render_audio
     pop rsi
 
-    no_vera_audio:
+no_vera_audio:
 
     mov rax, [rdx].state.clock_ymnext
     cmp r14, rax
@@ -592,7 +597,23 @@ no_read:
     or ebx, eax
     mov dword ptr [rdx].state.interrupt_hit, ebx
     
-    no_ym_audio:
+no_ym_audio:
+
+; WIFI CARD
+    mov rax, [rdx].state.clock_uart
+    cmp r14, rax
+    jl no_uart
+    
+    push rdx
+    mov rdx, [rdx].state.uart
+    call uart_tick
+    pop rdx
+
+    add rax, r14
+    mov [rdx].state.clock_uart, rax
+
+no_uart:
+
     ;popf
     ; ----------------------- AUDIO DONE
 

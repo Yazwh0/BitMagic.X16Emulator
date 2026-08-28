@@ -60,35 +60,47 @@ zimodem ends
 .CODE
 
 ; in: rdx = pointer to struct
+;
+; Self-aligning frame: the emulator core does not keep RSP 16-byte aligned at its
+; internal call sites, so we can't assume the ABI-standard entry alignment. `and rsp, -16`
+; forces it; rbp anchors the original RSP so we can unwind (can't `add` a constant back --
+; the `and` removes an unknown 0 or 8). rbp is non-volatile, so push/pop preserves it for
+; the caller too. After alignment, `sub rsp, 30h` (multiple of 16) gives 20h shadow + the
+; arg5 home slot at [rsp+20h] and keeps RSP 16-aligned at every call below.
 zimodem_init proc
-	push rdx
+	push rbp
+	mov rbp, rsp
+	and rsp, -16
+	sub rsp, 30h
+
 	mov r12, rdx
 
 	; init
-	lea rcx, [rdx].zimodem.data_dir
+	lea rcx, [r12].zimodem.data_dir
 	call [r12].zimodem.zimodem_host_create
 	test rax, rax
 	jz zimodem_init_failed
-	mov [rdx].zimodem.handle, rax
+	mov [r12].zimodem.handle, rax
 
 	; callbacks
 	mov rcx, rax
-	mov qword ptr [rsp + 20h], rdx	; user_context, so the pointer to the struct
+	mov qword ptr [rsp + 20h], r12	; user_context, so the pointer to the struct
 	lea rdx, zimodem_on_serial_out
 	xor r8, r8						; on_signal -- not wired up yet
 	xor r9, r9						; on_log -- not wired up yet
 	call [r12].zimodem.zimodem_host_set_callbacks
-	
-	pop rdx
 
-	mov rcx, [rdx].zimodem.handle
+	mov rcx, [r12].zimodem.handle
 	call [r12].zimodem.zimodem_host_start			; eax already holds start()'s result (0 = success)
 
+	mov rsp, rbp
+	pop rbp
 	ret
 
 zimodem_init_failed:
-	mov eax, 1
-	pop rdx
+	mov	eax, 1
+	mov rsp, rbp
+	pop rbp
 	ret
 
 zimodem_init endp

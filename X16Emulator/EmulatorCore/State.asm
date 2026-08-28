@@ -43,6 +43,7 @@ state struct
 	wrapper_flags			qword ?
 	
 	uart					qword ?
+	clock_uart				qword ?
 
 	; arrays
 	memory_ptr				qword ?

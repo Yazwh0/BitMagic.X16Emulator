@@ -144,7 +144,17 @@ uart_tick endp
 ;	   al = byte to send
 uart_write proc
 
-	sub rsp, 28h
+	push r12						; non-volatile, clobbered below
+
+	push rbp						; self-aligning frame -- core doesn't keep RSP 16-aligned
+	mov  rbp, rsp
+	and  rsp, -16
+	sub  rsp, 40h					; 20h shadow + 20h to save r8-r11
+
+	mov  [rsp+20h], r8				; the call below trashes r8-r11 (6502 A/X/Y/PC)
+	mov  [rsp+28h], r9
+	mov  [rsp+30h], r10
+	mov  [rsp+38h], r11
 
 	mov r12, [rdx].uart.zimodem
 
@@ -156,7 +166,14 @@ uart_write proc
 
 	mov [r12].zimodem.data_tx_error, eax
 
-	add rsp, 28h
+	mov  r8,  [rsp+20h]
+	mov  r9,  [rsp+28h]
+	mov  r10, [rsp+30h]
+	mov  r11, [rsp+38h]
+
+	mov  rsp, rbp
+	pop  rbp
+	pop  r12
 	ret
 
 uart_write endp

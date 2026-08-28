@@ -853,7 +853,7 @@ io_registers_write:
 	io_w_9fdf qword io_w_unsupported - io_registers_write
 
 	; WIFI Card
-	io_w_9fe0 qword uart_write - io_registers_write
+	io_w_9fe0 qword uart_write_00 - io_registers_write
 	io_w_9fe1 qword io_w_unsupported - io_registers_write
 	io_w_9fe2 qword io_w_unsupported - io_registers_write
 	io_w_9fe3 qword io_w_unsupported - io_registers_write

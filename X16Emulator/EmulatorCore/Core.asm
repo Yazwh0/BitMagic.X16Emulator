@@ -932,7 +932,7 @@ check_vera_access macro checkallvera
 
     xor r13, r13
     lea rax, [rbx - (09f00h - 1)]		    ; set to bottom of range we're interested in
-    cmp rax, 42h						    ; check upper bound of IO area + 1. Currently via1\2 + vera + YM
+    cmp rax, 100h						    ; check upper bound of IO area + 1. Not all IO Range.
     cmovbe r13, rax						    ; set r13 to the address in vera + 1.
 
 

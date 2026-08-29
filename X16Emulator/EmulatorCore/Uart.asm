@@ -13,10 +13,22 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see https://www.gnu.org/licenses/.
 
+LSR_DataReady equ 00000001b
+LSR_Empty equ 01000000b
+
+UART_Buffer equ 0
+UART_IER equ 1
+UART_IIR equ 2
+UART_LCR equ 3
+UART_MCR equ 4
+UART_LSR equ 5
+UART_MSR equ 6
+UART_SCR equ 7
+
 uart struct
 
 	zimodem			qword ?			; pointer to a zimodem struct instance (see zimodem.asm)
-	memory_output	qword ?			; pointer to where a byte should be written in the emulated memory
+	io_start		qword ?			; pointer to the start of the io range in memory
 
 	read_index		dword ?
 	write_index		dword ?
@@ -37,12 +49,14 @@ include zimodem.asm	; must come after uart struct above
 
 uart_init proc
 	
-	mov [rdx].uart.memory_output, rax	; address of 0x9fe0
+	mov [rdx].uart.io_start, rax	; address of 0x9fe0
+;	mov byte ptr [rax + UART_LSR], LSR_Empty ; probably true
+	mov [rdx].uart.empty, 1
 
 	; set a default for now
 	mov [rdx].uart.cpu_ticks, 64
-
-	mov [rdx].uart.empty, 1
+	mov [rdx].uart.read_index, 0
+	mov [rdx].uart.write_index, 0
 
 	mov rdx, [rdx].uart.zimodem
 	call zimodem_init
@@ -51,6 +65,11 @@ uart_init proc
 
 uart_init endp
 
+; ticks at the baud rate of the modem
+; pull one byte from zimodem if available
+; we use flow control here, so we never overflow. if fifo is full then don't read.
+; set the LSR flags depending on the state of the FIFO. we can assume they are correct on entry.
+; 
 uart_tick proc
 
 	push r12
@@ -82,15 +101,15 @@ slow_path:
 	push r10
 	push r11
 
-	sub  rsp, 20h
+	sub rsp, 20h
 
 	mov ebx, [r12].uart.write_index
 
-	; read a byte into the buffer
+	; read a byte into the buffer, if there is nothign to read, then head out.
 	mov rcx, [r13].zimodem.handle
 	call [r13].zimodem.zimodem_host_rx_read	
 	cmp eax, -1
-	je no_data
+	je nothing_returned
 
 	lea edi, [rbx + 1]
 	and edi, 16-1
@@ -98,23 +117,26 @@ slow_path:
 	mov byte ptr [r12].uart.buffer[rbx], al
 	mov [r12].uart.write_index, edi
 
-	cmp [r12].uart.empty, 1
-	jne skip_output
+	mov rcx, [r12].uart.io_start
+	; if the fifo was empty, then present the new byte
+	cmp [r12].uart.empty, 0
+	je not_empty
 
-	mov rcx, [r12].uart.memory_output
-	mov byte ptr [rcx], al
+	mov byte ptr [rcx + UART_Buffer], al
 
-skip_output:
+not_empty:
 	mov [r12].uart.empty, 0
+	mov byte ptr [rcx + UART_LSR], LSR_DataReady		; we know all other flags will be clear
 
-no_data:
+nothing_returned:
+	; see if there is more data
 	mov rcx, [r13].zimodem.handle
 	mov [r13].zimodem.data_available, 0
 	call [r13].zimodem.zimodem_host_rx_available
 	test eax, eax
-	jz exit
+	jz exit			; nothing available
 
-	mov [r13].zimodem.data_available, 1 ; needs to be a constant to avoid race
+	mov [r13].zimodem.data_available, 1					; needs to be a constant to avoid race
 
 exit:
 	add rsp, 20h
@@ -127,8 +149,14 @@ exit:
 	pop rcx
 	pop rbx
 
-	mov  rsp, rbp
-	pop  rbp
+	mov rsp, rbp
+	pop rbp
+
+	pop r13
+	pop r12
+
+	mov eax, [rdx].uart.cpu_ticks
+	ret
 
 fast_exit:
 
@@ -179,6 +207,8 @@ uart_write proc
 uart_write endp
 
 ; pull a byte from the buffer if there is one available.
+; set the next byte if there is one in the fifo
+; if not then set the LSR correctly
 ; in: rdx = pointer to struct
 uart_after_read proc
 
@@ -194,16 +224,19 @@ uart_after_read proc
 	cmp ecx, [rdx].uart.write_index
 	je went_empty						; caught up to write -> now empty
 
-	; still data: present buffer[read_index] at the mapped register
-	mov al, byte ptr [rdx].uart.buffer[rcx]
-	mov rcx, [rdx].uart.memory_output
-	mov byte ptr [rcx], al
+	; set the new byte in memory
+	mov al, byte ptr [[rdx].uart.buffer + rcx]
+	mov rcx, [rdx].uart.io_start
+	mov byte ptr [rcx + UART_Buffer], al
 
+nothing_todo:
 	ret
 
 went_empty:
+	; set empty and ensure data ready is clear
 	mov [rdx].uart.empty, 1
-nothing_todo:
+	mov rcx, [rdx].uart.io_start
+	and byte ptr [rcx + UART_LSR], NOT LSR_DataReady
 	ret
 
 uart_after_read endp

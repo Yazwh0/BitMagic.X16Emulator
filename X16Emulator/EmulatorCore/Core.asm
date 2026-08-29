@@ -932,7 +932,7 @@ check_vera_access macro checkallvera
 
     xor r13, r13
     lea rax, [rbx - (09f00h - 1)]		    ; set to bottom of range we're interested in
-    cmp rax, 100h						    ; check upper bound of IO area + 1. Not all IO Range.
+    cmp rax, 0100h						    ; check upper bound of IO area + 1. Not all IO Range.
     cmovbe r13, rax						    ; set r13 to the address in vera + 1.
 
 
@@ -964,7 +964,7 @@ endm
 step_vera_read macro checkvera
     local skip
 if checkvera eq 1
-    test r13b, r13b
+    test r13, r13
     jz skip
 ;	call vera_afterread
     call io_afterread
@@ -976,7 +976,7 @@ endm
 step_io_readwrite macro checkvera
     local skip
 if checkvera eq 1
-    test r13b, r13b
+    test r13, r13
     jz skip
 ;	call vera_afterreadwrite
     call io_afterreadwrite
@@ -989,7 +989,7 @@ endm
 step_io_write macro checkvera
     local skip
 if checkvera eq 1
-    test r13b, r13b
+    test r13, r13
     jz skip
     call io_afterwrite
 

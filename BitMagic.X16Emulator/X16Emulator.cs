@@ -1327,14 +1327,29 @@ public class Emulator : IDisposable
         _state.History_Pos = 0;
     }
 
+    private bool _disposed;
+
     public unsafe void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
 
+    // Backstop for a missed Dispose(). Everything freed below is unmanaged -- the native
+    // allocations, the marshalled data_dir string, the pinned state handle and the
+    // one-instance-per-process zimodem_host teardown -- so it is all safe to run from the
+    // finalizer thread. Does NOT cover a hard TerminateProcess (e.g. VS "Stop Debugging").
+    ~Emulator()
+    {
+        Dispose(false);
+    }
+
     protected virtual unsafe void Dispose(bool disposing)
     {
+        if (_disposed)
+            return;
+        _disposed = true;
+
         // ZiModem: SetupZiModem allocated state->uart and state->uart->zimodem and
         // marshalled the data_dir string into zimodem->DataDir. If zimodem_init started the
         // background thread, destroy() joins it first -- otherwise the next on_serial_out

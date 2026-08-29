@@ -1193,7 +1193,9 @@ public class Emulator : IDisposable
         // struct is just { const char* data_dir; }, so DataDir must hold a NUL-terminated
         // string pointer that stays alive for the modem's lifetime. Freed via this same
         // DataDir field in Dispose.
-        zimodemPtr->DataDir = (ulong)Marshal.StringToCoTaskMemUTF8(Options.ZiModemFolder ?? ".");
+        var ziModemFolder = Options.ZiModemFolder ?? ".";
+        Directory.CreateDirectory(ziModemFolder);    // idempotent; zimodem_host_create bails if the dir is missing
+        zimodemPtr->DataDir = (ulong)Marshal.StringToCoTaskMemUTF8(ziModemFolder);
 
         // The eight entry points the core calls through (zimodem.asm: `call [r13].zimodem.zimodem_host_*`)
         zimodemPtr->zimodem_host_create = Export("zimodem_host_create");

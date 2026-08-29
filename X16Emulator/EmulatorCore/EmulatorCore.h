@@ -63,6 +63,8 @@ extern "C"
 		__int64 wrapper_flags; // used by linux wrapper
 
 		uart* uart;
+		__int64 clock_uart;    // MUST match State.asm / CpuState.cs -- without it, `memory`
+		                       // lands 8 bytes low and ym_wrapper writes through a null ptr
 
 		int8_t* memory;
 	};

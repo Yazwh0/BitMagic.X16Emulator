@@ -54,6 +54,7 @@ public class EmulatorWindow : IDisposable
     private readonly Stopwatch _stopwatch = new Stopwatch();
     private Emulator? _emulator;
     private bool _closing = false;
+    private bool _disposed = false;
     private bool _hasMouse = false;
     private Vector2 _lastMousePosition;
     private IGamepad[]? _joysticks;
@@ -337,6 +338,9 @@ public class EmulatorWindow : IDisposable
 
     private void CheckMouseMove(Object? stateInfo)
     {
+        if (_emulator == null)          // timer can still fire once after Dispose()
+            return;
+
         if (_mouseX == 0 && _mouseY == 0)
             return;
 
@@ -415,11 +419,38 @@ public class EmulatorWindow : IDisposable
     {
         Console.WriteLine("STOP called");
         _closing = true;
+        StopAudio();            // join SDL's audio thread now, before the emulator's buffers can be freed
         _window?.Close();
+    }
+
+    // Tears down the SDL audio device synchronously. CloseAudioDevice joins SDL's audio
+    // callback thread, so once this returns nothing is reading the emulator's audio buffers
+    // and they are safe to free. Safe to call from any thread and more than once.
+    public void StopAudio()
+    {
+        EmulatorAudio? audio;
+        lock (_lock)
+        {
+            audio = _audio;
+            _audio = null;
+        }
+        audio?.Dispose();
     }
 
     public void Dispose()
     {
+        if (_disposed)
+            return;
+        _disposed = true;
+
+        // Mouse timer first: CheckMouseMove dereferences _emulator, which is nulled below.
+        _mouseTimer?.Dispose();
+        _mouseTimer = null;
+
+        // Audio next: joins SDL's callback thread so nothing is reading the emulator's
+        // audio buffers past this point. No-op if Stop() already did it.
+        StopAudio();
+
         if (_layers != null)
         {
             foreach (var i in _layers)
@@ -427,7 +458,9 @@ public class EmulatorWindow : IDisposable
                 i.Dispose();
             }
         }
-        _emulator!.Control = Control.Stop;
+
+        if (_emulator != null)
+            _emulator.Control = Control.Stop;
 
         if (_input != null)
         {
@@ -451,9 +484,5 @@ public class EmulatorWindow : IDisposable
         _input?.Dispose();
         _input = null;
         _joysticks = null;
-        _audio?.StopPlayback();
-        _audio?.Dispose();
-        _audio = null;
-        _mouseTimer?.Dispose();
     }
 }

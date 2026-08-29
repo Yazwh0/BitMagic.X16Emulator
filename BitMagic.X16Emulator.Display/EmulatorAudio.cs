@@ -20,6 +20,8 @@ public unsafe class EmulatorAudio : IDisposable
     private readonly uint _bufferSize;
     private readonly ulong _ptr;
     public uint Delay { get; private set; }
+    private bool _disposed;
+    private readonly object _disposeLock = new();
     #if LOG_OUTPUT
     private readonly StreamWriter _writer;
     #endif
@@ -81,19 +83,44 @@ public unsafe class EmulatorAudio : IDisposable
 
     public void Dispose()
     {
-        if (_audio_device != 0)
-            _sdl.CloseAudioDevice(_audio_device);
+        lock (_disposeLock)
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
 
-        #if LOG_OUTPUT
-        _writer.Flush();
-        _writer.Close();
-        _writer.Dispose();
-        #endif
+            // CloseAudioDevice stops and JOINS SDL's audio thread, so no AudioCallback can
+            // run after this returns -- the emulator's audio buffers are then safe to free.
+            if (_audio_device != 0)
+                _sdl.CloseAudioDevice(_audio_device);
+
+            _sdl.QuitSubSystem(Sdl.InitAudio);
+
+            #if LOG_OUTPUT
+            _writer.Flush();
+            _writer.Close();
+            _writer.Dispose();
+            #endif
+        }
     }
 
     // Buffer Sizes and indexes are in 4 byte steps!
     // SDL length is in bytes.
     public void AudioCallback(void* userdata, byte* stream, int length)
+    {
+        // SDL invokes this on its own audio thread. A managed exception must never
+        // propagate back across that native boundary -- fill silence and bail instead.
+        try
+        {
+            RenderAudio(stream, length);
+        }
+        catch
+        {
+            new Span<byte>(stream, length).Clear();
+        }
+    }
+
+    private void RenderAudio(byte* stream, int length)
     {
         //var buffW = _emulator.AudioWrite;
         //var bufferWrite = buffW & _bufferMask;
@@ -102,7 +129,10 @@ public unsafe class EmulatorAudio : IDisposable
         var outputOffset = 0;
 
         if (length != 0x400)
-            throw new Exception("Audio request size missmatch!");
+        {
+            new Span<byte>(stream, length).Clear();
+            return;
+        }
 
         if (_bufferRead == bufferWrite)
         {

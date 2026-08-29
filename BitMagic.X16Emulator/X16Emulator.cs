@@ -1337,15 +1337,11 @@ public class Emulator : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    // Backstop for a missed Dispose(). Everything freed below is unmanaged -- the native
-    // allocations, the marshalled data_dir string, the pinned state handle and the
-    // one-instance-per-process zimodem_host teardown -- so it is all safe to run from the
-    // finalizer thread. Does NOT cover a hard TerminateProcess (e.g. VS "Stop Debugging").
-    ~Emulator()
-    {
-        Dispose(false);
-    }
-
+    // NB: no finalizer. Dispose() frees native memory and joins the zimodem worker; doing
+    // that from the GC finalizer thread races any still-running Emulate() / audio callback
+    // (nothing has stopped those threads) and freed that memory out from under them --
+    // e.g. on a bare Ctrl+C with no orderly shutdown. The caller MUST stop the emulator
+    // threads before calling Dispose(). On process exit the OS reclaims everything anyway.
     protected virtual unsafe void Dispose(bool disposing)
     {
         if (_disposed)

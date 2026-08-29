@@ -17,6 +17,12 @@
     <RootNamespace>EmulatorCore</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>EmulatorCore</ProjectName>
+    <!-- VS's C++ fast up-to-date check does not reliably honour the CustomBuild
+         AdditionalInputs below (the .asm includes) or C++ header changes, so an F5 can
+         silently run a stale core after editing State.asm / EmulatorCore.h / Uart.asm.
+         Force VS to invoke MSBuild every build so the real Outputs/AdditionalInputs
+         timestamp check runs. -->
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">

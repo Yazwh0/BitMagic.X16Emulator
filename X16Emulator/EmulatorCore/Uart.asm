@@ -25,6 +25,11 @@ UART_LSR equ 5
 UART_MSR equ 6
 UART_SCR equ 7
 
+UART_Divisor_L equ 0
+UART_Divisor_H equ 1
+
+NO_DIVISOR equ 00000efffh
+
 uart struct
 
 	zimodem			qword ?			; pointer to a zimodem struct instance (see zimodem.asm)
@@ -38,14 +43,47 @@ uart struct
 
 	stop_bits		dword ?
 	parity			dword ?
-	baud_rate		dword ?
 	empty			dword ?
 
 	cpu_ticks		dword ?			; number of ticks per byte. 8000000 / 921600 / (2 + parity + stopbits)
 
+	divisor_latch	dword ?
+	divisor			dword ?
+
+	receive_byte	dword ?			; so we can present the byte on a divisor switch
+	interrupt_enabled dword ?
 uart ends
 
 include zimodem.asm	; must come after uart struct above
+
+calculate_baudrate macro
+	local baud_zero, set_value
+
+	push rcx
+	mov eax, [rdx].uart.stop_bits
+	mov ecx, [rdx].uart.parity
+	lea ecx, [rax + rcx + 8+2] ; 1 start + 8 data + 1 mandatory stop
+	imul rax, rcx, 8000000
+
+	push rdx
+	movzx ecx, word ptr [rdx].uart.divisor	; read before edx is zeroed for the divide
+	test ecx, ecx
+	jz baud_zero
+
+	; cpu ticks = 8000_000 * frame size * division / 921_600
+	imul rax, rcx
+	mov ecx, 921600
+	xor edx, edx
+	div rcx
+	jmp set_value
+baud_zero:
+	mov eax, NO_DIVISOR
+set_value:
+	pop rdx
+
+	mov [rdx].uart.cpu_ticks, eax
+	pop rcx
+endm
 
 uart_init proc
 	
@@ -54,7 +92,7 @@ uart_init proc
 	mov [rdx].uart.empty, 1
 
 	; set a default for now
-	mov [rdx].uart.cpu_ticks, 64
+	mov [rdx].uart.cpu_ticks, NO_DIVISOR
 	mov [rdx].uart.read_index, 0
 	mov [rdx].uart.write_index, 0
 
@@ -122,7 +160,11 @@ slow_path:
 	cmp [r12].uart.empty, 0
 	je not_empty
 
+	cmp [r12].uart.divisor_latch, 0
+	jne dont_set_buffer
 	mov byte ptr [rcx + UART_Buffer], al
+dont_set_buffer:
+	mov byte ptr [r12].uart.receive_byte, al
 
 not_empty:
 	mov [r12].uart.empty, 0
@@ -168,9 +210,12 @@ fast_exit:
 
 uart_tick endp
 
-; in: rdx = pointer to struct
+; in: rdx = pointer to uart struct
 ;	   al = byte to send
 uart_write proc
+
+	cmp [rdx].uart.divisor_latch, 0
+	jne set_divisor
 
 	push r12						; non-volatile, clobbered below
 
@@ -202,6 +247,14 @@ uart_write proc
 	mov  rsp, rbp
 	pop  rbp
 	pop  r12
+
+	ret
+
+set_divisor:
+
+	mov byte ptr [rdx].uart.divisor, al
+	calculate_baudrate
+
 	ret
 
 uart_write endp
@@ -227,7 +280,11 @@ uart_after_read proc
 	; set the new byte in memory
 	mov al, byte ptr [[rdx].uart.buffer + rcx]
 	mov rcx, [rdx].uart.io_start
+	cmp [rdx].uart.divisor_latch, 0
+	jne dont_set_buffer
 	mov byte ptr [rcx + UART_Buffer], al
+dont_set_buffer:
+	mov byte ptr [rdx].uart.receive_byte, al
 
 nothing_todo:
 	ret
@@ -240,3 +297,96 @@ went_empty:
 	ret
 
 uart_after_read endp
+
+; in: rdx = pointer to the state struct NOT uart struct
+uart_nochange proc
+	mov byte ptr [rsi + rbx], r12b
+	ret
+uart_nochange endp
+
+; in: rdx = pointer to the state struct NOT uart struct
+uart_dlm_ier_write proc
+
+	movzx eax, byte ptr [rsi + rbx]
+
+	push rdx
+	mov rdx, [rdx].state.uart
+	cmp [rdx].uart.divisor_latch, 0
+	jne set_divisor
+
+	mov [rdx].uart.interrupt_enabled, eax
+
+	pop rdx
+	ret
+
+set_divisor:
+	mov byte ptr [rdx].uart.divisor + 1, al
+
+	calculate_baudrate
+
+	pop rdx
+	ret
+
+uart_dlm_ier_write endp
+
+; in: rdx = pointer to the state struct NOT uart struct
+uart_fcr_write proc
+
+	movzx eax, byte ptr [rsi + rbx]
+	; preserve the currenct value, FCR is write only
+	mov byte ptr [rsi + rbx], r12b
+
+
+
+	ret
+uart_fcr_write endp
+
+uart_lcr_write proc
+	movzx eax, byte ptr [rsi + rbx]
+
+	push rdx
+	push rbx
+
+	mov ebx, eax
+	shr ebx, 7
+	mov rdx, [rdx].state.uart
+	mov byte ptr [rdx].uart.divisor_latch, bl
+
+	pop rbx
+	pop rdx
+
+	ret
+uart_lcr_write endp
+
+uart_mcr_write proc
+
+	movzx eax, byte ptr [rsi + rbx]
+;	and al, 00111111b
+
+
+;	push rdx
+;	mov rdx, [rdx].state.uart
+;	mov byte ptr [rsi + rbx], al
+;	test al, al
+;	jnz latch_set
+
+;	mov eax, [rdx].uart.receive_byte
+;	push rbx
+;	mov rbx, [rdx].uart.io_start
+;	mov byte ptr [rbx + UART_Buffer], al
+
+;	mov eax, [rdx].uart.interrupt_enabled
+;	mov byte ptr [rbx + UART_IER], al
+;	pop rbx
+
+;	pop rdx
+;	ret
+
+;latch_set:
+;	mov eax, [rdx].uart.divisor
+;	mov rbx, [rdx].uart.io_start
+;	mov word ptr [rbx + UART_Divisor_L], ax
+;	pop rdx
+	ret
+uart_mcr_write endp
+

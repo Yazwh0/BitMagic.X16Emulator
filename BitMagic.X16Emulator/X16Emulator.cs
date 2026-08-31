@@ -388,11 +388,13 @@ public class Emulator : IDisposable
         public uint DataTxError;
     }
 
+    // Mirrors the `uart` struct in EmulatorCore/Uart.asm field-for-field (order + size).
+    // Any change here must be matched there (and in EmulatorCore.h) or it's silent memory corruption.
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct Uart
     {
-        public unsafe ZiModem* ZiModem;
-        public ulong MemoryOutput;
+        public unsafe ZiModem* ZiModem;     // qword: pointer to the zimodem struct instance
+        public ulong IoStart;               // qword: start of the io range in memory (asm: io_start)
 
         public uint ReadIndex;
         public uint WriteIndex;
@@ -403,10 +405,14 @@ public class Emulator : IDisposable
         public uint StopBits;
         public uint Parity;
         public uint BaudRate;
-
         public uint Empty;
 
-        public uint CpuTicks;
+        public uint CpuTicks;               // ticks per byte: 8000000 / 921600 / (2 + parity + stopbits)
+
+        public uint DivisorLatch;
+        public uint Divisor;
+        public uint ReceiveByte;            // held so the byte can be re-presented on a divisor switch
+        public uint InterruptEnabled;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

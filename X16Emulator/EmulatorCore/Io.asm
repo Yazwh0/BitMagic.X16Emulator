@@ -17,6 +17,7 @@
 
 ;
 ; r13: address in io space +1
+; r12b: previous value
 ;
 
 io_afterwrite proc
@@ -61,6 +62,7 @@ uart_write_00 proc
 	push rdx
 
 	movzx eax, byte ptr [rsi+rbx]
+	mov byte ptr [rsi + rbx], r12b	; this is write only register. read is from the fifo, so put it back.
 	mov rdx, [rdx].state.uart
 	call uart_write
 
@@ -73,19 +75,11 @@ uart_read_00 proc
 
 	mov rdx, [rdx].state.uart
 	call uart_after_read
+	; eax now contains the next byte, but its already in memory
 
 	pop rdx
-
-	; eax now contains the next byte.
-
 	ret
 uart_read_00 endp
-
-uart_read_write_00 proc
-
-	ret
-
-uart_read_write_00 endp
 
 io_registers_read:
 	io_r_9f00 qword io_r_readmemory - io_registers_read
@@ -587,13 +581,13 @@ io_registers_readwrite:
 	io_rw_9fdf qword io_cantwrite  -  io_registers_readwrite
 
 	; WIFI Card
-	io_rw_9fe0 qword uart_read_write_00 -  io_registers_readwrite
-	io_rw_9fe1 qword io_rw_readmemory -  io_registers_readwrite
-	io_rw_9fe2 qword io_rw_readmemory -  io_registers_readwrite
-	io_rw_9fe3 qword io_rw_readmemory -  io_registers_readwrite
-	io_rw_9fe4 qword io_rw_readmemory -  io_registers_readwrite
-	io_rw_9fe5 qword io_rw_readmemory -  io_registers_readwrite
-	io_rw_9fe6 qword io_rw_readmemory -  io_registers_readwrite
+	io_rw_9fe0 qword uart_write_00 -  io_registers_readwrite
+	io_rw_9fe1 qword uart_dlm_ier_write -  io_registers_readwrite
+	io_rw_9fe2 qword uart_fcr_write -  io_registers_readwrite
+	io_rw_9fe3 qword uart_lcr_write -  io_registers_readwrite
+	io_rw_9fe4 qword uart_mcr_write -  io_registers_readwrite
+	io_rw_9fe5 qword uart_nochange -  io_registers_readwrite
+	io_rw_9fe6 qword uart_nochange -  io_registers_readwrite
 	io_rw_9fe7 qword io_rw_readmemory -  io_registers_readwrite
 
 	io_rw_9fe8 qword io_cantwrite  -  io_registers_readwrite
@@ -855,12 +849,12 @@ io_registers_write:
 
 	; WIFI Card
 	io_w_9fe0 qword uart_write_00 - io_registers_write
-	io_w_9fe1 qword io_w_unsupported - io_registers_write
-	io_w_9fe2 qword io_w_unsupported - io_registers_write
-	io_w_9fe3 qword io_w_unsupported - io_registers_write
-	io_w_9fe4 qword io_w_unsupported - io_registers_write
-	io_w_9fe5 qword io_w_unsupported - io_registers_write
-	io_w_9fe6 qword io_w_unsupported - io_registers_write
+	io_w_9fe1 qword uart_dlm_ier_write - io_registers_write
+	io_w_9fe2 qword uart_fcr_write - io_registers_write
+	io_w_9fe3 qword uart_lcr_write - io_registers_write
+	io_w_9fe4 qword uart_mcr_write - io_registers_write
+	io_w_9fe5 qword uart_nochange - io_registers_write
+	io_w_9fe6 qword uart_nochange - io_registers_write
 	io_w_9fe7 qword io_w_unsupported - io_registers_write
 
 	io_w_9fe8 qword io_cantwrite  - io_registers_write

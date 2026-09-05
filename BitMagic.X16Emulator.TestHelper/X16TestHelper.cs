@@ -13,6 +13,16 @@ namespace BitMagic.X16Emulator.TestHelper;
 
 public static class X16TestHelper
 {
+    /// <summary>
+    /// The standard test Emulator. Always backed by MockZiModemHost, never the real
+    /// zimodem_host.dll -- no background thread, no network/port activity. Tests that
+    /// specifically need to exercise real ZiModem/firmware behaviour are out of scope for
+    /// this helper and should construct their own Emulator directly. The mock is kept
+    /// alive for exactly as long as the Emulator is, via ZiModemHostFunctions.KeepAlive.
+    /// </summary>
+    public static Emulator NewEmulator()
+        => new(new EmulatorOptions { ZiModemHostOverride = new MockZiModemHost().Exports });
+
     public static async Task<Emulator> EmulateTemplate(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
         => (await EmulateTemplateChanges(code, emulator, dontChangeEmulatorOptions, expectedResult)).Emulator;
 

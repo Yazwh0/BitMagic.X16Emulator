@@ -390,7 +390,11 @@ public class Emulator : IDisposable
         public unsafe bool EmptyOutbound => _emulator._state.Uart != null && _emulator._state.Uart->EmptyOutbound != 0;
         public unsafe uint StopBits => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->StopBits;
         public unsafe uint Parity => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->Parity;
-        public unsafe uint CpuTicks => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->CpuTicks;
+        public unsafe uint CpuTicks
+        {
+            get => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->CpuTicks;
+            set { if (_emulator._state.Uart != null) _emulator._state.Uart->CpuTicks = value; }
+        }
         public unsafe uint DivisorLatch => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->DivisorLatch;
         public unsafe uint Divisor => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->Divisor;
         public unsafe uint ReceiveByte => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->ReceiveByte;
@@ -968,6 +972,7 @@ public class Emulator : IDisposable
     public ushort Pc { get => _state.Pc; set => _state.Pc = value; }
     public ushort StackPointer { get => _state.StackPointer; set => _state.StackPointer = value; }
     public ulong Clock { get => _state.Clock; set => _state.Clock = value; }
+    public ulong ClockUart { get => _state.ClockUart; set => _state.ClockUart = value; }
     public bool Carry { get => _state.Carry != 0; set => _state.Carry = (byte)(value ? 0x01 : 0x00); }
     public bool Zero { get => _state.Zero != 0; set => _state.Zero = (byte)(value ? 0x01 : 0x00); }
     public bool InterruptDisable { get => _state.InterruptDisable != 0; set => _state.InterruptDisable = (byte)(value ? 0x01 : 0x00); }
@@ -1032,6 +1037,12 @@ public class Emulator : IDisposable
     // (that's the core's own call surface), so it's kept here and invoked from managed
     // code only. See GetModemLineConfig.
     private nint _zimodemGetLineConfig;
+
+    // See ZiModemHostFunctions.KeepAlive -- rooting this here ties a ZiModemHostOverride's
+    // lifetime (e.g. a MockZiModemHost) to this Emulator's, so its delegates -- and the
+    // native thunks Marshal.GetFunctionPointerForDelegate built for them -- can't be
+    // collected out from under the raw function pointers stored in the ZiModem struct.
+    private object? _ziModemHostKeepAlive;
 
     public uint Keyboard_ReadPosition => _state.Keyboard_ReadPosition;
     public uint Keyboard_WritePosition { get => _state.Keyboard_WritePosition; set => _state.Keyboard_WritePosition = value; }
@@ -1291,9 +1302,6 @@ public class Emulator : IDisposable
 
     private unsafe void SetupZiModem()
     {
-        var zimodemLib = NativeLibrary.Load(
-            OperatingSystem.IsWindows() ? "zimodem_host.dll" : "libzimodem_host.so");
-
         // state->uart and state->uart->zimodem both start null. Allocate them in native
         // memory and chain them off state; those pointers are the only handles -- Dispose
         // reads them back to free them.
@@ -1309,6 +1317,28 @@ public class Emulator : IDisposable
         var ziModemFolder = Options.ZiModemFolder ?? ".";
         Directory.CreateDirectory(ziModemFolder);    // idempotent; zimodem_host_create bails if the dir is missing
         zimodemPtr->DataDir = (ulong)Marshal.StringToCoTaskMemUTF8(ziModemFolder);
+
+        // Test-only escape hatch: a caller (e.g. MockZiModemHost in the test helper project)
+        // can supply its own set of the nine zimodem_host_* function pointers instead of a
+        // real zimodem_host.dll -- lets tests drive the UART's inbound/outbound FIFOs and
+        // interrupts deterministically without a live modem/background thread.
+        if (Options.ZiModemHostOverride is { } overrideFns)
+        {
+            zimodemPtr->zimodem_host_create = (ulong)overrideFns.Create;
+            zimodemPtr->zimodem_host_set_callbacks = (ulong)overrideFns.SetCallbacks;
+            zimodemPtr->zimodem_host_start = (ulong)overrideFns.Start;
+            zimodemPtr->zimodem_host_write_serial = (ulong)overrideFns.WriteSerial;
+            zimodemPtr->zimodem_host_rx_available = (ulong)overrideFns.RxAvailable;
+            zimodemPtr->zimodem_host_rx_read = (ulong)overrideFns.RxRead;
+            zimodemPtr->zimodem_host_set_pin = (ulong)overrideFns.SetPin;
+            zimodemPtr->zimodem_host_destroy = (ulong)overrideFns.Destroy;
+            _zimodemGetLineConfig = overrideFns.GetLineConfig;
+            _ziModemHostKeepAlive = overrideFns.KeepAlive;
+            return;
+        }
+
+        var zimodemLib = NativeLibrary.Load(
+            OperatingSystem.IsWindows() ? "zimodem_host.dll" : "libzimodem_host.so");
 
         // The eight entry points the core calls through (zimodem.asm: `call [r13].zimodem.zimodem_host_*`)
         zimodemPtr->zimodem_host_create = Export("zimodem_host_create");
@@ -1541,4 +1571,39 @@ public class EmulatorOptions
     public int HistorySize { get; set; } = 0x80000;
     public double WindowScale { get; set; } = 1;
     public string ZiModemFolder { get; set; } = Path.Combine(Path.GetTempPath(), "ZiModem");
+
+    /// <summary>
+    /// When set, SetupZiModem() wires these function pointers into the ZiModem struct
+    /// instead of loading zimodem_host.dll -- see MockZiModemHost in the test helper
+    /// project for a pure-managed implementation.
+    /// </summary>
+    public ZiModemHostFunctions? ZiModemHostOverride { get; set; }
+}
+
+/// <summary>
+/// The nine zimodem_host_* C ABI entry points (see External/BitMagic.ZiModem/native/wrapper/include/zimodem_host.h)
+/// as raw native-callable function pointers, for <see cref="EmulatorOptions.ZiModemHostOverride"/>.
+/// </summary>
+public class ZiModemHostFunctions
+{
+    public nint Create { get; set; }
+    public nint SetCallbacks { get; set; }
+    public nint Start { get; set; }
+    public nint WriteSerial { get; set; }
+    public nint RxAvailable { get; set; }
+    public nint RxRead { get; set; }
+    public nint SetPin { get; set; }
+    public nint Destroy { get; set; }
+    public nint GetLineConfig { get; set; }
+
+    /// <summary>
+    /// Optional: whatever produced these function pointers (e.g. a MockZiModemHost),
+    /// if it needs to stay alive for as long as the Emulator might call through them.
+    /// Marshal.GetFunctionPointerForDelegate does not root the delegate it was built
+    /// from -- without this, the delegate (and the native thunk backing these pointers)
+    /// is eligible for GC the moment nothing else references it, even while the Emulator
+    /// still holds the raw pointer value. SetupZiModem() stores this on the Emulator
+    /// itself so it lives exactly as long as the Emulator does.
+    /// </summary>
+    public object? KeepAlive { get; set; }
 }

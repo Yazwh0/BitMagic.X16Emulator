@@ -3754,7 +3754,7 @@ bit_body_end macro checkvera, clock, pc
 
     ; check the zero flag, which is the and of input and the accumulator
     and dil, r8b
-    test dil, dil
+    ;test dil, dil      ; removed as and will set the flag
     lahf
     and rax, 0100000000000000b ; isolate zero
     and r15, 1011111111111111b ; remove zero
@@ -3772,7 +3772,7 @@ bit_body_end_nochangetovn macro clock, pc
     ; no call to write flags, as only Z can change.    
     ; check the zero flag, which is the and of input and the accumulator
     and dil, r8b
-    test dil, dil
+    ;test dil, dil          ; removed as and will set the flag
     lahf
     and rax, 0100000000000000b ; isolate zero
     and r15, 1011111111111111b ; remove zero

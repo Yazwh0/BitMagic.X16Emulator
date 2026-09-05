@@ -586,8 +586,8 @@ io_registers_readwrite:
 	io_rw_9fe2 qword uart_fcr_write -  io_registers_readwrite
 	io_rw_9fe3 qword uart_lcr_write -  io_registers_readwrite
 	io_rw_9fe4 qword uart_mcr_write -  io_registers_readwrite
-	io_rw_9fe5 qword uart_nochange -  io_registers_readwrite
-	io_rw_9fe6 qword uart_nochange -  io_registers_readwrite
+	io_rw_9fe5 qword uart_lsr_write -  io_registers_readwrite
+	io_rw_9fe6 qword uart_msr_write -  io_registers_readwrite
 	io_rw_9fe7 qword io_rw_readmemory -  io_registers_readwrite
 
 	io_rw_9fe8 qword io_cantwrite  -  io_registers_readwrite
@@ -853,8 +853,8 @@ io_registers_write:
 	io_w_9fe2 qword uart_fcr_write - io_registers_write
 	io_w_9fe3 qword uart_lcr_write - io_registers_write
 	io_w_9fe4 qword uart_mcr_write - io_registers_write
-	io_w_9fe5 qword uart_nochange - io_registers_write
-	io_w_9fe6 qword uart_nochange - io_registers_write
+	io_w_9fe5 qword uart_lsr_write - io_registers_write
+	io_w_9fe6 qword uart_msr_write - io_registers_write
 	io_w_9fe7 qword io_w_unsupported - io_registers_write
 
 	io_w_9fe8 qword io_cantwrite  - io_registers_write

@@ -51,9 +51,21 @@ zimodem struct
 	zimodem_host_destroy		qword ?
 
 	data_available				dword ?
-	
+
 	data_tx						dword ?			; used to send data to zimodem
 	data_tx_error				dword ?
+
+	; --- line config, pushed by zimodem_on_line_config (the 4th zimodem_host_set_callbacks
+	;     callback) from the modem's background thread ---
+	line_baud					dword ?			; bits per second; 0 until the modem's setup() has run
+	line_data_bits				dword ?			; 5..8
+	line_parity					dword ?			; 0 = none, 1 = odd, 2 = even (ZIMODEM_PARITY_*)
+	line_stop_bits_x10			dword ?			; stop bits * 10: 10, 15, or 20
+
+	; total bits on the wire per byte: 1 start + data bits + (parity ? 1 : 0) + stop bits.
+	; Derived from the four line_* fields above by zimodem_on_line_config; 0 until setup() runs.
+	; For the usual 115200 8N1 this is 10.
+	data_width					dword ?
 
 zimodem ends
 
@@ -66,7 +78,7 @@ zimodem ends
 ; forces it; rbp anchors the original RSP so we can unwind (can't `add` a constant back --
 ; the `and` removes an unknown 0 or 8). rbp is non-volatile, so push/pop preserves it for
 ; the caller too. After alignment, `sub rsp, 30h` (multiple of 16) gives 20h shadow + the
-; arg5 home slot at [rsp+20h] and keeps RSP 16-aligned at every call below.
+; arg5/arg6 home slots at [rsp+20h]/[rsp+28h] and keeps RSP 16-aligned at every call below.
 zimodem_init proc
 	push rbp
 	mov rbp, rsp
@@ -82,12 +94,24 @@ zimodem_init proc
 	jz zimodem_init_failed
 	mov [r12].zimodem.handle, rax
 
+	; Power-on line defaults (115200 8N1, confirmed on hardware). Seeds the struct for the
+	; window between here and the modem thread's setup() running begin() -- which fires
+	; zimodem_on_line_config with these same values. data_width = 1 start + 8 data + 0
+	; parity + 1 stop.
+	mov [r12].zimodem.line_baud, 115200
+	mov [r12].zimodem.line_data_bits, 8
+	mov [r12].zimodem.line_parity, 0
+	mov [r12].zimodem.line_stop_bits_x10, 10
+	mov [r12].zimodem.data_width, 10
+
 	; callbacks
-	mov rcx, rax
-	mov qword ptr [rsp + 20h], r12	; user_context, so the pointer to the struct
+	mov rcx, rax					; handle
 	lea rdx, zimodem_on_serial_out
 	xor r8, r8						; on_signal -- not wired up yet
 	xor r9, r9						; on_log -- not wired up yet
+	lea rax, zimodem_on_line_config
+	mov qword ptr [rsp + 20h], rax	; on_line_config (arg5)
+	mov qword ptr [rsp + 28h], r12	; user_context (arg6) -- the pointer to the struct
 	call [r12].zimodem.zimodem_host_set_callbacks
 
 	mov rcx, [r12].zimodem.handle
@@ -118,6 +142,44 @@ zimodem_on_serial_out proc
 	ret
 zimodem_on_serial_out endp
 
+; ---------------------------------------------------------------------------------
+; zimodem_on_line_config -- the C ABI callback zimodem_host calls on ITS OWN background
+; thread whenever the vendored firmware changes baud / data bits / parity / stop bits
+; (an AT config, an ATSxx write, or the power-on default). Registered as the 4th
+; callback of zimodem_host_set_callbacks.
+;
+; void zimodem_on_line_config(void* user_context, int baud, int data_bits,
+;                             int parity, int stop_bits_x10)
+; in: rcx = user_context (the zimodem struct)
+;     edx = baud
+;     r8d = data_bits
+;     r9d = parity
+;     [rsp+28h] = stop_bits_x10   ; arg5: [rsp]=return addr, [rsp+8..20h]=shadow, [rsp+28h]=arg5
+;
+; Leaf: aligned stores + a small integer calc, no frame -- like zimodem_on_serial_out.
+; Values are read back by the emulator core (UART) to check them against its own
+; divisor/framing. r10d/r11d/eax/edx are all volatile under Win64, so scratching them
+; here is free (rcx is the only input we must preserve past the stores).
+; ---------------------------------------------------------------------------------
+zimodem_on_line_config proc
+	mov eax, dword ptr [rsp + 28h]			; stop_bits_x10 (arg5, past the shadow space)
+	mov [rcx].zimodem.line_baud, edx
+	mov [rcx].zimodem.line_data_bits, r8d
+	mov [rcx].zimodem.line_parity, r9d
+	mov [rcx].zimodem.line_stop_bits_x10, eax
+
+	; data_width = 1 start + data_bits + (parity ? 1 : 0) + round(stop_bits_x10 / 10)
+	lea r11d, [r9d + 1]
+	shr r11d, 1								; parity {0 none, 1 odd, 2 even} -> {0, 1, 1}
+	lea r10d, [r8d + r11d + 1]				; start bit + data bits + parity bit
+	add eax, 5								; round-to-nearest for the /10 (1.5 stop bits -> 2)
+	xor edx, edx
+	mov r11d, 10
+	div r11d								; eax = (stop_bits_x10 + 5) / 10  -> 1 or 2
+	add r10d, eax							; stop bits
+	mov [rcx].zimodem.data_width, r10d
+	ret
+zimodem_on_line_config endp
 
 ;;; ---------------------------------------------------------------------------------
 ;;; zimodem_write_serial -- call from Io.asm's write dispatch for the UART's TX register.

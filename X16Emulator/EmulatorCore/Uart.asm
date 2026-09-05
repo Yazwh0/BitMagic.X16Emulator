@@ -35,23 +35,28 @@ uart struct
 	zimodem			qword ?			; pointer to a zimodem struct instance (see zimodem.asm)
 	io_start		qword ?			; pointer to the start of the io range in memory
 
-	read_index		dword ?
-	write_index		dword ?
+	read_index_inbound	dword ?
+	write_index_inbound	dword ?
 
-	buffer			byte 16 dup (?)	; buffer
-	buffer_error	byte 16 dup (?)	; buffer
+	read_index_outbound	dword ?
+	write_index_outbound dword ?
+
+	buffer_inbound	byte 16 dup (?)	; buffer
+	buffer_outbound	byte 16 dup (?)	; buffer
 
 	stop_bits		dword ?
 	parity			dword ?
-	empty			dword ?
+	empty_inbound	dword ?
+	empty_outbound  dword ?
 
-	cpu_ticks		dword ?			; number of ticks per byte. 8000000 / 921600 / (2 + parity + stopbits)
+	cpu_ticks		dword ?			; number of ticks per byte. 8000000 / 921600 / (2 + 8 + parity + stopbits)
 
 	divisor_latch	dword ?
 	divisor			dword ?
 
 	receive_byte	dword ?			; so we can present the byte on a divisor switch
 	interrupt_enabled dword ?
+
 uart ends
 
 include zimodem.asm	; must come after uart struct above
@@ -89,12 +94,15 @@ uart_init proc
 	
 	mov [rdx].uart.io_start, rax	; address of 0x9fe0
 ;	mov byte ptr [rax + UART_LSR], LSR_Empty ; probably true
-	mov [rdx].uart.empty, 1
+	mov [rdx].uart.empty_inbound, 1
+	mov [rdx].uart.empty_outbound, 1
 
 	; set a default for now
 	mov [rdx].uart.cpu_ticks, NO_DIVISOR
-	mov [rdx].uart.read_index, 0
-	mov [rdx].uart.write_index, 0
+	mov [rdx].uart.read_index_inbound, 0
+	mov [rdx].uart.write_index_inbound, 0
+	mov [rdx].uart.read_index_outbound, 0
+	mov [rdx].uart.write_index_outbound, 0
 
 	mov rdx, [rdx].uart.zimodem
 	call zimodem_init
@@ -115,15 +123,10 @@ uart_tick proc
 
 	mov r12, rdx
 	mov r13, [r12].uart.zimodem
-	cmp [r13].zimodem.data_available, 0
+	mov eax, [r12].uart.empty_outbound
+	xor eax, 1
+	or eax, [r13].zimodem.data_available
 	jz fast_exit						; nothing queued from the modem
-
-	cmp [r12].uart.empty, 0
-	jne slow_path						; empty -> guaranteed room
-
-	mov eax, [r12].uart.write_index
-	cmp eax, [r12].uart.read_index
-	je fast_exit						; not empty & write==read -> full, retry next tick
 
 slow_path:
 	push rbp
@@ -136,13 +139,18 @@ slow_path:
 	push rdi
 	push r8
 	push r9
-	push r10
+	push r10		
 	push r11
-
 	sub rsp, 20h
 
-	mov ebx, [r12].uart.write_index
+	mov ebx, [r12].uart.write_index_inbound
+	cmp [r12].uart.empty_inbound, 0
+	jne do_read						; empty -> guaranteed room
 
+	cmp ebx, [r12].uart.read_index_inbound
+	je done_read						; not empty & write==read -> full, retry next tick
+
+do_read:
 	; read a byte into the buffer, if there is nothign to read, then head out.
 	mov rcx, [r13].zimodem.handle
 	call [r13].zimodem.zimodem_host_rx_read	
@@ -152,12 +160,12 @@ slow_path:
 	lea edi, [rbx + 1]
 	and edi, 16-1
 
-	mov byte ptr [r12].uart.buffer[rbx], al
-	mov [r12].uart.write_index, edi
+	mov byte ptr [r12].uart.buffer_inbound[rbx], al
+	mov [r12].uart.write_index_inbound, edi
 
 	mov rcx, [r12].uart.io_start
 	; if the fifo was empty, then present the new byte
-	cmp [r12].uart.empty, 0
+	cmp [r12].uart.empty_inbound, 0
 	je not_empty
 
 	cmp [r12].uart.divisor_latch, 0
@@ -167,7 +175,7 @@ dont_set_buffer:
 	mov byte ptr [r12].uart.receive_byte, al
 
 not_empty:
-	mov [r12].uart.empty, 0
+	mov [r12].uart.empty_inbound, 0
 	mov byte ptr [rcx + UART_LSR], LSR_DataReady		; we know all other flags will be clear
 
 nothing_returned:
@@ -176,11 +184,40 @@ nothing_returned:
 	mov [r13].zimodem.data_available, 0
 	call [r13].zimodem.zimodem_host_rx_available
 	test eax, eax
-	jz exit			; nothing available
+	jz done_read			; nothing available
 
 	mov [r13].zimodem.data_available, 1					; needs to be a constant to avoid race
 
-exit:
+done_read:
+
+	; now need to pull a byte out of the outbound fifo if there are any
+	; both write and reads to this fifo happen on the same thread, so we are threadsafe here.
+
+	mov eax, [r12].uart.empty_outbound
+	test eax, eax
+	jnz slow_exit
+
+	mov ebx, [r12].uart.read_index_outbound
+	lea edi, [rbx + 1]
+	and edi, 16-1
+	mov [r12].uart.read_index_outbound, edi
+
+	cmp edi, [r12].uart.write_index_outbound
+	jne output_not_empty
+	mov [r12].uart.empty_outbound, 1
+
+output_not_empty:
+	movzx rax, [r12].uart.buffer_outbound[rbx]
+
+	mov [r13].zimodem.data_tx, eax
+	mov rcx, [r13].zimodem.handle
+	lea rdx, [r13].zimodem.data_tx
+	mov r8, 1
+	call [r13].zimodem.zimodem_host_write_serial
+
+	mov [r13].zimodem.data_tx_error, eax
+
+slow_exit:
 	add rsp, 20h
 	pop r11
 	pop r10
@@ -217,37 +254,30 @@ uart_write proc
 	cmp [rdx].uart.divisor_latch, 0
 	jne set_divisor
 
-	push r12						; non-volatile, clobbered below
+	push rbx
 
-	push rbp						; self-aligning frame -- core doesn't keep RSP 16-aligned
-	mov  rbp, rsp
-	and  rsp, -16
-	sub  rsp, 40h					; 20h shadow + 20h to save r8-r11
+	mov ebx, [rdx].uart.write_index_outbound
 
-	mov  [rsp+20h], r8				; the call below trashes r8-r11 (6502 A/X/Y/PC)
-	mov  [rsp+28h], r9
-	mov  [rsp+30h], r10
-	mov  [rsp+38h], r11
+	cmp [rdx].uart.empty_outbound, 1
+	je do_write
 
-	mov r12, [rdx].uart.zimodem
+	cmp ebx, [rdx].uart.read_index_outbound
+	je overrun
 
-	mov [r12].zimodem.data_tx, eax
-	mov rcx, [r12].zimodem.handle
-	lea rdx, [r12].zimodem.data_tx
-	mov r8, 1
-	call [r12].zimodem.zimodem_host_write_serial ; call write directly so we dont waste cycles
+do_write:
+	lea edi, [rbx + 1]
+	and edi, 16-1
+	mov [rdx].uart.write_index_outbound, edi
+	mov [rdx].uart.empty_outbound, 0
 
-	mov [r12].zimodem.data_tx_error, eax
+	mov byte ptr [rdx].uart.buffer_outbound[rbx], al
 
-	mov  r8,  [rsp+20h]
-	mov  r9,  [rsp+28h]
-	mov  r10, [rsp+30h]
-	mov  r11, [rsp+38h]
+	pop rbx
+	ret
 
-	mov  rsp, rbp
-	pop  rbp
-	pop  r12
-
+overrun:
+	; todo: set Overrun Error and set interupt
+	pop rbx
 	ret
 
 set_divisor:
@@ -265,20 +295,20 @@ uart_write endp
 ; in: rdx = pointer to struct
 uart_after_read proc
 
-	cmp [rdx].uart.empty, 0
+	cmp [rdx].uart.empty_inbound, 0
 	jne nothing_todo					; empty == 1 -> FIFO already empty, nothing to advance
 
 	; advance past the byte the CPU just consumed
-	mov ecx, [rdx].uart.read_index
+	mov ecx, [rdx].uart.read_index_inbound
 	inc ecx
 	and ecx, 16-1
-	mov [rdx].uart.read_index, ecx
+	mov [rdx].uart.read_index_inbound, ecx
 
-	cmp ecx, [rdx].uart.write_index
+	cmp ecx, [rdx].uart.write_index_inbound
 	je went_empty						; caught up to write -> now empty
 
 	; set the new byte in memory
-	mov al, byte ptr [[rdx].uart.buffer + rcx]
+	mov al, byte ptr [[rdx].uart.buffer_inbound + rcx]
 	mov rcx, [rdx].uart.io_start
 	cmp [rdx].uart.divisor_latch, 0
 	jne dont_set_buffer
@@ -291,7 +321,7 @@ nothing_todo:
 
 went_empty:
 	; set empty and ensure data ready is clear
-	mov [rdx].uart.empty, 1
+	mov [rdx].uart.empty_inbound, 1
 	mov rcx, [rdx].uart.io_start
 	and byte ptr [rcx + UART_LSR], NOT LSR_DataReady
 	ret
@@ -390,3 +420,14 @@ uart_mcr_write proc
 	ret
 uart_mcr_write endp
 
+uart_lsr_write proc
+	movzx eax, byte ptr [rsi + rbx]
+	mov byte ptr [rsi + rbx], r12b
+	ret
+uart_lsr_write endp
+
+uart_msr_write proc
+	movzx eax, byte ptr [rsi + rbx]
+	mov byte ptr [rsi + rbx], r12b
+	ret
+uart_msr_write endp

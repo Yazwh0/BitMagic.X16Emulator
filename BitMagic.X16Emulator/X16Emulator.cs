@@ -367,8 +367,65 @@ public class Emulator : IDisposable
         public uint PreviousCommand { get => _emulator._state.SpiPreviousCommand; set => _emulator._state.SpiPreviousCommand = value; }
     }
 
+    // Unlike the other *State wrappers, Uart lives behind a pointer (state->uart) that is
+    // null before SetupZiModem() runs and after Dispose() frees it, so every getter guards
+    // against a null Uart pointer and returns a safe default rather than dereferencing it.
+    public class UartState
+    {
+        private readonly Emulator _emulator;
+
+        public UartState(Emulator emulator)
+        {
+            _emulator = emulator;
+            _zimodem = new ZiModemState(emulator);
+        }
+
+        public unsafe uint ReadIndexInbound => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->ReadIndexInbound;
+        public unsafe uint WriteIndexInbound => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->WriteIndexInbound;
+        public unsafe uint ReadIndexOutbound => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->ReadIndexOutbound;
+        public unsafe uint WriteIndexOutbound => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->WriteIndexOutbound;
+        public unsafe bool EmptyInbound => _emulator._state.Uart != null && _emulator._state.Uart->EmptyInbound != 0;
+        public unsafe bool EmptyOutbound => _emulator._state.Uart != null && _emulator._state.Uart->EmptyOutbound != 0;
+        public unsafe uint StopBits => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->StopBits;
+        public unsafe uint Parity => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->Parity;
+        public unsafe uint CpuTicks => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->CpuTicks;
+        public unsafe uint DivisorLatch => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->DivisorLatch;
+        public unsafe uint Divisor => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->Divisor;
+        public unsafe uint ReceiveByte => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->ReceiveByte;
+        public unsafe bool InterruptEnabled => _emulator._state.Uart != null && _emulator._state.Uart->InterruptEnabled != 0;
+
+        public unsafe Span<byte> BufferInbound => _emulator._state.Uart == null ? Span<byte>.Empty : new Span<byte>(_emulator._state.Uart->BufferInbound, 16);
+        public unsafe Span<byte> BufferOutbound => _emulator._state.Uart == null ? Span<byte>.Empty : new Span<byte>(_emulator._state.Uart->BufferOutbound, 16);
+
+        private readonly ZiModemState _zimodem;
+        public ZiModemState ZiModem => _zimodem;
+    }
+
+    public class ZiModemState
+    {
+        private readonly Emulator _emulator;
+
+        public ZiModemState(Emulator emulator)
+        {
+            _emulator = emulator;
+        }
+
+        private unsafe ZiModemRegisters* Ptr => _emulator._state.Uart == null ? null : _emulator._state.Uart->ZiModem;
+
+        public unsafe bool Connected => Ptr != null && Ptr->Handle != 0;
+        public unsafe ulong Handle => Ptr == null ? 0 : Ptr->Handle;
+        public unsafe uint DataAvailable => Ptr == null ? 0 : Ptr->DataAvailable;
+        public unsafe uint DataTx => Ptr == null ? 0 : Ptr->DataTx;
+        public unsafe uint DataTxError => Ptr == null ? 0 : Ptr->DataTxError;
+        public unsafe uint LineBaud => Ptr == null ? 0 : Ptr->LineBaud;
+        public unsafe uint LineDataBits => Ptr == null ? 0 : Ptr->LineDataBits;
+        public unsafe ModemParity LineParity => Ptr == null ? default : (ModemParity)Ptr->LineParity;
+        public unsafe uint LineStopBitsX10 => Ptr == null ? 0 : Ptr->LineStopBitsX10;
+        public unsafe uint DataWidth => Ptr == null ? 0 : Ptr->DataWidth;
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct ZiModem
+    public struct ZiModemRegisters
     {
         public ulong Handle;
         public ulong DataDir;
@@ -386,33 +443,67 @@ public class Emulator : IDisposable
         public uint DataAvailable;
         public uint DataTx;
         public uint DataTxError;
+
+        // Line config, pushed by zimodem_on_line_config (registered as the 4th callback
+        // of zimodem_host_set_callbacks) from the modem's background thread.
+        public uint LineBaud;         // bits per second; 0 until the modem's setup() has run
+        public uint LineDataBits;     // 5..8
+        public uint LineParity;       // 0 = none, 1 = odd, 2 = even
+        public uint LineStopBitsX10;  // stop bits * 10: 10, 15, or 20
+
+        // Total bits on the wire per byte: 1 start + data bits + (parity ? 1 : 0) + stop bits.
+        // Derived from the four Line* fields above by zimodem_on_line_config; 0 until setup() runs.
+        // For the usual 115200 8N1 this is 10.
+        public uint DataWidth;
     }
 
     // Mirrors the `uart` struct in EmulatorCore/Uart.asm field-for-field (order + size).
     // Any change here must be matched there (and in EmulatorCore.h) or it's silent memory corruption.
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct Uart
+    public struct UartRegisters
     {
-        public unsafe ZiModem* ZiModem;     // qword: pointer to the zimodem struct instance
+        public unsafe ZiModemRegisters* ZiModem;     // qword: pointer to the zimodem struct instance
         public ulong IoStart;               // qword: start of the io range in memory (asm: io_start)
 
-        public uint ReadIndex;
-        public uint WriteIndex;
+        public uint ReadIndexInbound;
+        public uint WriteIndexInbound;
 
-        public unsafe fixed byte Buffer[16];
-        public unsafe fixed byte BufferError[16];
+        public uint ReadIndexOutbound;
+        public uint WriteIndexOutbound;
+
+        public unsafe fixed byte BufferInbound[16];
+        public unsafe fixed byte BufferOutbound[16];
 
         public uint StopBits;
         public uint Parity;
-        public uint BaudRate;
-        public uint Empty;
+        public uint EmptyInbound;
+        public uint EmptyOutbound;
 
-        public uint CpuTicks;               // ticks per byte: 8000000 / 921600 / (2 + parity + stopbits)
+        public uint CpuTicks;               // ticks per byte: 8000000 * frame * divisor / 921600
 
         public uint DivisorLatch;
         public uint Divisor;
         public uint ReceiveByte;            // held so the byte can be re-presented on a divisor switch
         public uint InterruptEnabled;
+    }
+
+    /// <summary>Parity reported by <see cref="Emulator.GetModemLineConfig"/> (mirrors ZIMODEM_PARITY_* in zimodem_host.h).</summary>
+    public enum ModemParity
+    {
+        None = 0,
+        Odd = 1,
+        Even = 2,
+    }
+
+    /// <summary>
+    /// The ZiModem firmware's current serial line settings. <see cref="BaudRate"/> is 0
+    /// until the modem's background setup() has run (<see cref="IsConfigured"/>).
+    /// <see cref="StopBitsX10"/> is stop bits times ten: 10, 15, or 20.
+    /// </summary>
+    public readonly record struct ModemLineConfig(int BaudRate, int DataBits, ModemParity Parity, int StopBitsX10)
+    {
+        public bool IsConfigured => BaudRate != 0;
+        public double StopBits => StopBitsX10 / 10.0;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -438,7 +529,7 @@ public class Emulator : IDisposable
 
         public ulong WrapperFlags = 0;  // used by the linux wrapper to see if these calls have had their handlers injected.
 
-        public unsafe Uart* Uart;
+        public unsafe UartRegisters* Uart;
         public ulong ClockUart = 0;
 
         // arrays
@@ -927,6 +1018,14 @@ public class Emulator : IDisposable
     private readonly SpiState _spiState;
     public SpiState Spi => _spiState;
 
+    private readonly UartState _uart;
+    public UartState Uart => _uart;
+
+    // zimodem_host_get_line_config export -- not part of the asm-mirrored ZiModem struct
+    // (that's the core's own call surface), so it's kept here and invoked from managed
+    // code only. See GetModemLineConfig.
+    private nint _zimodemGetLineConfig;
+
     public uint Keyboard_ReadPosition => _state.Keyboard_ReadPosition;
     public uint Keyboard_WritePosition { get => _state.Keyboard_WritePosition; set => _state.Keyboard_WritePosition = value; }
     public uint Mouse_ReadPosition => _state.Mouse_ReadPosition;
@@ -1068,6 +1167,7 @@ public class Emulator : IDisposable
         _veraAudio = new VeraAudioState(this);
         _veraFx = new VeraFxState(this);
         _spiState = new SpiState(this);
+        _uart = new UartState(this);
 
         SetPointers();
 
@@ -1190,9 +1290,9 @@ public class Emulator : IDisposable
         // state->uart and state->uart->zimodem both start null. Allocate them in native
         // memory and chain them off state; those pointers are the only handles -- Dispose
         // reads them back to free them.
-        _state.Uart = (Uart*)NativeMemory.AllocZeroed((nuint)sizeof(Uart));
+        _state.Uart = (UartRegisters*)NativeMemory.AllocZeroed((nuint)sizeof(UartRegisters));
 
-        var zimodemPtr = (ZiModem*)NativeMemory.AllocZeroed((nuint)sizeof(ZiModem));
+        var zimodemPtr = (ZiModemRegisters*)NativeMemory.AllocZeroed((nuint)sizeof(ZiModemRegisters));
         _state.Uart->ZiModem = zimodemPtr;
 
         // data_dir doubles as the zimodem_host_config* passed to create() -- that native
@@ -1213,7 +1313,31 @@ public class Emulator : IDisposable
         zimodemPtr->zimodem_host_set_pin = Export("zimodem_host_set_pin");
         zimodemPtr->zimodem_host_destroy = Export("zimodem_host_destroy");
 
+        // Managed-only pull: lets host code check the modem's serial settings against the UART's.
+        // The push side (zimodem_on_line_config) is registered by the core as the 4th
+        // callback arg of zimodem_host_set_callbacks -- see zimodem.asm.
+        _zimodemGetLineConfig = NativeLibrary.GetExport(zimodemLib, "zimodem_host_get_line_config");
+
         ulong Export(string name) => (ulong)NativeLibrary.GetExport(zimodemLib, name);
+    }
+
+    /// <summary>
+    /// The modem's current serial line settings (baud / data bits / parity / stop bits),
+    /// as last applied by the vendored ZiModem firmware -- its power-on default or a
+    /// later AT / ATSxx change. Compare against the UART's divisor and framing to detect
+    /// the mismatch that garbles data on real hardware. <see cref="ModemLineConfig.IsConfigured"/>
+    /// is false until the modem's background setup() has run.
+    /// </summary>
+    public unsafe ModemLineConfig GetModemLineConfig()
+    {
+        if (_zimodemGetLineConfig == 0 || _state.Uart == null || _state.Uart->ZiModem == null)
+            return default;
+
+        int baud = 0, dataBits = 0, parity = 0, stopBitsX10 = 0;
+        ((delegate* unmanaged<nint, int*, int*, int*, int*, void>)_zimodemGetLineConfig)(
+            (nint)_state.Uart->ZiModem->Handle, &baud, &dataBits, &parity, &stopBitsX10);
+
+        return new ModemLineConfig(baud, dataBits, (ModemParity)parity, stopBitsX10);
     }
 
     public unsafe void FillMemory(byte memoryFillValue)

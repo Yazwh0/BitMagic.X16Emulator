@@ -162,6 +162,7 @@ zimodem_on_serial_out endp
 ; here is free (rcx is the only input we must preserve past the stores).
 ; ---------------------------------------------------------------------------------
 zimodem_on_line_config proc
+
 	mov eax, dword ptr [rsp + 28h]			; stop_bits_x10 (arg5, past the shadow space)
 	mov [rcx].zimodem.line_baud, edx
 	mov [rcx].zimodem.line_data_bits, r8d
@@ -179,6 +180,7 @@ zimodem_on_line_config proc
 	add r10d, eax							; stop bits
 	mov [rcx].zimodem.data_width, r10d
 	ret
+
 zimodem_on_line_config endp
 
 ;;; ---------------------------------------------------------------------------------

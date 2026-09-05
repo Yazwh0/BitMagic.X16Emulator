@@ -64,7 +64,9 @@ public enum InterruptSource : uint
     Spcol = 4,
     Aflow = 8,
     Via = 16,
-    Ym = 32
+    Ym = 32,
+    UartRda = 64,
+    UartThre = 128
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -392,7 +394,9 @@ public class Emulator : IDisposable
         public unsafe uint DivisorLatch => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->DivisorLatch;
         public unsafe uint Divisor => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->Divisor;
         public unsafe uint ReceiveByte => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->ReceiveByte;
-        public unsafe bool InterruptEnabled => _emulator._state.Uart != null && _emulator._state.Uart->InterruptEnabled != 0;
+        public unsafe bool InterruptRdaEnabled => _emulator._state.Uart != null && _emulator._state.Uart->InterruptRdaEnabled != 0;
+        public unsafe bool InterruptThreEnabled => _emulator._state.Uart != null && _emulator._state.Uart->InterruptThreEnabled != 0;
+        public unsafe uint FifoTrigger => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->FifoTrigger;
 
         public unsafe Span<byte> BufferInbound => _emulator._state.Uart == null ? Span<byte>.Empty : new Span<byte>(_emulator._state.Uart->BufferInbound, 16);
         public unsafe Span<byte> BufferOutbound => _emulator._state.Uart == null ? Span<byte>.Empty : new Span<byte>(_emulator._state.Uart->BufferOutbound, 16);
@@ -464,6 +468,7 @@ public class Emulator : IDisposable
     {
         public unsafe ZiModemRegisters* ZiModem;     // qword: pointer to the zimodem struct instance
         public ulong IoStart;               // qword: start of the io range in memory (asm: io_start)
+        public unsafe CpuState* CpuState;   // qword: pointer to the main state object, for interrupt handling (asm: cpu_state)
 
         public uint ReadIndexInbound;
         public uint WriteIndexInbound;
@@ -484,7 +489,9 @@ public class Emulator : IDisposable
         public uint DivisorLatch;
         public uint Divisor;
         public uint ReceiveByte;            // held so the byte can be re-presented on a divisor switch
-        public uint InterruptEnabled;
+        public uint InterruptRdaEnabled;    // IER bit 0 (asm: interrupt_rda_enabled)
+        public uint InterruptThreEnabled;   // IER bit 1 (asm: interrupt_thre_enabled)
+        public uint FifoTrigger;            // RX FIFO trigger level (asm: fifo_trigger), decoded from FCR bits 6-7
     }
 
     /// <summary>Parity reported by <see cref="Emulator.GetModemLineConfig"/> (mirrors ZIMODEM_PARITY_* in zimodem_host.h).</summary>

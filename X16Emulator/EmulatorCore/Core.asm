@@ -51,12 +51,14 @@ MEMORY_WRITE_VALUE  equ   0110000b          ; write this everytime
 MEMORY_EXECUTION    equ  01000000b          ; execution points
 MEMORY_READ         equ 010000000b          ; read this session
 
-INTERRUPT_VSYNC     equ 000000001b
-INTERRUPT_LINE      equ 000000010b
-INTERRUPT_SPCOL     equ 000000100b
-INTERRUPT_AFLOW     equ 000001000b
-INTERRUPT_VIA       equ 000010000b
-INTERRUPT_YM        equ 000100000b
+INTERRUPT_VSYNC      equ 000000001b
+INTERRUPT_LINE       equ 000000010b
+INTERRUPT_SPCOL      equ 000000100b
+INTERRUPT_AFLOW      equ 000001000b
+INTERRUPT_VIA        equ 000010000b
+INTERRUPT_YM         equ 000100000b
+INTERRUPT_UART_RDA   equ 001000000b
+INTERRUPT_UART_THRE  equ 010000000b
 
 cpu_history struct 
 
@@ -237,10 +239,8 @@ asm_func proc state_ptr:QWORD
     
     mov rax, [rdx].state.memory_ptr
     add rax, 9fe0h
-    push rdx
-    mov rdx, [rdx].state.uart
+    
     call uart_init
-    pop rdx
 
     jmp clock_done
 

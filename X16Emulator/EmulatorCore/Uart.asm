@@ -14,7 +14,10 @@
 ;    along with this program.  If not, see https://www.gnu.org/licenses/.
 
 LSR_DataReady equ 00000001b
-LSR_Empty equ 01000000b
+LSR_Empty equ 01100000b
+
+IIR_RDA  equ 0001b
+IIR_THRE equ 0010b
 
 UART_Buffer equ 0
 UART_IER equ 1
@@ -34,6 +37,7 @@ uart struct
 
 	zimodem			qword ?			; pointer to a zimodem struct instance (see zimodem.asm)
 	io_start		qword ?			; pointer to the start of the io range in memory
+	cpu_state		qword ?			; pointer to the main state object for interrupt handling
 
 	read_index_inbound	dword ?
 	write_index_inbound	dword ?
@@ -55,7 +59,10 @@ uart struct
 	divisor			dword ?
 
 	receive_byte	dword ?			; so we can present the byte on a divisor switch
-	interrupt_enabled dword ?
+	interrupt_rda_enabled dword ?
+	interrupt_thre_enabled dword ?
+
+	fifo_trigger	dword ?
 
 uart ends
 
@@ -92,6 +99,11 @@ endm
 
 uart_init proc
 	
+	push rdx
+	mov rbx, rdx
+	mov rdx, [rdx].state.uart
+
+	mov [rdx].uart.cpu_state, rbx
 	mov [rdx].uart.io_start, rax	; address of 0x9fe0
 ;	mov byte ptr [rax + UART_LSR], LSR_Empty ; probably true
 	mov [rdx].uart.empty_inbound, 1
@@ -107,6 +119,7 @@ uart_init proc
 	mov rdx, [rdx].uart.zimodem
 	call zimodem_init
 
+	pop rdx
 	ret
 
 uart_init endp
@@ -178,6 +191,25 @@ not_empty:
 	mov [r12].uart.empty_inbound, 0
 	mov byte ptr [rcx + UART_LSR], LSR_DataReady		; we know all other flags will be clear
 
+	; now need to compare vs fifo_trigger, cant be empty here
+	sub edi, [r12].uart.read_index_inbound
+	mov ecx, 16
+	and edi, 16-1
+	cmovz edi, ecx
+
+	cmp edi, [r12].uart.fifo_trigger
+	jl nothing_returned
+
+	; set interrupt and IIR on interface
+	mov rcx, [r12].uart.io_start
+	or byte ptr [rcx + UART_IIR], 1
+
+	cmp [r12].uart.interrupt_rda_enabled, 0
+	je nothing_returned
+
+	mov rdi, [r12].uart.cpu_state
+	or [rdi].state.interrupt_hit, INTERRUPT_UART_RDA
+
 nothing_returned:
 	; see if there is more data
 	mov rcx, [r13].zimodem.handle
@@ -204,7 +236,10 @@ done_read:
 
 	cmp edi, [r12].uart.write_index_outbound
 	jne output_not_empty
+
 	mov [r12].uart.empty_outbound, 1
+	mov rcx, [r12].uart.io_start
+	or byte ptr [rcx + UART_LSR], LSR_Empty
 
 output_not_empty:
 	movzx rax, [r12].uart.buffer_outbound[rbx]
@@ -256,6 +291,10 @@ uart_write proc
 
 	push rbx
 
+	; clear THRE
+	mov rbx, [rdx].uart.io_start
+	and byte ptr [rbx + UART_LSR], NOT LSR_Empty
+
 	mov ebx, [rdx].uart.write_index_outbound
 
 	cmp [rdx].uart.empty_outbound, 1
@@ -276,7 +315,7 @@ do_write:
 	ret
 
 overrun:
-	; todo: set Overrun Error and set interupt
+	; ignore the write as the fifo is full
 	pop rbx
 	ret
 
@@ -307,6 +346,19 @@ uart_after_read proc
 	cmp ecx, [rdx].uart.write_index_inbound
 	je went_empty						; caught up to write -> now empty
 
+	; check and clear interrupt if necessary
+	mov edi, [rdx].uart.write_index_inbound
+	sub edi, ecx
+	and edi, 16-1
+	cmp edi, [rdx].uart.fifo_trigger
+	jge no_trigger
+
+	mov rdi, [rdx].uart.io_start
+	and byte ptr [rdi + UART_IIR], NOT IIR_RDA
+	mov rdi, [rdx].uart.cpu_state
+	and [rdi].state.interrupt_hit, NOT INTERRUPT_UART_RDA
+
+no_trigger:
 	; set the new byte in memory
 	mov al, byte ptr [[rdx].uart.buffer_inbound + rcx]
 	mov rcx, [rdx].uart.io_start
@@ -324,6 +376,13 @@ went_empty:
 	mov [rdx].uart.empty_inbound, 1
 	mov rcx, [rdx].uart.io_start
 	and byte ptr [rcx + UART_LSR], NOT LSR_DataReady
+
+	; always unset the interrupt
+	and byte ptr [rcx + UART_IIR], NOT IIR_RDA
+	mov rdx, [rdx].uart.cpu_state
+	and [rdx].state.interrupt_hit, NOT INTERRUPT_UART_RDA
+
+went_empty_done:
 	ret
 
 uart_after_read endp
@@ -344,7 +403,13 @@ uart_dlm_ier_write proc
 	cmp [rdx].uart.divisor_latch, 0
 	jne set_divisor
 
-	mov [rdx].uart.interrupt_enabled, eax
+	mov edi, eax
+	and edi, 1
+	mov [rdx].uart.interrupt_rda_enabled, edi
+
+	and eax, 0010b
+	shr eax, 1
+	mov [rdx].uart.interrupt_thre_enabled, eax
 
 	pop rdx
 	ret
@@ -361,13 +426,22 @@ uart_dlm_ier_write endp
 
 ; in: rdx = pointer to the state struct NOT uart struct
 uart_fcr_write proc
+	push rdx
+	mov rdx, [rdx].state.uart
 
 	movzx eax, byte ptr [rsi + rbx]
 	; preserve the currenct value, FCR is write only
 	mov byte ptr [rsi + rbx], r12b
 
+	mov ebx, eax
+	shr ebx, 6
 
+	; ebx now has the offset
+	lea rdi, fifo_trigger_level
+	mov ebx, dword ptr [rdi + rbx * 4]
+	mov [rdx].uart.fifo_trigger, ebx
 
+	pop rdx
 	ret
 uart_fcr_write endp
 
@@ -431,3 +505,7 @@ uart_msr_write proc
 	mov byte ptr [rsi + rbx], r12b
 	ret
 uart_msr_write endp
+
+align 4
+fifo_trigger_level:
+dd 1, 4, 8, 14

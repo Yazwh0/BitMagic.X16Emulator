@@ -98,7 +98,7 @@ set_value:
 endm
 
 uart_init proc
-	
+
 	push rdx
 	mov rbx, rdx
 	mov rdx, [rdx].state.uart
@@ -128,7 +128,7 @@ uart_init endp
 ; pull one byte from zimodem if available
 ; we use flow control here, so we never overflow. if fifo is full then don't read.
 ; set the LSR flags depending on the state of the FIFO. we can assume they are correct on entry.
-; 
+;
 uart_tick proc
 
 	push r12
@@ -152,7 +152,7 @@ slow_path:
 	push rdi
 	push r8
 	push r9
-	push r10		
+	push r10
 	push r11
 	sub rsp, 20h
 
@@ -166,7 +166,7 @@ slow_path:
 do_read:
 	; read a byte into the buffer, if there is nothign to read, then head out.
 	mov rcx, [r13].zimodem.handle
-	call [r13].zimodem.zimodem_host_rx_read	
+	call [r13].zimodem.zimodem_host_rx_read
 	cmp eax, -1
 	je nothing_returned
 
@@ -240,6 +240,8 @@ done_read:
 	mov [r12].uart.empty_outbound, 1
 	mov rcx, [r12].uart.io_start
 	or byte ptr [rcx + UART_LSR], LSR_Empty
+
+	; todo : set interrupt if necessary
 
 output_not_empty:
 	movzx rax, [r12].uart.buffer_outbound[rbx]
@@ -394,23 +396,46 @@ uart_nochange proc
 uart_nochange endp
 
 ; in: rdx = pointer to the state struct NOT uart struct
+;     r12b = previous value in memory, which will need to be written back
 uart_dlm_ier_write proc
 
 	movzx eax, byte ptr [rsi + rbx]
 
 	push rdx
+
 	mov rdx, [rdx].state.uart
 	cmp [rdx].uart.divisor_latch, 0
 	jne set_divisor
 
+	push r12
+	push rdi
+	push rbx
+
+	and eax, 1111b	
+	mov byte ptr [rsi + rbx], al
+
+	mov rbx, [rdx].uart.cpu_state
+	mov r12, [rdx].uart.io_start
+	movzx r12, byte ptr [r12 + UART_IIR]
+
+	; need to set the interrupt_hit depending on if the interrupt is on (can use r12b) and the enabled flag
 	mov edi, eax
 	and edi, 1
 	mov [rdx].uart.interrupt_rda_enabled, edi
 
+	and edi, r12d
+	shl edi, 6
+	and [rbx].state.interrupt_hit, NOT INTERRUPT_UART_RDA
+	or [rbx].state.interrupt_hit, edi
+
+thre:
 	and eax, 0010b
 	shr eax, 1
 	mov [rdx].uart.interrupt_thre_enabled, eax
 
+	pop rbx
+	pop rdi
+	pop r12
 	pop rdx
 	ret
 
@@ -423,6 +448,21 @@ set_divisor:
 	ret
 
 uart_dlm_ier_write endp
+
+; in: rdx = pointer to the state struct NOT uart struct
+uart_iir_afterread proc
+	; always clear THRE interrupt if its set
+	and [rdx].state.interrupt_hit, NOT INTERRUPT_UART_THRE
+
+	push rdx
+	mov rdx, [rdx].state.uart
+	mov rdx, [rdx].uart.io_start
+	and byte ptr [rdx + UART_IIR], NOT IIR_THRE
+
+	pop rdx
+
+	ret
+uart_iir_afterread endp
 
 ; in: rdx = pointer to the state struct NOT uart struct
 uart_fcr_write proc
@@ -441,6 +481,35 @@ uart_fcr_write proc
 	mov ebx, dword ptr [rdi + rbx * 4]
 	mov [rdx].uart.fifo_trigger, ebx
 
+	cmp [rdx].uart.empty_inbound, 0
+	jne exit									; if the inbound is empty, no need to recheck
+
+	mov eax, [rdx].uart.write_index_inbound
+	sub eax, [rdx].uart.read_index_inbound
+	and eax, 16-1
+	cmp ebx, eax
+	jge turn_off
+
+	mov rdi, [rdx].uart.io_start
+	or byte ptr [rdi + UART_IIR], IIR_RDA
+
+	cmp [rdx].uart.interrupt_rda_enabled, 0
+	je turn_off_interrupt
+
+	mov rdi, [rdx].uart.cpu_state
+	or [rdi].state.interrupt_hit, INTERRUPT_UART_RDA
+
+	pop rdx
+	ret
+
+turn_off:
+	mov rdi, [rdx].uart.io_start
+	and byte ptr [rdi + UART_IIR], NOT IIR_RDA
+turn_off_interrupt:
+	mov rdi, [rdx].uart.cpu_state
+	and [rdi].state.interrupt_hit, NOT INTERRUPT_UART_RDA
+
+exit:
 	pop rdx
 	ret
 uart_fcr_write endp

@@ -18,6 +18,7 @@ public class Fcr
                 stp",
                 emulator);
 
+        emulator.AssertState(Pc: 0x816);
         Assert.AreEqual(1u, emulator.Uart.FifoTrigger);
     }
 
@@ -34,6 +35,7 @@ public class Fcr
                 stp",
                 emulator);
 
+        emulator.AssertState(Pc: 0x816);
         Assert.AreEqual(4u, emulator.Uart.FifoTrigger);
     }
 
@@ -50,6 +52,7 @@ public class Fcr
                 stp",
                 emulator);
 
+        emulator.AssertState(Pc: 0x816);
         Assert.AreEqual(8u, emulator.Uart.FifoTrigger);
     }
 
@@ -66,6 +69,7 @@ public class Fcr
                 stp",
                 emulator);
 
+        emulator.AssertState(Pc: 0x816);
         Assert.AreEqual(14u, emulator.Uart.FifoTrigger);
     }
 
@@ -86,6 +90,7 @@ public class Fcr
                 stp",
                 emulator);
 
+        emulator.AssertState(Pc: 0x816);
         Assert.AreEqual(14u, emulator.Uart.FifoTrigger);
         Assert.AreEqual((byte)0x01, emulator.Memory[0x9fe2]);
     }

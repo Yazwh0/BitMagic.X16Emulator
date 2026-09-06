@@ -18,6 +18,7 @@ public class Ier
                 stp",
                 emulator);
 
+        emulator.AssertState(Pc: 0x816);
         Assert.IsTrue(emulator.Uart.InterruptRdaEnabled);
         Assert.IsFalse(emulator.Uart.InterruptThreEnabled);
     }
@@ -35,6 +36,7 @@ public class Ier
                 stp",
                 emulator);
 
+        emulator.AssertState(Pc: 0x816);
         Assert.IsFalse(emulator.Uart.InterruptRdaEnabled);
         Assert.IsTrue(emulator.Uart.InterruptThreEnabled);
     }
@@ -52,6 +54,7 @@ public class Ier
                 stp",
                 emulator);
 
+        emulator.AssertState(Pc: 0x816);
         Assert.IsTrue(emulator.Uart.InterruptRdaEnabled);
         Assert.IsTrue(emulator.Uart.InterruptThreEnabled);
     }
@@ -69,7 +72,37 @@ public class Ier
                 stp",
                 emulator);
 
+        emulator.AssertState(Pc: 0x816);
         Assert.IsFalse(emulator.Uart.InterruptRdaEnabled);
         Assert.IsFalse(emulator.Uart.InterruptThreEnabled);
+    }
+
+    [TestMethod]
+    public async Task Ier_TopFourBitsAreNotStored()
+    {
+        // Unlike $9fe2 (FCR/IIR), IER genuinely is read == write -- there's no separate
+        // register hiding behind the same address, so a write should still be visible on
+        // a subsequent read (this only applies with DLAB clear; with the divisor latch
+        // enabled, $9fe1 is the divisor MSB instead and the full byte is meaningful).
+        // But real IER only implements the low 4 bits (RDA/THRE enables here, plus two
+        // more not modelled); the top 4 bits are unused and must read back as 0
+        // regardless of what the CPU wrote into them.
+        var emulator = X16TestHelper.NewEmulator();
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                lda #%11110011
+                sta $9fe1      ; IER: top nibble set, should be masked off on readback
+                stp",
+                emulator);
+
+        emulator.AssertState(Pc: 0x816);
+        Assert.IsTrue(emulator.Uart.InterruptRdaEnabled);
+        Assert.IsTrue(emulator.Uart.InterruptThreEnabled);
+        Assert.AreEqual((byte)0b0011, (byte)(emulator.Memory[0x9fe1] & 0b00001111),
+            "the low nibble should reflect what was written");
+        Assert.AreEqual(0, emulator.Memory[0x9fe1] & 0b11110000,
+            "the top 4 bits of IER are unused and must not be stored");
     }
 }

@@ -314,7 +314,7 @@ io_registers_read:
 	; WIFI Card
 	io_r_9fe0 qword uart_read_00 - io_registers_read
 	io_r_9fe1 qword io_r_readmemory - io_registers_read
-	io_r_9fe2 qword io_r_readmemory - io_registers_read
+	io_r_9fe2 qword uart_iir_afterread - io_registers_read
 	io_r_9fe3 qword io_r_readmemory - io_registers_read
 	io_r_9fe4 qword io_r_readmemory - io_registers_read
 	io_r_9fe5 qword io_r_readmemory - io_registers_read
@@ -582,7 +582,7 @@ io_registers_readwrite:
 
 	; WIFI Card
 	io_rw_9fe0 qword uart_write_00 -  io_registers_readwrite
-	io_rw_9fe1 qword uart_dlm_ier_write -  io_registers_readwrite
+	io_rw_9fe1 qword uart_dlm_ier_write -  io_registers_readwrite ; todo: make this RW work properly
 	io_rw_9fe2 qword uart_fcr_write -  io_registers_readwrite
 	io_rw_9fe3 qword uart_lcr_write -  io_registers_readwrite
 	io_rw_9fe4 qword uart_mcr_write -  io_registers_readwrite

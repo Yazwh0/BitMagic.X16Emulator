@@ -134,6 +134,9 @@ uart_init endp
 ;
 uart_tick proc
 
+	cmp [rdx].uart.fifo_enbled, 0
+	je just_exit
+
 	push r12
 	push r13
 
@@ -288,6 +291,7 @@ fast_exit:
 	pop r12
 
 	mov eax, [rdx].uart.cpu_ticks
+just_exit:
 	ret
 
 uart_tick endp

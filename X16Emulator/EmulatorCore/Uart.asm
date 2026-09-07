@@ -290,8 +290,8 @@ fast_exit:
 	pop r13
 	pop r12
 
-	mov eax, [rdx].uart.cpu_ticks
 just_exit:
+	mov eax, [rdx].uart.cpu_ticks
 	ret
 
 uart_tick endp

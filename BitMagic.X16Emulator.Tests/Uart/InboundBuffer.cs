@@ -252,8 +252,10 @@ public class InboundBuffer
                 sei
                 lda #%00000001
                 sta $9fe1      ; IER: enable RDA
-                lda #%10000000
-                sta $9fe2      ; FCR: trigger level 8
+                lda #%10000001
+                sta $9fe2      ; FCR: trigger level 8, FIFO enable (bit 0 -- FCR is
+                               ; write-only, so every write must re-assert it or
+                               ; uart_tick stops doing anything at all)
                 stp",
                 emulator);
 
@@ -292,8 +294,8 @@ public class InboundBuffer
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
-                lda #%00000000
-                sta $9fe2      ; FCR: trigger level 1
+                lda #%00000001
+                sta $9fe2      ; FCR: trigger level 1, FIFO enable
                 stp",
                 emulator);
 
@@ -316,8 +318,9 @@ public class InboundBuffer
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
-                lda #%10000000
-                sta $9fe2      ; FCR: trigger level 8
+                lda #%10000001
+                sta $9fe2      ; FCR: trigger level 8, FIFO enable (bit 0 -- FCR is
+                               ; write-only, so every write must re-assert it)
                 stp",
                 emulator);
 
@@ -350,8 +353,8 @@ public class InboundBuffer
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
-                lda #%00000000
-                sta $9fe2      ; FCR: trigger level 1
+                lda #%00000001
+                sta $9fe2      ; FCR: trigger level 1, FIFO enable
                 stp",
                 emulator);
 
@@ -383,8 +386,9 @@ public class InboundBuffer
                 sei
                 lda #%00000001
                 sta $9fe1      ; IER: enable RDA
-                lda #%00000000
-                sta $9fe2      ; FCR: trigger level 1
+                lda #%00000001
+                sta $9fe2      ; FCR: trigger level 1, FIFO enable (bit 0 -- FCR is
+                               ; write-only, so every write must re-assert it)
                 stp",
                 emulator);
 
@@ -422,8 +426,8 @@ public class InboundBuffer
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
-                lda #%10000000
-                sta $9fe2      ; FCR: trigger level 8
+                lda #%10000001
+                sta $9fe2      ; FCR: trigger level 8, FIFO enable
                 stp",
                 emulator);
 

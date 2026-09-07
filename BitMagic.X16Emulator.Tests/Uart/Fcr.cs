@@ -80,6 +80,19 @@ public class Fcr
         // was already there (uart_fcr_write's "preserve the current value" behaviour),
         // not leave the CPU's written value sitting in memory.
         var emulator = X16TestHelper.NewEmulator();
+
+        // Stage 1: spend the emulator's lazy first-run init (uart_init, called from
+        // Core.asm's initial_startup check on the very first Emulate()) before poking
+        // memory below -- otherwise uart_init's own IIR seed (IIR_THRE, since the
+        // outbound FIFO starts idle) would overwrite the poke before the FCR write
+        // under test ever runs.
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                stp",
+                emulator);
+
+        emulator.AssertState(Pc: 0x811);
         emulator.Memory[0x9fe2] = 0x01; // pretend RDA is latched in IIR
 
         await X16TestHelper.Emulate(@"

@@ -11,6 +11,7 @@ public class InboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         mock.EnqueueInbound(0x41);
 
@@ -33,6 +34,7 @@ public class InboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         mock.EnqueueInbound(0x41);
 
@@ -55,6 +57,7 @@ public class InboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: no bytes exist yet, so it's safe for uart_tick to fire (and find
         // nothing to do) whenever it likes here -- no burn loop needed. Enable RDA
@@ -117,6 +120,7 @@ public class InboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // IRQ vector -> $0900. RomBank occupies the top of the address space, so $3ffe/
         // $3fff here are $fffe/$ffff -- same technique Vera/Interrupt_Vsync.cs uses.
@@ -187,6 +191,7 @@ public class InboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // A byte arrives with IER still disabled. Trigger level defaults to 0 (FCR never
         // written), so the trigger condition is already satisfied -- IIR's RDA bit should
@@ -233,6 +238,7 @@ public class InboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: enable RDA and set a high trigger level (8) with nothing queued yet,
         // so it's harmless for the free tick to spend itself here. SEI first -- same
@@ -302,6 +308,7 @@ public class InboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: IER RDA is never enabled anywhere in this test. Set a high trigger
         // (8) with nothing queued yet, so it's harmless for the free tick to spend
@@ -362,6 +369,7 @@ public class InboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: enable RDA and set a low trigger level (1) with nothing queued yet,
         // so it's harmless for the free tick to spend itself here. SEI first -- this
@@ -425,5 +433,74 @@ public class InboundBuffer
             "IIR RDA should no longer be pending -- only 4 of the required 8 bytes remain queued");
         Assert.IsTrue((emulator.State.Interrupt_Hit & (uint)InterruptSource.UartRda) == 0,
             "raising the trigger above the already-queued count should clear the interrupt");
+    }
+
+    // --- FCR bits 1/2: "Clear Receiver FIFO" and "Clear Transmitter FIFO". Per the
+    // TL16C2550 datasheet, writing FCR with these bits set resets the corresponding
+    // FIFO's read/write pointers, discards anything still queued, and clears the
+    // associated LSR/IIR/interrupt state (RX here: DR + IIR_RDA + interrupt_hit's RDA
+    // flag; TX is in OutboundBuffer.cs -- see Fcr_ClearTransmitterFifoBit_ResetsOutboundFifo).
+    // uart_fcr_write currently only ever extracts the trigger-level bits (6-7); it never
+    // looks at bits 1/2 at all, so this test is expected to FAIL until that's implemented.
+
+    [TestMethod]
+    public async Task Fcr_ClearReceiverFifoBit_ResetsInboundFifo()
+    {
+        var mock = new MockZiModemHost();
+        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
+
+        // Stage 1: enable RDA and queue 3 bytes -- comfortably over the default trigger
+        // (0, so any count >= 1 satisfies it) -- so DR, IIR RDA and interrupt_hit are all
+        // live by the time we clear the FIFO. SEI first -- same reasoning as the other
+        // interrupt tests in this file: checks state.Interrupt_Hit directly rather than
+        // real vectoring, so the CPU must never actually act on the pending IRQ.
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                sei
+                lda #%00000001
+                sta $9fe1      ; IER: enable RDA
+                stp",
+                emulator);
+
+        emulator.AssertState(Pc: 0x817);
+
+        emulator.Uart.CpuTicks = 1;
+        emulator.ClockUart = 0;
+        mock.EnqueueInbound(new byte[] { 0x01, 0x02, 0x03 });
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                nop
+                nop
+                nop
+                stp",
+                emulator);
+
+        emulator.AssertState(Pc: 0x814);
+        Assert.IsFalse(emulator.Uart.EmptyInbound, "bytes should have arrived");
+        Assert.AreNotEqual(0, emulator.Memory[0x9fe5] & 0b00000001, "DR should be set");
+        Assert.AreNotEqual(0, emulator.Memory[0x9fe2] & 0b0001, "IIR RDA should be pending");
+        Assert.IsTrue((emulator.State.Interrupt_Hit & (uint)InterruptSource.UartRda) != 0, "interrupt should be live");
+
+        // Stage 2: clear the RX FIFO via FCR bit 1. Nothing new arrives in between.
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                lda #%00000010
+                sta $9fe2      ; FCR: clear receiver FIFO
+                stp",
+                emulator);
+
+        emulator.AssertState(Pc: 0x816);
+        Assert.IsTrue(emulator.Uart.EmptyInbound, "the RX FIFO should be reset to empty");
+        Assert.AreEqual(emulator.Uart.WriteIndexInbound, emulator.Uart.ReadIndexInbound,
+            "read/write pointers should both reset together");
+        Assert.AreEqual(0, emulator.Memory[0x9fe5] & 0b00000001, "DR should clear -- the FIFO is now empty");
+        Assert.AreEqual(0, emulator.Memory[0x9fe2] & 0b0001, "IIR RDA should clear -- nothing left queued");
+        Assert.IsTrue((emulator.State.Interrupt_Hit & (uint)InterruptSource.UartRda) == 0,
+            "clearing the RX FIFO should also clear the live RDA interrupt");
     }
 }

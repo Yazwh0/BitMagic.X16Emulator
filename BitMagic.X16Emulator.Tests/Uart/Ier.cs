@@ -28,15 +28,22 @@ public class Ier
     {
         var emulator = X16TestHelper.NewEmulator();
 
+        // SEI first -- the outbound FIFO starts genuinely idle (uart_init seeds
+        // IIR_THRE), so enabling THRE here correctly asserts the interrupt for real
+        // immediately (see Outbound_ThreInterrupt_ClearsWhenByteQueuedAndReassertsOnceDrained).
+        // This test only cares about the enabled-flag readback, not real IRQ delivery,
+        // and there's no vector table set up here, so the CPU must never actually act
+        // on the pending IRQ.
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
+                sei
                 lda #%00000010
                 sta $9fe1
                 stp",
                 emulator);
 
-        emulator.AssertState(Pc: 0x816);
+        emulator.AssertState(Pc: 0x817);
         Assert.IsFalse(emulator.Uart.InterruptRdaEnabled);
         Assert.IsTrue(emulator.Uart.InterruptThreEnabled);
     }
@@ -46,15 +53,19 @@ public class Ier
     {
         var emulator = X16TestHelper.NewEmulator();
 
+        // SEI first -- same reasoning as Ier_ThreOnly: enabling THRE while the outbound
+        // FIFO is idle now correctly asserts the interrupt for real, and this test only
+        // cares about the enabled-flag readback.
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
+                sei
                 lda #%00000011
                 sta $9fe1
                 stp",
                 emulator);
 
-        emulator.AssertState(Pc: 0x816);
+        emulator.AssertState(Pc: 0x817);
         Assert.IsTrue(emulator.Uart.InterruptRdaEnabled);
         Assert.IsTrue(emulator.Uart.InterruptThreEnabled);
     }
@@ -89,15 +100,19 @@ public class Ier
         // regardless of what the CPU wrote into them.
         var emulator = X16TestHelper.NewEmulator();
 
+        // SEI first -- the low nibble here also enables THRE, and the outbound FIFO
+        // starts genuinely idle, so this would otherwise fire a real interrupt (see
+        // Ier_ThreOnly). This test only cares about the stored bits, not IRQ delivery.
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
+                sei
                 lda #%11110011
                 sta $9fe1      ; IER: top nibble set, should be masked off on readback
                 stp",
                 emulator);
 
-        emulator.AssertState(Pc: 0x816);
+        emulator.AssertState(Pc: 0x817);
         Assert.IsTrue(emulator.Uart.InterruptRdaEnabled);
         Assert.IsTrue(emulator.Uart.InterruptThreEnabled);
         Assert.AreEqual((byte)0b0011, (byte)(emulator.Memory[0x9fe1] & 0b00001111),

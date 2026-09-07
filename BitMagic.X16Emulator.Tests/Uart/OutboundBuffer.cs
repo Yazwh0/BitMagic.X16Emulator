@@ -27,6 +27,7 @@ public class OutboundBuffer
     public async Task Outbound_FillsExactlySixteen()
     {
         var emulator = X16TestHelper.NewEmulator();
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         await X16TestHelper.Emulate(WriteBytesCode(16), emulator);
 
@@ -42,6 +43,7 @@ public class OutboundBuffer
     public async Task Outbound_Overrun_DropsExtraByteWithoutCorruptingBuffer()
     {
         var emulator = X16TestHelper.NewEmulator();
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // 16 fill the FIFO exactly; the 17th (value 0x10) should be silently dropped.
         await X16TestHelper.Emulate(WriteBytesCode(17), emulator);
@@ -59,6 +61,7 @@ public class OutboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Fill the FIFO exactly (16 bytes: 0x00-0x0F), then write a 17th (0x10) that
         // should be silently dropped. Nothing drains during this stage -- same reasoning
@@ -105,6 +108,7 @@ public class OutboundBuffer
     public async Task Outbound_Write_ClearsThreAndTemt()
     {
         var emulator = X16TestHelper.NewEmulator();
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
         emulator.Memory[0x9fe5] = LsrEmptyMask; // simulate an idle/drained UART
 
         await X16TestHelper.Emulate(@"
@@ -124,6 +128,7 @@ public class OutboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: nothing queued yet, so it's harmless for the free first tick (clock_uart
         // starts at 0, always fires once) to land here and lock in the slow default
@@ -165,6 +170,7 @@ public class OutboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: same reasoning as the single-byte test above -- let the free tick spend
         // itself here, before anything exists to drain.
@@ -217,6 +223,7 @@ public class OutboundBuffer
     {
         var mock = new MockZiModemHost();
         var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: enable THRE with nothing ever queued -- the outbound FIFO starts
         // empty (uart_init sets empty_outbound = 1), so this should assert immediately,
@@ -274,6 +281,58 @@ public class OutboundBuffer
     }
 
     [TestMethod]
+    public async Task Outbound_ThreInterrupt_DrainSetsIirAndLsrEvenWhenDisabled()
+    {
+        // uart_tick's drain block (the "outbound FIFO just went empty" branch) has three
+        // separate jobs when a queued byte finishes sending: set LSR_Empty (THRE|TEMT),
+        // set IIR bit 1 (THRE pending), and set state.interrupt_hit's THRE flag. The IIR
+        // and interrupt_hit writes have different contracts -- IIR must be unconditional
+        // (a polling driver needs to see the condition regardless of IER, same as
+        // RDA/FCR), interrupt_hit must stay gated by interrupt_thre_enabled. THRE is left
+        // disabled throughout this test (IER is never written) specifically to isolate
+        // that: mirrors Fcr_TriggerSatisfiedWhileInterruptsDisabled_SetsIirButNotInterruptHit
+        // for RDA. Currently the IIR write in uart_tick sits behind the
+        // interrupt_thre_enabled check instead of ahead of it, so the IIR assertion below
+        // is expected to FAIL until that ordering is fixed.
+        var mock = new MockZiModemHost();
+        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
+
+        // Stage 1: spend the free first tick before anything is queued -- same reasoning
+        // as the other outbound drain tests.
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                stp",
+                emulator);
+
+        emulator.AssertState(Pc: 0x811);
+        Assert.IsFalse(emulator.Uart.InterruptThreEnabled, "THRE must stay disabled for this test");
+
+        emulator.Uart.CpuTicks = 1;
+        emulator.ClockUart = 0;
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                lda #$41
+                sta $9fe0
+                nop
+                nop
+                stp",
+                emulator);
+
+        emulator.AssertState(Pc: 0x818);
+        Assert.IsTrue(emulator.Uart.EmptyOutbound, "the byte should have fully drained");
+        Assert.AreEqual(LsrEmptyMask, emulator.Memory[0x9fe5] & LsrEmptyMask,
+            "LSR: THRE|TEMT should both be set once the FIFO drains");
+        Assert.AreNotEqual(0, emulator.Memory[0x9fe2] & 0b0010,
+            "IIR: THRE pending must be reported regardless of whether THRE is enabled in IER");
+        Assert.IsTrue((emulator.State.Interrupt_Hit & (uint)InterruptSource.UartThre) == 0,
+            "interrupt must not fire -- THRE was never enabled in IER");
+    }
+
+    [TestMethod]
     public async Task Outbound_ThreInterrupt_VectorsToHandler()
     {
         var mock = new MockZiModemHost();
@@ -286,6 +345,15 @@ public class OutboundBuffer
         // No SEI -- the outbound FIFO is already empty (nothing ever queued), so
         // enabling THRE should make the interrupt go live for real immediately, and we
         // want the CPU to actually take it.
+        //
+        // $02 is a reentry guard: if disabling THRE via IER doesn't actually clear the
+        // interrupt condition, RTI immediately re-takes the same IRQ and the CPU spins
+        // between $900 and $810 forever -- the emulator has no instruction-budget
+        // watchdog to catch that (X16TestHelper.Emulate() calls straight into the native
+        // CPU loop, which only returns on stp/brk). So count entries instead of trusting
+        // the disable write blindly: a second entry takes the brk path and fails the
+        // test fast (Brk_Causes_Stop is on by default, so Emulate()'s result no longer
+        // matches the expected DebugOpCode and Assert.Fail fires) rather than hanging.
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
@@ -293,12 +361,19 @@ public class OutboundBuffer
                 sta $9fe1      ; IER: enable THRE
                 stp
                 .org $900
+                inc $02
+                lda $02
+                cmp #$02
+                beq loop_detected
                 lda #$00
                 sta $9fe1      ; disable THRE -- otherwise RTI immediately refires (the
                                ; FIFO is still empty; nothing here drains anything the
                                ; way reading $9fe0 does for RDA)
                 lda #$ab       ; marker: only reachable if the CPU actually vectored here
-                rti",
+                rti
+            .loop_detected:
+                brk            ; disabling THRE didn't clear the condition -- fail fast
+                               ; instead of spinning",
                 emulator);
 
         // Proves the CPU actually vectored to $900 and ran the handler (and, via Pc,
@@ -349,5 +424,123 @@ public class OutboundBuffer
         Assert.AreEqual(0, emulator.Memory[0x9fe2] & 0b0010, "IIR: THRE must clear once it has been read");
         Assert.IsTrue((emulator.State.Interrupt_Hit & (uint)InterruptSource.UartThre) == 0,
             "reading IIR should acknowledge and clear the THRE interrupt");
+    }
+
+    [TestMethod]
+    public async Task Outbound_ThreInterrupt_WriteAcknowledgesIt()
+    {
+        // uart_write is the other of the two THRE ack paths (the other being reading
+        // IIR -- see Outbound_ThreInterrupt_ReadingIirAcknowledgesIt above): queuing a
+        // new byte into THR means the transmitter is no longer idle, so LSR_Empty
+        // (THRE|TEMT), IIR bit 1, and state.interrupt_hit's THRE flag should all clear.
+        //
+        // Scoped to just that clear behaviour (uart_write), not to whatever raises THRE
+        // in the first place -- same reasoning as the IIR-read test above, the "already
+        // pending" precondition is poked directly instead of produced for real.
+        var emulator = X16TestHelper.NewEmulator();
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
+
+        emulator.Memory[0x9fe5] = LsrEmptyMask;              // LSR: THRE | TEMT
+        emulator.Memory[0x9fe2] = 0b0010;                    // IIR: THRE pending
+        emulator.InterruptHit = InterruptSource.UartThre;    // the live interrupt itself
+
+        // Same reasoning as Outbound_ThreInterrupt_ReadingIirAcknowledgesIt: interrupt_hit
+        // is already live before Emulate() runs its first instruction, so the I flag must
+        // be set directly rather than via an in-code SEI.
+        emulator.InterruptDisable = true;
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                lda #$41
+                sta $9fe0
+                stp",
+                emulator);
+
+        emulator.AssertState(Pc: 0x816);
+        Assert.AreEqual(0, emulator.Memory[0x9fe5] & LsrEmptyMask, "LSR: THRE|TEMT must clear once a byte is written");
+        Assert.AreEqual(0, emulator.Memory[0x9fe2] & 0b0010, "IIR: THRE must clear once a byte is written");
+        Assert.IsTrue((emulator.State.Interrupt_Hit & (uint)InterruptSource.UartThre) == 0,
+            "writing THR should acknowledge and clear the THRE interrupt");
+    }
+
+    // --- FCR bit 2: "Clear Transmitter FIFO" -- see the equivalent RX-side comment in
+    // InboundBuffer.cs (Fcr_ClearReceiverFifoBit_ResetsInboundFifo). The FIFO clear also
+    // makes the transmitter go idle, same as a normal drain-to-empty (see
+    // Outbound_ThreInterrupt_DrainSetsIirAndLsrEvenWhenDisabled) -- so THRE must assert
+    // on the clear too: IIR bit 1 unconditionally, interrupt_hit gated by
+    // interrupt_thre_enabled. uart_fcr_write currently never looks at bit 2 at all, so
+    // this test is expected to FAIL until that's implemented.
+
+    [TestMethod]
+    public async Task Fcr_ClearTransmitterFifoBit_ResetsOutboundFifoAndAssertsThre()
+    {
+        var mock = new MockZiModemHost();
+        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
+
+        // Stage 1: enable THRE, then queue two bytes without forcing fast ticks -- the
+        // default (slow) cpu_ticks means neither has a chance to drain before the clear
+        // below. The FIFO is non-empty throughout this stage, so THRE must not be
+        // pending yet (enabling it here doesn't hit the separate "already idle" gap --
+        // that only applies when the FIFO is empty at enable time). SEI first -- this
+        // test checks state.Interrupt_Hit directly rather than real vectoring, and once
+        // fixed the clear below will make the interrupt go live for real, so the CPU
+        // must never actually act on it (no vector table here). The I flag persists
+        // across Emulate() calls on the same Emulator, so this covers the stage below.
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                sei
+                lda #%00000010
+                sta $9fe1      ; IER: enable THRE
+                lda #$01
+                sta $9fe0
+                lda #$02
+                sta $9fe0
+                stp",
+                emulator);
+
+        emulator.AssertState(Pc: 0x821);
+        Assert.IsTrue(emulator.Uart.InterruptThreEnabled);
+        Assert.IsFalse(emulator.Uart.EmptyOutbound, "bytes should still be queued, nothing has drained");
+        Assert.AreEqual(0, emulator.Memory[0x9fe2] & 0b0010, "IIR: THRE must not be pending -- the FIFO isn't empty");
+        Assert.IsTrue((emulator.State.Interrupt_Hit & (uint)InterruptSource.UartThre) == 0);
+
+        // Stage 2: clear the TX FIFO via FCR bit 2. Nothing new arrives in between.
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                lda #%00000100
+                sta $9fe2      ; FCR: clear transmitter FIFO
+                stp",
+                emulator);
+
+        emulator.AssertState(Pc: 0x816);
+        Assert.IsTrue(emulator.Uart.EmptyOutbound, "the TX FIFO should be reset to empty");
+        Assert.AreEqual(emulator.Uart.WriteIndexOutbound, emulator.Uart.ReadIndexOutbound,
+            "read/write pointers should both reset together");
+        Assert.AreEqual(LsrEmptyMask, emulator.Memory[0x9fe5] & LsrEmptyMask,
+            "LSR: THRE|TEMT should both be set -- the FIFO is now empty");
+        Assert.AreNotEqual(0, emulator.Memory[0x9fe2] & 0b0010,
+            "IIR: THRE should assert -- the clear made the transmitter go idle, same as a normal drain");
+        Assert.IsTrue((emulator.State.Interrupt_Hit & (uint)InterruptSource.UartThre) != 0,
+            "clearing the TX FIFO should also assert the live THRE interrupt -- it's enabled in IER");
+
+        // Force fast ticks afterward and confirm the discarded bytes never reach the
+        // modem -- clearing the FIFO must actually drop them, not just reset the flags.
+        emulator.Uart.CpuTicks = 1;
+        emulator.ClockUart = 0;
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                nop
+                nop
+                stp",
+                emulator);
+
+        emulator.AssertState(Pc: 0x813);
+        Assert.AreEqual(0, mock.SentBytes.Count, "the cleared bytes must never reach the modem");
     }
 }

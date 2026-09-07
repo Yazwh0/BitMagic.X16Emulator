@@ -401,6 +401,11 @@ public class Emulator : IDisposable
         public unsafe bool InterruptRdaEnabled => _emulator._state.Uart != null && _emulator._state.Uart->InterruptRdaEnabled != 0;
         public unsafe bool InterruptThreEnabled => _emulator._state.Uart != null && _emulator._state.Uart->InterruptThreEnabled != 0;
         public unsafe uint FifoTrigger => _emulator._state.Uart == null ? 0 : _emulator._state.Uart->FifoTrigger;
+        public unsafe bool FifoEnabled
+        {
+            get => _emulator._state.Uart != null && _emulator._state.Uart->FifoEnabled != 0;
+            set { if (_emulator._state.Uart != null) _emulator._state.Uart->FifoEnabled = value ? 1u : 0u; }
+        }
 
         public unsafe Span<byte> BufferInbound => _emulator._state.Uart == null ? Span<byte>.Empty : new Span<byte>(_emulator._state.Uart->BufferInbound, 16);
         public unsafe Span<byte> BufferOutbound => _emulator._state.Uart == null ? Span<byte>.Empty : new Span<byte>(_emulator._state.Uart->BufferOutbound, 16);
@@ -496,6 +501,7 @@ public class Emulator : IDisposable
         public uint InterruptRdaEnabled;    // IER bit 0 (asm: interrupt_rda_enabled)
         public uint InterruptThreEnabled;   // IER bit 1 (asm: interrupt_thre_enabled)
         public uint FifoTrigger;            // RX FIFO trigger level (asm: fifo_trigger), decoded from FCR bits 6-7
+        public uint FifoEnabled;            // FCR bit 0 (asm: fifo_enbled -- sic, typo kept in asm)
     }
 
     /// <summary>Parity reported by <see cref="Emulator.GetModemLineConfig"/> (mirrors ZIMODEM_PARITY_* in zimodem_host.h).</summary>

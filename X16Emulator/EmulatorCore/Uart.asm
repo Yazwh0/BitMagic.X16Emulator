@@ -63,6 +63,7 @@ uart struct
 	interrupt_thre_enabled dword ?
 
 	fifo_trigger	dword ?
+	fifo_enbled		dword ?
 
 uart ends
 
@@ -105,9 +106,10 @@ uart_init proc
 
 	mov [rdx].uart.cpu_state, rbx
 	mov [rdx].uart.io_start, rax	; address of 0x9fe0
-;	mov byte ptr [rax + UART_LSR], LSR_Empty ; probably true
 	mov [rdx].uart.empty_inbound, 1
 	mov [rdx].uart.empty_outbound, 1
+	mov byte ptr [rax + UART_IIR], IIR_THRE
+	mov byte ptr [rax + UART_LSR], LSR_Empty
 
 	; set a default for now
 	mov [rdx].uart.cpu_ticks, NO_DIVISOR
@@ -115,6 +117,7 @@ uart_init proc
 	mov [rdx].uart.write_index_inbound, 0
 	mov [rdx].uart.read_index_outbound, 0
 	mov [rdx].uart.write_index_outbound, 0
+
 
 	mov rdx, [rdx].uart.zimodem
 	call zimodem_init
@@ -202,7 +205,7 @@ not_empty:
 
 	; set interrupt and IIR on interface
 	mov rcx, [r12].uart.io_start
-	or byte ptr [rcx + UART_IIR], 1
+	or byte ptr [rcx + UART_IIR], IIR_RDA
 
 	cmp [r12].uart.interrupt_rda_enabled, 0
 	je nothing_returned
@@ -240,8 +243,13 @@ done_read:
 	mov [r12].uart.empty_outbound, 1
 	mov rcx, [r12].uart.io_start
 	or byte ptr [rcx + UART_LSR], LSR_Empty
+	or byte ptr [rcx + UART_IIR], IIR_THRE
 
-	; todo : set interrupt if necessary
+	cmp [r12].uart.interrupt_thre_enabled, 0
+	je output_not_empty
+
+	mov rcx, [r12].uart.cpu_state
+	or [rcx].state.interrupt_hit, INTERRUPT_UART_THRE
 
 output_not_empty:
 	movzx rax, [r12].uart.buffer_outbound[rbx]
@@ -296,6 +304,9 @@ uart_write proc
 	; clear THRE
 	mov rbx, [rdx].uart.io_start
 	and byte ptr [rbx + UART_LSR], NOT LSR_Empty
+	and byte ptr [rbx + UART_IIR], NOT IIR_THRE
+	mov rdi, [rdx].uart.cpu_state
+	and [rdi].state.interrupt_hit, NOT INTERRUPT_UART_THRE
 
 	mov ebx, [rdx].uart.write_index_outbound
 
@@ -414,7 +425,6 @@ uart_dlm_ier_write proc
 	and eax, 1111b	
 	mov byte ptr [rsi + rbx], al
 
-	mov rbx, [rdx].uart.cpu_state
 	mov r12, [rdx].uart.io_start
 	movzx r12, byte ptr [r12 + UART_IIR]
 
@@ -425,6 +435,8 @@ uart_dlm_ier_write proc
 
 	and edi, r12d
 	shl edi, 6
+
+	mov rbx, [rdx].uart.cpu_state
 	and [rbx].state.interrupt_hit, NOT INTERRUPT_UART_RDA
 	or [rbx].state.interrupt_hit, edi
 
@@ -433,6 +445,15 @@ thre:
 	shr eax, 1
 	mov [rdx].uart.interrupt_thre_enabled, eax
 
+	shr r12d, 1
+	and r12d, 1
+	and r12d, eax
+	shl r12d, 7
+
+	and [rbx].state.interrupt_hit, NOT INTERRUPT_UART_THRE
+	or [rbx].state.interrupt_hit, r12d
+
+exit:
 	pop rbx
 	pop rdi
 	pop r12
@@ -467,12 +488,54 @@ uart_iir_afterread endp
 ; in: rdx = pointer to the state struct NOT uart struct
 uart_fcr_write proc
 	push rdx
-	mov rdx, [rdx].state.uart
+	push rcx
+	push r12
 
 	movzx eax, byte ptr [rsi + rbx]
 	; preserve the currenct value, FCR is write only
 	mov byte ptr [rsi + rbx], r12b
 
+	mov r12, rdx
+	mov rdx, [rdx].state.uart
+
+	; fifo enable
+	mov ebx, eax
+	and ebx, 1
+	mov [rdx].uart.fifo_enbled, ebx
+	mov rcx, [rdx].uart.io_start
+
+	mov ebx, eax
+	test ebx, 2
+	jz no_inbound_clear
+
+	mov [rdx].uart.read_index_inbound, 0
+	mov [rdx].uart.write_index_inbound, 0
+	mov [rdx].uart.empty_inbound, 1
+	
+	and byte ptr [rcx + UART_LSR], NOT LSR_DataReady
+
+	; always unset the interrupt
+	and byte ptr [rcx + UART_IIR], NOT IIR_RDA
+	and [r12].state.interrupt_hit, NOT INTERRUPT_UART_RDA
+
+no_inbound_clear:
+
+	test ebx, 4
+	jz no_outbound_clear
+
+	mov [rdx].uart.read_index_outbound, 0
+	mov [rdx].uart.write_index_outbound, 0
+	mov [rdx].uart.empty_outbound, 1
+
+	or byte ptr [rcx + UART_LSR], LSR_Empty
+	or byte ptr [rcx + UART_IIR], IIR_THRE
+
+	cmp [rdx].uart.interrupt_thre_enabled, 0
+	je no_outbound_clear
+
+	or [r12].state.interrupt_hit, INTERRUPT_UART_THRE
+
+no_outbound_clear:
 	mov ebx, eax
 	shr ebx, 6
 
@@ -499,6 +562,8 @@ uart_fcr_write proc
 	mov rdi, [rdx].uart.cpu_state
 	or [rdi].state.interrupt_hit, INTERRUPT_UART_RDA
 
+	pop r12
+	pop rcx
 	pop rdx
 	ret
 
@@ -510,6 +575,8 @@ turn_off_interrupt:
 	and [rdi].state.interrupt_hit, NOT INTERRUPT_UART_RDA
 
 exit:
+	pop r12
+	pop rcx
 	pop rdx
 	ret
 uart_fcr_write endp

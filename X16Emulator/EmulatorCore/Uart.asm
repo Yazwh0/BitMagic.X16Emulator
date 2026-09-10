@@ -102,6 +102,7 @@ uart_init proc
 
 	push rdx
 	mov rbx, rdx
+
 	mov rdx, [rdx].state.uart
 
 	mov [rdx].uart.cpu_state, rbx
@@ -110,6 +111,7 @@ uart_init proc
 	mov [rdx].uart.empty_outbound, 1
 	mov byte ptr [rax + UART_IIR], IIR_THRE
 	mov byte ptr [rax + UART_LSR], LSR_Empty
+	mov byte ptr [rax + UART_MSR], 00110000b
 
 	; set a default for now
 	mov [rdx].uart.cpu_ticks, NO_DIVISOR
@@ -605,6 +607,8 @@ uart_lcr_write endp
 uart_mcr_write proc
 
 	movzx eax, byte ptr [rsi + rbx]
+	and al, 11111011b
+	mov byte ptr [rsi + rbx], al
 ;	and al, 00111111b
 
 
@@ -640,8 +644,15 @@ uart_lsr_write proc
 	ret
 uart_lsr_write endp
 
+uart_msr_afterread proc
+;	movzx eax, byte ptr [rsi + rbx]
+	and r12b, 11110000b
+	mov byte ptr [rsi + rbx], r12b
+	ret
+uart_msr_afterread endp
+
 uart_msr_write proc
-	movzx eax, byte ptr [rsi + rbx]
+;	movzx eax, byte ptr [rsi + rbx]
 	mov byte ptr [rsi + rbx], r12b
 	ret
 uart_msr_write endp

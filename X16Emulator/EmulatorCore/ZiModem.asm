@@ -13,30 +13,32 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see https://www.gnu.org/licenses/.
 
-; This file talks directly to zimodem_host.dll's C ABI (see zimodem_host.h in the
-; BitMagic.ZiModem submodule, native/wrapper/include) -- EXTERN-linked against
-; zimodem_host.lib. Not yet wired into the project: EmulatorCore.vcxproj still needs
-; zimodem_host.h's include dir and zimodem_host.lib added, and something needs to call
-; zimodem_init once at startup (Core.asm's state.initial_startup branch is where every
-; other one-time init in this codebase lives) and zimodem_write_serial/
-; zimodem_serial_available/zimodem_read_serial/zimodem_set_pin need entries in Io.asm's
-; dispatch tables (or calls from whatever register model the UART emulation builds).
-; Included from Uart.asm, after uart_state is declared there.
-
+; This file talks to zimodem_host's C ABI (see zimodem_host.h in the BitMagic.ZiModem
+; submodule, native/wrapper/include -- zimodem_host.dll on Windows, libzimodem_host.so on
+; Linux). Included from Uart.asm, after uart_state is declared there. zimodem_init is
+; called once from Core.asm's state.initial_startup branch (alongside vera_init/via_init);
+; the per-register entry points are reached from Uart.asm, not Io.asm's dispatch tables.
+;
 ; All native-interop state for the one zimodem_handle this process will ever have
 ; (zimodem_host.h's own one-instance-per-process constraint), reached via
 ; state.uart -> uart_state.zimodem -> this struct. data_dir doubles as the
 ; zimodem_host_config* passed to zimodem_host_create() -- that native struct is just
 ; { const char* data_dir; }, so a pointer to this one field has an identical layout.
 ;
-; The eight zimodem_host entry points are NOT cached here -- unlike state.step_ym/
-; write_register_ym/sleep/get_ticks elsewhere in this codebase (which exist as struct
-; fields because those are internal, non-exported C++ functions with no linkable symbol
-; for asm to EXTERN against -- the only way to hand asm a callable address for them is
-; for C++ to resolve it at runtime and hand it over via state), zimodem_host_* are real
-; ZIMODEM_API exports with proper entries in zimodem_host.lib. EXTERN + linking against
-; that .lib already gives every proc below a directly callable symbol, so there's
-; nothing to resolve or store -- see the EXTERN block and the calls further down.
+; The eight zimodem_host_* entry points ARE cached as qword fields below, the same
+; runtime-resolved-pointer model as state.step_ym / sleep / get_ticks: BitMagic's managed
+; layer (X16Emulator.cs SetupZiModem) loads the library, resolves each export, and writes
+; the pointer into this struct before the core runs -- or a test supplies its own set
+; (MockZiModemHost) with no real library at all. The procs below just `call` through the
+; struct slot; there is no EXTERN block and nothing is link-time bound.
+;
+; Calling convention: every `call` here uses the Windows x64 convention (see zimodem_init's
+; frame setup -- RCX/RDX/R8/R9, 20h shadow, arg5/6 at [rsp+20h]/[rsp+28h], RSP 16-aligned).
+; That matches zimodem_host.dll natively. On Linux the platform default is System V, so the
+; .so consumed here must be built with -DZIMODEM_HOST_MSABI (forces __attribute__((ms_abi))
+; on the ABI boundary and the callback pointers) -- the superproject's build-linux CI job
+; builds a dedicated copy that way. The same applies to the zimodem_on_* callbacks in this
+; file, which the library invokes with that same Windows convention.
 zimodem struct
 	handle						qword ?
 	data_dir					qword ?

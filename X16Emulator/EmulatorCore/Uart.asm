@@ -645,9 +645,9 @@ uart_lsr_write proc
 uart_lsr_write endp
 
 uart_msr_afterread proc
-;	movzx eax, byte ptr [rsi + rbx]
-	and r12b, 11110000b
-	mov byte ptr [rsi + rbx], r12b
+	movzx eax, byte ptr [rsi + rbx]
+	and al, 11110000b
+	mov byte ptr [rsi + rbx], al
 	ret
 uart_msr_afterread endp
 

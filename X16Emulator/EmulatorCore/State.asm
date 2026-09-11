@@ -244,6 +244,7 @@ state struct
 	interrupt_hit			dword ?
 
 	debug_sprites			dword ?
+	emable_wifi				dword ?
 
 	register_pc				word ?
 	stackpointer			word ?

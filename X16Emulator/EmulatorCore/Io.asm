@@ -316,9 +316,9 @@ io_registers_read:
 	io_r_9fe1 qword io_r_readmemory - io_registers_read
 	io_r_9fe2 qword uart_iir_afterread - io_registers_read
 	io_r_9fe3 qword io_r_readmemory - io_registers_read
-	io_r_9fe4 qword uart_msr_afterread - io_registers_read
+	io_r_9fe4 qword io_r_readmemory - io_registers_read
 	io_r_9fe5 qword io_r_readmemory - io_registers_read
-	io_r_9fe6 qword io_r_readmemory - io_registers_read
+	io_r_9fe6 qword uart_msr_afterread - io_registers_read
 	io_r_9fe7 qword io_r_readmemory - io_registers_read
 
 	io_r_9fe8 qword io_r_readmemory - io_registers_read

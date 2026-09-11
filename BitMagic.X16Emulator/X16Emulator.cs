@@ -745,6 +745,7 @@ public class Emulator : IDisposable
         public uint Interrupt_Hit = 0;
 
         public uint DebugSprites = 0;
+        public uint EnableWifi = 1; // State.asm: emable_wifi -- default on; set Emulator.EnableWifi = false before the first Emulate() to gate the UART/WiFi card off
 
         public ushort Pc = 0;
         public ushort StackPointer = 0x1fd; // apparently
@@ -971,6 +972,11 @@ public class Emulator : IDisposable
     public CpuState State => _state;
 
     public bool DebugMode { get; set; } // lets users of the enumlator know the application is in debug mode.
+
+    // Core.asm gates both uart_init and the per-tick UART service on state.emable_wifi == 1.
+    // Must be set before the first Emulate() call (uart_init runs on the initial_startup
+    // branch). With this off, any access to $9fe0-$9fe7 hits an uninitialised UART.
+    public bool EnableWifi { get => _state.EnableWifi != 0; set => _state.EnableWifi = value ? 1u : 0u; }
 
     public byte A { get => _state.A; set => _state.A = value; }
     public byte X { get => _state.X; set => _state.X = value; }

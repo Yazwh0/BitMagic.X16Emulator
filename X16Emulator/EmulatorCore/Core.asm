@@ -240,6 +240,9 @@ asm_func proc state_ptr:QWORD
     mov rax, [rdx].state.memory_ptr
     add rax, 9fe0h
     
+    cmp [rdx].state.emable_wifi, 1
+    jne clock_done
+
     call uart_init
 
     jmp clock_done
@@ -600,6 +603,9 @@ no_vera_audio:
 no_ym_audio:
 
 ; WIFI CARD
+    cmp [rdx].state.emable_wifi, 1
+    jne no_uart
+
     mov rax, [rdx].state.clock_uart
     cmp r14, rax
     jl no_uart

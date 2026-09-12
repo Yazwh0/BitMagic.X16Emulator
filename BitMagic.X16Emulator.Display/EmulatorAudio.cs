@@ -154,7 +154,9 @@ public unsafe class EmulatorAudio : IDisposable
             #endif
         }
 
+        #if SHOW_AUDIO_WARNINGS
         bool showDebug = false;
+        #endif
         if (_bufferRead + 0x100 > _bufferSize)
         {
             var toWrite = Math.Min(_bufferSize - _bufferRead, actLength);

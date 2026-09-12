@@ -1125,7 +1125,7 @@ public class Emulator : IDisposable
 
     public SdCard? SdCard { get; private set; }
 
-    public double WindowScale { get; private set; }
+    public double WindowScale { get; set; }
 
     public void LoadSdCard(SdCard sdCard)
     {

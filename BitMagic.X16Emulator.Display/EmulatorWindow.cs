@@ -275,7 +275,7 @@ public class EmulatorWindow : IDisposable
             return;
 
         //var input = _window.CreateInput();
-        _input.Mice[0].Cursor.CursorMode = CursorMode.Normal;
+        _input!.Mice[0].Cursor.CursorMode = CursorMode.Normal;
         _hasMouse = false;
         _mouseTimer?.Dispose();
     }
@@ -287,7 +287,7 @@ public class EmulatorWindow : IDisposable
             return;
 
         //var input = _window.CreateInput();
-        _input.Mice[0].Cursor.CursorMode = CursorMode.Raw;
+        _input!.Mice[0].Cursor.CursorMode = CursorMode.Raw;
         _hasMouse = true;
         _mouse = arg1;
         _mouseTimer = new Timer(CheckMouseMove, null, 20, 20);

@@ -17,8 +17,8 @@ static class Program
     private const string RomEnvironmentVariable = "BITMAGIC_ROM";
     private static bool RestartOnStop = false;
     private static readonly AutoResetEvent ContinueEvent = new AutoResetEvent(false);
-    private static Emulator Emulator;
-    private static CommandLineOptions Options;
+    private static Emulator Emulator = null!; // assigned in Main() before any use
+    private static CommandLineOptions Options = null!; // assigned in Main() before any use
 
     public class CommandLineOptions
     {
@@ -82,6 +82,9 @@ static class Program
 
         [Option("wifi", Required = false, HelpText = "Enable the wifi card at $9fe0.")]
         public bool Wifi { get; set; } = false;
+
+        [Option("scale", Required = false, HelpText = "Window scale, e.g. 2 for double size.")]
+        public double Scale { get; set; } = 1;
 
         //[Option('m', "autorun", Required = false, HelpText = "Automatically run at startup. Ignored if address is specified. NOT YET IMPLEMENTED")]
         public bool AutoRun { get; set; } = false;
@@ -302,6 +305,7 @@ static class Program
 
         emulator.Brk_Causes_Stop = false;
         emulator.EnableWifi = options.Wifi;
+        emulator.WindowScale = options.Scale;
 
         SdCard sdCard = string.IsNullOrEmpty(options.SdCardFileName) ? new SdCard(options.SdCardSize, new ConsoleLogger()) : new SdCard(options.SdCardFileName , new ConsoleLogger());
 
@@ -528,6 +532,9 @@ static class Program
 
         public static void DisplayMemory(int start, int length)
         {
+            if (Emulator == null)
+                return;
+
             Console.WriteLine();
             for (var i = start; i < start + length; i += 16)
             {

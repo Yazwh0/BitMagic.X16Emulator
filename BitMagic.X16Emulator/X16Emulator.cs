@@ -1349,8 +1349,13 @@ public class Emulator : IDisposable
             return;
         }
 
-        var zimodemLib = NativeLibrary.Load(
-            OperatingSystem.IsWindows() ? "zimodem_host.dll" : "libzimodem_host.so");
+        // A bare filename resolves via LoadLibrary's default search order on Windows, which
+        // includes the application directory -- but dlopen on Linux does not search there,
+        // only LD_LIBRARY_PATH / the ld.so cache / standard system dirs. Resolving to a full
+        // path next to the running assembly works identically on both platforms and doesn't
+        // require the caller to set LD_LIBRARY_PATH.
+        var zimodemLibName = OperatingSystem.IsWindows() ? "zimodem_host.dll" : "libzimodem_host.so";
+        var zimodemLib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, zimodemLibName));
 
         // The eight entry points the core calls through (zimodem.asm: `call [r13].zimodem.zimodem_host_*`)
         zimodemPtr->zimodem_host_create = Export("zimodem_host_create");

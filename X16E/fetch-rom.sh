@@ -2,23 +2,37 @@
 # Downloads the latest Commander X16 ROM image from the X16Community/x16-rom
 # GitHub releases page and installs rom.bin next to this script, or into the
 # directory passed as the first argument.
+#
+# Deliberately avoids the api.github.com REST API (its unauthenticated rate
+# limit is a low 60 requests/hour per IP, shared with anything else on that
+# IP -- easy to exhaust). Instead this resolves the latest release via the
+# plain github.com redirect and scrapes the release page's asset list, both
+# ordinary page loads that aren't subject to that quota.
 set -euo pipefail
 
 repo="X16Community/x16-rom"
 dest_dir="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 
-echo "Fetching latest ROM release info for $repo..."
-release_json=$(curl -fsSL -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$repo/releases/latest")
+echo "Resolving latest ROM release for $repo..."
+tag_url=$(curl -fsSL -o /dev/null -w '%{url_effective}' -L "https://github.com/$repo/releases/latest")
+tag="${tag_url##*/}"
 
-tag=$(printf '%s' "$release_json" | grep -o '"tag_name" *: *"[^"]*"' | head -n1 | sed -E 's/.*"([^"]+)"$/\1/')
-asset_url=$(printf '%s' "$release_json" | grep -o '"browser_download_url" *: *"[^"]*\.zip"' | head -n1 | sed -E 's/.*"(https[^"]+)"/\1/')
-
-if [ -z "$asset_url" ]; then
-    echo "Could not find a ROM .zip asset in the latest release of $repo." >&2
+if [ -z "$tag" ]; then
+    echo "Could not resolve the latest release tag for $repo." >&2
     exit 1
 fi
 
 echo "Latest ROM release: $tag"
+
+assets_html=$(curl -fsSL "https://github.com/$repo/releases/expanded_assets/$tag")
+asset_path=$(printf '%s' "$assets_html" | grep -o "href=\"/$repo/releases/download/[^\"]*\.zip\"" | head -n1 | sed -E 's/^href="(.*)"$/\1/')
+
+if [ -z "$asset_path" ]; then
+    echo "Could not find a ROM .zip asset in release $tag of $repo." >&2
+    exit 1
+fi
+
+asset_url="https://github.com$asset_path"
 echo "Downloading $asset_url"
 
 tmp_dir=$(mktemp -d)

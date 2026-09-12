@@ -413,6 +413,14 @@ public class EmulatorWindow : IDisposable
     {
         Console.WriteLine("OnClose");
         _closing = true;
+
+        // Program.cs blocks on EmulatorThread.Join() as soon as window.Run() returns, and
+        // that join only completes once the native loop sees Control.Stop and hands back
+        // control from Emulate(). Dispose() (below) also sets this, but Dispose() doesn't
+        // run until AFTER that join -- so without setting it here too, closing the window
+        // deadlocks the process instead of exiting.
+        if (_emulator != null)
+            _emulator.Control = Control.Stop;
     }
 
     public void Stop()

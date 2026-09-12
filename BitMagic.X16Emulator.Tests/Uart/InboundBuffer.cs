@@ -10,7 +10,7 @@ public class InboundBuffer
     public async Task Inbound_ByteArrives_IsReadableAndSetsDr()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         mock.EnqueueInbound(0x41);
@@ -33,7 +33,7 @@ public class InboundBuffer
     public async Task Inbound_Read_ClearsDrOnceDrained()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         mock.EnqueueInbound(0x41);
@@ -56,7 +56,7 @@ public class InboundBuffer
     public async Task Inbound_RdaInterrupt_FiresOnceEnabledAndClearsOnceDrained()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: no bytes exist yet, so it's safe for uart_tick to fire (and find
@@ -119,7 +119,7 @@ public class InboundBuffer
     public async Task Inbound_RdaInterrupt_VectorsToHandler()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // IRQ vector -> $0900. RomBank occupies the top of the address space, so $3ffe/
@@ -190,7 +190,7 @@ public class InboundBuffer
     public async Task Inbound_RdaInterrupt_AssertsImmediatelyWhenEnabledAfterDataAlreadyPresent()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // A byte arrives with IER still disabled. Trigger level defaults to 0 (FCR never
@@ -237,7 +237,7 @@ public class InboundBuffer
     public async Task Inbound_RdaInterrupt_AssertsImmediatelyWhenTriggerLoweredBelowCurrentCount()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: enable RDA and set a high trigger level (8) with nothing queued yet,
@@ -309,7 +309,7 @@ public class InboundBuffer
     public async Task Fcr_TriggerSatisfiedWhileInterruptsDisabled_SetsIirButNotInterruptHit()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: IER RDA is never enabled anywhere in this test. Set a high trigger
@@ -371,7 +371,7 @@ public class InboundBuffer
     public async Task Fcr_TriggerRaisedAboveCurrentCount_ClearsIirAndInterruptHit()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: enable RDA and set a low trigger level (1) with nothing queued yet,
@@ -451,7 +451,7 @@ public class InboundBuffer
     public async Task Fcr_ClearReceiverFifoBit_ResetsInboundFifo()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: enable RDA and queue 3 bytes -- comfortably over the default trigger

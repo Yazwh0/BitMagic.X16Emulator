@@ -60,7 +60,7 @@ public class OutboundBuffer
     public async Task Outbound_Overrun_ExtraByteNeverReachesModemEvenAfterDraining()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Fill the FIFO exactly (16 bytes: 0x00-0x0F), then write a 17th (0x10) that
@@ -127,7 +127,7 @@ public class OutboundBuffer
     public async Task Outbound_Drain_SendsQueuedByteToModem()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: nothing queued yet, so it's harmless for the free first tick (clock_uart
@@ -169,7 +169,7 @@ public class OutboundBuffer
     public async Task Outbound_Drain_SendsMultipleBytesInOrder()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: same reasoning as the single-byte test above -- let the free tick spend
@@ -222,7 +222,7 @@ public class OutboundBuffer
     public async Task Outbound_ThreInterrupt_ClearsWhenByteQueuedAndReassertsOnceDrained()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: enable THRE with nothing ever queued -- the outbound FIFO starts
@@ -295,7 +295,7 @@ public class OutboundBuffer
         // interrupt_thre_enabled check instead of ahead of it, so the IIR assertion below
         // is expected to FAIL until that ordering is fixed.
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: spend the free first tick before anything is queued -- same reasoning
@@ -336,7 +336,7 @@ public class OutboundBuffer
     public async Task Outbound_ThreInterrupt_VectorsToHandler()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
 
         // IRQ vector -> $0900, same technique as Inbound_RdaInterrupt_VectorsToHandler.
         emulator.RomBank[0x3ffe] = 0x00;
@@ -476,7 +476,7 @@ public class OutboundBuffer
     public async Task Fcr_ClearTransmitterFifoBit_ResetsOutboundFifoAndAssertsThre()
     {
         var mock = new MockZiModemHost();
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = mock.Exports });
+        var emulator = X16TestHelper.NewEmulator(mock.Exports);
         emulator.Uart.FifoEnabled = true; // FCR bit 0 -- required for FIFO reads/writes
 
         // Stage 1: enable THRE, then queue two bytes without forcing fast ticks -- the

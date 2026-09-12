@@ -26,8 +26,16 @@ public static class X16TestHelper
     /// having to opt in individually.
     /// </summary>
     public static Emulator NewEmulator()
+        => NewEmulator(new MockZiModemHost().Exports);
+
+    /// <summary>
+    /// Same as <see cref="NewEmulator()"/> (including EnableWifi), but for tests that need
+    /// their own inspectable MockZiModemHost instance (e.g. to assert on SentBytes or feed
+    /// inbound bytes) rather than the throwaway one NewEmulator() builds internally.
+    /// </summary>
+    public static Emulator NewEmulator(ZiModemHostFunctions ziModemHostOverride)
     {
-        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = new MockZiModemHost().Exports });
+        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = ziModemHostOverride });
         emulator.EnableWifi = true;
         return emulator;
     }

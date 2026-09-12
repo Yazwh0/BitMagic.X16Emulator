@@ -19,18 +19,17 @@ if [ "$(uname -s)" != "Linux" ]; then
 fi
 
 # --- .NET runtime ---
-# X16E targets net6.0 but is framework-dependent, and .NET's default roll-forward
-# policy runs a net6.0 app on any later installed major too (not just 6.x) -- which
-# matters since .NET 6 itself is EOL and many machines will only have a newer one.
-# So this checks for "highest installed Microsoft.NETCore.App >= 6.0", not an exact 6.x match.
+# X16E targets net10.0 but is framework-dependent, and .NET's default roll-forward
+# policy runs it on any later installed major too (not just 10.x) -- so this checks
+# for "highest installed Microsoft.NETCore.App >= 10.0", not an exact 10.x match.
 echo
 echo ".NET runtime:"
 if command -v dotnet >/dev/null 2>&1; then
     highest=$(dotnet --list-runtimes 2>/dev/null | awk '/^Microsoft\.NETCore\.App /{print $2}' | sort -V | tail -n1)
-    if [ -n "$highest" ] && [ "$(printf '%s\n6.0.0\n' "$highest" | sort -V | head -n1)" = "6.0.0" ]; then
-        ok ".NET runtime found ($highest -- roll-forward will use this for this net6.0 app)"
+    if [ -n "$highest" ] && [ "$(printf '%s\n10.0.0\n' "$highest" | sort -V | head -n1)" = "10.0.0" ]; then
+        ok ".NET runtime found ($highest -- roll-forward will use this for this net10.0 app)"
     else
-        bad "no Microsoft.NETCore.App runtime >= 6.0 found" \
+        bad "no Microsoft.NETCore.App runtime >= 10.0 found" \
             "install: https://learn.microsoft.com/dotnet/core/install/linux"
     fi
 else

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -63,7 +63,7 @@
     <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Fat\BitMagic.DiscUtils.Fat.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(Configuration)' != 'Release' ">
+  <ItemGroup Condition=" '$(Configuration)' != 'Release' and '$(SkipNativeProjectReferences)' != 'true' ">
     <ProjectReference Include="..\X16Emulator\EmulatorCore\EmulatorCore.vcxproj" />
     <!-- Build-order only: runs the ZiModem CMake/Ninja build so the zimodem_host.dll picked up
          by the <Content> item above exists. Not linked, not copied (Content handles the copy).

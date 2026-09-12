@@ -1,4 +1,4 @@
-﻿using BigMagic_Emulator;
+﻿using BitMagic_Emulator;
 
 Console.WriteLine("BitMagic - 65c02 Emulator");
 

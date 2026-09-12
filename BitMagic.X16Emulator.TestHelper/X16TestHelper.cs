@@ -19,9 +19,18 @@ public static class X16TestHelper
     /// specifically need to exercise real ZiModem/firmware behaviour are out of scope for
     /// this helper and should construct their own Emulator directly. The mock is kept
     /// alive for exactly as long as the Emulator is, via ZiModemHostFunctions.KeepAlive.
+    ///
+    /// EnableWifi defaults to off (Emulator.EnableWifi), so the UART/wifi card registers
+    /// are absent unless explicitly enabled; set here (before the first Emulate() call,
+    /// as required) so the Uart/* tests keep exercising the card without every test
+    /// having to opt in individually.
     /// </summary>
     public static Emulator NewEmulator()
-        => new(new EmulatorOptions { ZiModemHostOverride = new MockZiModemHost().Exports });
+    {
+        var emulator = new Emulator(new EmulatorOptions { ZiModemHostOverride = new MockZiModemHost().Exports });
+        emulator.EnableWifi = true;
+        return emulator;
+    }
 
     public static async Task<Emulator> EmulateTemplate(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode)
         => (await EmulateTemplateChanges(code, emulator, dontChangeEmulatorOptions, expectedResult)).Emulator;

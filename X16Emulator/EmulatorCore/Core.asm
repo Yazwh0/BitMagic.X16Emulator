@@ -196,7 +196,7 @@ public asm_func
 
 
 asm_func proc state_ptr:QWORD
-    mov rdx, rsi						; move state to rdx
+    mov rdx, rcx						; move state to rdx (x64 ABI: 1st arg arrives in rcx, not rsi)
 
     store_registers
 

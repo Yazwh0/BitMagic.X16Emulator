@@ -745,7 +745,7 @@ public class Emulator : IDisposable
         public uint Interrupt_Hit = 0;
 
         public uint DebugSprites = 0;
-        public uint EnableWifi = 0; // State.asm: emable_wifi -- default on; set Emulator.EnableWifi = false before the first Emulate() to gate the UART/WiFi card off
+        public uint EnableWifi = 0; // State.asm: emable_wifi -- default off; set Emulator.EnableWifi = true before the first Emulate() to enable the UART/WiFi card
 
         public ushort Pc = 0;
         public ushort StackPointer = 0x1fd; // apparently

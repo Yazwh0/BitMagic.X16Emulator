@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BigMagic_Emulator
+namespace BitMagic_Emulator
 {
     public enum EmulatorReturn
     {

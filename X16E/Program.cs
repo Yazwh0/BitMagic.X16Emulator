@@ -80,6 +80,9 @@ static class Program
         [Option("dump-folder", Required = false, HelpText = "Folder to write dump files (Menu + Left Ctrl + S) to.")]
         public string DumpFolder { get; set; } = "";
 
+        [Option("wifi", Required = false, HelpText = "Enable the wifi card at $9fe0.")]
+        public bool Wifi { get; set; } = false;
+
         //[Option('m', "autorun", Required = false, HelpText = "Automatically run at startup. Ignored if address is specified. NOT YET IMPLEMENTED")]
         public bool AutoRun { get; set; } = false;
     }
@@ -298,6 +301,7 @@ static class Program
             emulator.FrameControl = FrameControl.Synced;
 
         emulator.Brk_Causes_Stop = false;
+        emulator.EnableWifi = options.Wifi;
 
         SdCard sdCard = string.IsNullOrEmpty(options.SdCardFileName) ? new SdCard(options.SdCardSize, new ConsoleLogger()) : new SdCard(options.SdCardFileName , new ConsoleLogger());
 

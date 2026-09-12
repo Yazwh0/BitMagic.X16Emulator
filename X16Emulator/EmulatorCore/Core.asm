@@ -237,6 +237,8 @@ asm_func proc state_ptr:QWORD
     
     mov [rdx].state.base_ticks, rax
     
+    call io_init
+
     ; wifi card enable, set at 0x9fe0
     cmp [rdx].state.emable_wifi, 1
     jne card_init_complete
@@ -246,7 +248,7 @@ asm_func proc state_ptr:QWORD
 
     ; io init should be called once all the 'cards' have been inited, so the io jump table is correct
 card_init_complete:
-    call io_init
+    call io_finalise
 
     jmp clock_done
 

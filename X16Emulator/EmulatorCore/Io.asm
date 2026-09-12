@@ -81,7 +81,55 @@ uart_read_00 proc
 	ret
 uart_read_00 endp
 
+; copy the default io data to the io region
 io_init proc
+
+	push rax
+	push rbx
+	push rcx
+	push r8
+
+	lea rbx, io_registers_read_source
+	lea r8, io_registers_read
+	mov rcx, 0
+loop_read:
+	mov rax, [rbx + rcx * 8]
+	mov [r8 + rcx * 8], rax
+	inc rcx
+	cmp rcx, 0100h
+	jne loop_read
+
+	lea rbx, io_registers_readwrite_source
+	lea r8, io_registers_readwrite
+	mov rcx, 0
+loop_readwrite:
+	mov rax, [rbx + rcx * 8]
+	mov [r8 + rcx * 8], rax
+	inc rcx
+	cmp rcx, 0100h
+	jne loop_readwrite
+
+	lea rbx, io_registers_write_source
+	lea r8, io_registers_write
+	mov rcx, 0
+loop_write:
+	mov rax, [rbx + rcx * 8]
+	mov [r8 + rcx * 8], rax
+	inc rcx
+	cmp rcx, 0100h
+	jne loop_write
+
+	pop r8
+	pop rcx
+	pop rbx
+	pop rax
+
+	ret
+
+io_init endp
+
+; update the io table to make it relative. call once all cards have initialised.
+io_finalise proc
 
 	push rax
 	push rbx
@@ -122,11 +170,18 @@ loop_write:
 	pop rax
 
 	ret
-
-io_init endp
+io_finalise endp
 
 .data
 io_registers_read:
+qword 100h dup (?)
+io_registers_readwrite:
+qword 100h dup (?)
+io_registers_write:
+qword 100h dup (?)
+
+.code
+io_registers_read_source:
 	io_r_9f00 qword io_r_readmemory
 	io_r_9f01 qword io_r_readmemory
 	io_r_9f02 qword io_r_readmemory
@@ -394,7 +449,7 @@ io_registers_read:
 
 
 
-io_registers_readwrite:
+io_registers_readwrite_source:
 	io_rw_9f00 qword via_prb
 	io_rw_9f01 qword via_pra
 	io_rw_9f02 qword io_rw_readmemory
@@ -661,7 +716,7 @@ io_registers_readwrite:
 	io_rw_9ffe qword io_cantwrite 
 	io_rw_9fff qword io_cantwrite 
 
-io_registers_write:
+io_registers_write_source:
 	; VIA1
 	io_w_9f00 qword via_prb 
 	io_w_9f01 qword via_pra 

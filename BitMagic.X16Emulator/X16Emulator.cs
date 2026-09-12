@@ -1471,6 +1471,11 @@ public class Emulator : IDisposable
         SetPointers();
     }
 
+    public unsafe void Reset()
+    {
+        _state.InitialStartup = 1;
+    }
+
     public unsafe void SetOptions(EmulatorOptions options)
     {
         var oldOptions = Options;

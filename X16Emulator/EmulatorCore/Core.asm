@@ -234,16 +234,19 @@ asm_func proc state_ptr:QWORD
     mov ebx, [rdx].state.initial_startup
     test ebx, ebx
     jz set_adjustment
-
+    
     mov [rdx].state.base_ticks, rax
     
-    mov rax, [rdx].state.memory_ptr
-    add rax, 9fe0h
-    
+    ; wifi card enable, set at 0x9fe0
     cmp [rdx].state.emable_wifi, 1
-    jne clock_done
+    jne card_init_complete
 
+    mov rax, 9fe0h
     call uart_init
+
+    ; io init should be called once all the 'cards' have been inited, so the io jump table is correct
+card_init_complete:
+    call io_init
 
     jmp clock_done
 

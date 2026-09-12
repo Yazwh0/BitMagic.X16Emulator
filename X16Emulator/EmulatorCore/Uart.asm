@@ -98,12 +98,63 @@ set_value:
 	pop rcx
 endm
 
+; initialises the uart.
+; in: rax, address of the card in x16, eg 0x9fe0.
+;     rdx, pointer to state 
 uart_init proc
 
 	push rdx
-	mov rbx, rdx
 
+	; set io range
+	mov rcx, rax
+	and rcx, 0ffh ; need io range address
+	shl rcx, 3
+	mov rbx, 0
+
+	lea r8, io_read
+	lea r9, io_registers_read
+	add r9, rcx						; add on output offset
+copy_read_loop:
+	mov rcx, [r8 + rbx * 8]
+	mov [r9 + rbx * 8], rcx
+	inc rbx
+	cmp rbx, 8
+	jne copy_read_loop
+
+	mov rcx, rax
+	and rcx, 0ffh ; need io range address
+	shl rcx, 3
+	mov rbx, 0
+
+	lea r8, io_readwrite
+	lea r9, io_registers_readwrite
+	add r9, rcx						; add on output offset
+copy_readwrite_loop:
+	mov rcx, [r8 + rbx * 8]
+	mov [r9 + rbx * 8], rcx
+	inc rbx
+	cmp rbx, 8
+	jne copy_readwrite_loop
+
+	mov rcx, rax
+	and rcx, 0ffh ; need io range address
+	shl rcx, 3
+	mov rbx, 0
+
+	lea r8, io_write
+	lea r9, io_registers_write
+	add r9, rcx						; add on output offset
+copy_write_loop:
+	mov rcx, [r8 + rbx * 8]
+	mov [r9 + rbx * 8], rcx
+	inc rbx
+	cmp rbx, 8
+	jne copy_write_loop
+
+	mov rbx, rdx
 	mov rdx, [rdx].state.uart
+
+    add rax, [rbx].state.memory_ptr
 
 	mov [rdx].uart.cpu_state, rbx
 	mov [rdx].uart.io_start, rax	; address of 0x9fe0
@@ -120,7 +171,6 @@ uart_init proc
 	mov [rdx].uart.read_index_outbound, 0
 	mov [rdx].uart.write_index_outbound, 0
 
-
 	mov rdx, [rdx].uart.zimodem
 	call zimodem_init
 
@@ -128,6 +178,36 @@ uart_init proc
 	ret
 
 uart_init endp
+
+io_read:
+	wifi_r_9fe0 qword uart_read_00
+	wifi_r_9fe1 qword io_r_readmemory
+	wifi_r_9fe2 qword uart_iir_afterread
+	wifi_r_9fe3 qword io_r_readmemory
+	wifi_r_9fe4 qword io_r_readmemory
+	wifi_r_9fe5 qword io_r_readmemory
+	wifi_r_9fe6 qword uart_msr_afterread
+	wifi_r_9fe7 qword io_r_readmemory
+
+io_readwrite:
+	wifi_rw_9fe0 qword uart_write_00
+	wifi_rw_9fe1 qword uart_dlm_ier_write ; todo: make this RW work properly
+	wifi_rw_9fe2 qword uart_fcr_write
+	wifi_rw_9fe3 qword uart_lcr_write
+	wifi_rw_9fe4 qword uart_mcr_write
+	wifi_rw_9fe5 qword uart_lsr_write
+	wifi_rw_9fe6 qword uart_msr_write
+	wifi_rw_9fe7 qword io_rw_readmemory
+
+io_write:
+	wifi_w_9fe0 qword uart_write_00 
+	wifi_w_9fe1 qword uart_dlm_ier_write 
+	wifi_w_9fe2 qword uart_fcr_write 
+	wifi_w_9fe3 qword uart_lcr_write 
+	wifi_w_9fe4 qword uart_mcr_write 
+	wifi_w_9fe5 qword uart_lsr_write 
+	wifi_w_9fe6 qword uart_msr_write 
+	wifi_w_9fe7 qword io_w_unsupported 
 
 ; ticks at the baud rate of the modem
 ; pull one byte from zimodem if available
@@ -605,36 +685,10 @@ uart_lcr_write proc
 uart_lcr_write endp
 
 uart_mcr_write proc
-
 	movzx eax, byte ptr [rsi + rbx]
 	and al, 11111011b
 	mov byte ptr [rsi + rbx], al
-;	and al, 00111111b
 
-
-;	push rdx
-;	mov rdx, [rdx].state.uart
-;	mov byte ptr [rsi + rbx], al
-;	test al, al
-;	jnz latch_set
-
-;	mov eax, [rdx].uart.receive_byte
-;	push rbx
-;	mov rbx, [rdx].uart.io_start
-;	mov byte ptr [rbx + UART_Buffer], al
-
-;	mov eax, [rdx].uart.interrupt_enabled
-;	mov byte ptr [rbx + UART_IER], al
-;	pop rbx
-
-;	pop rdx
-;	ret
-
-;latch_set:
-;	mov eax, [rdx].uart.divisor
-;	mov rbx, [rdx].uart.io_start
-;	mov word ptr [rbx + UART_Divisor_L], ax
-;	pop rdx
 	ret
 uart_mcr_write endp
 

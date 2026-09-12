@@ -846,6 +846,8 @@ exit_loop:
     ret
 
 not_supported:
+    pop rdx             ; undo the "push rdx" before the LAHF/AVX/XGETBV checks
+    restore_registers   ; undo store_registers, matching the normal exit path below
     mov rax, EXIT_NOTSUPPORTED
     ret
 

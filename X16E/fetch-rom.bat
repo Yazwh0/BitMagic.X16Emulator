@@ -2,10 +2,15 @@
 rem Downloads the latest Commander X16 ROM image from the X16Community/x16-rom
 rem GitHub releases page and installs rom.bin next to this script, or into the
 rem directory passed as the first argument.
+rem
+rem Deliberately avoids the api.github.com REST API (its unauthenticated rate
+rem limit is a low 60 requests/hour per IP, shared with anything else on that
+rem IP -- easy to exhaust). Instead this resolves the latest release via the
+rem plain github.com redirect and scrapes the release page's asset list, both
+rem ordinary page loads that aren't subject to that quota.
 setlocal EnableDelayedExpansion
 
 set "REPO=X16Community/x16-rom"
-set Q="
 
 if "%~1"=="" (
     set "DEST_DIR=%~dp0"
@@ -27,33 +32,61 @@ if errorlevel 1 (
 set "TMP_DIR=%TEMP%\fetch-rom-%RANDOM%%RANDOM%"
 mkdir "%TMP_DIR%" >nul 2>&1
 
-echo Fetching latest ROM release info for %REPO%...
-curl -fsSL -H "Accept: application/vnd.github+json" "https://api.github.com/repos/%REPO%/releases/latest" -o "%TMP_DIR%\release.json"
-if errorlevel 1 (
-    echo Failed to query the GitHub API for %REPO%. 1>&2
+echo Resolving latest ROM release for %REPO%...
+for /f "usebackq delims=" %%A in (`curl -fsSL -o nul -w "%%{url_effective}" -L "https://github.com/%REPO%/releases/latest"`) do set "TAG_URL=%%A"
+
+if not defined TAG_URL (
+    echo Failed to resolve the latest release for %REPO%. 1>&2
     goto :fail
 )
 
-set "TAG="
-for /f "usebackq delims=" %%A in ("%TMP_DIR%\release.json") do (
-    set "LINE=%%A"
-    echo !LINE! | findstr /c:"\"tag_name\"" >nul
-    if !errorlevel! equ 0 if not defined TAG call :extract TAG "!LINE!"
-)
+set "TAG=!TAG_URL:*/tag/=!"
 
-set "ASSET_URL="
-for /f "usebackq delims=" %%A in ("%TMP_DIR%\release.json") do (
-    set "LINE=%%A"
-    echo !LINE! | findstr /r /c:"\"browser_download_url\".*\.zip" >nul
-    if !errorlevel! equ 0 if not defined ASSET_URL call :extract ASSET_URL "!LINE!"
-)
-
-if not defined ASSET_URL (
-    echo Could not find a ROM .zip asset in the latest release of %REPO%. 1>&2
+if not defined TAG (
+    echo Could not parse a release tag from !TAG_URL! 1>&2
     goto :fail
 )
 
 echo Latest ROM release: !TAG!
+
+curl -fsSL -o "%TMP_DIR%\assets.html" "https://github.com/%REPO%/releases/expanded_assets/!TAG!"
+if errorlevel 1 (
+    echo Failed to fetch the asset list for release !TAG! of %REPO%. 1>&2
+    goto :fail
+)
+
+set "ASSET_LINE="
+for /f "usebackq delims=" %%A in (`findstr /r /c:"releases/download/!TAG!/.*\.zip" "%TMP_DIR%\assets.html"`) do (
+    if not defined ASSET_LINE set "ASSET_LINE=%%A"
+)
+
+if not defined ASSET_LINE (
+    echo Could not find a ROM .zip asset in release !TAG! of %REPO%. 1>&2
+    goto :fail
+)
+
+rem Strip everything up to and including "releases/download/<tag>/", leaving
+rem the filename followed by the closing quote and any other HTML attributes.
+set "STEP1=!ASSET_LINE:*releases/download/%TAG%/=!"
+rem Everything from (and including) the first ".zip" onward.
+set "AFTER=!STEP1:*.zip=!"
+
+rem Both strings may contain literal quote characters, which breaks quoted
+rem CALL arguments -- hand them to :strlen via a plain global instead.
+set "_S=!STEP1!"
+call :strlen LEN1
+set "_S=!AFTER!"
+call :strlen LEN2
+
+set /a FNLEN=LEN1-LEN2
+for /f %%N in ("!FNLEN!") do set "ASSET_NAME=!STEP1:~0,%%N!"
+
+if not defined ASSET_NAME (
+    echo Could not determine the ROM asset filename for release !TAG! of %REPO%. 1>&2
+    goto :fail
+)
+
+set "ASSET_URL=https://github.com/%REPO%/releases/download/!TAG!/!ASSET_NAME!"
 echo Downloading !ASSET_URL!
 
 curl -fsSL -o "%TMP_DIR%\rom.zip" "!ASSET_URL!"
@@ -91,14 +124,19 @@ exit /b 1
 if exist "%TMP_DIR%" rd /s /q "%TMP_DIR%"
 goto :eof
 
-:extract
-rem %1 = output variable name, %2 = the JSON line (quoted)
+:strlen
+rem Reads the string to measure from the global %_S%, returns the length in
+rem the variable named by %1. Deliberately doesn't take the string itself as
+rem a parameter -- it may contain quote characters, which corrupts quoted
+rem CALL arguments.
 setlocal EnableDelayedExpansion
-set "L=%~2"
-for /f "tokens=1,* delims=:" %%X in ("!L!") do set "L=%%Y"
-for /f "tokens=* delims= " %%X in ("!L!") do set "L=%%X"
-set "L=!L:~1!"
-if "!L:~-1!"=="," set "L=!L:~0,-1!"
-if "!L:~-1!"=="!Q!" set "L=!L:~0,-1!"
-endlocal & set "%~1=%L%"
+set "s=!_S!"
+set "len=0"
+for %%P in (4096 2048 1024 512 256 128 64 32 16 8 4 2 1) do (
+    if not "!s:~%%P,1!"=="" (
+        set /a "len+=%%P"
+        set "s=!s:~%%P!"
+    )
+)
+endlocal & set "%~1=%len%"
 goto :eof

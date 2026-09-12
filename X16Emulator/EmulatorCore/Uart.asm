@@ -106,6 +106,11 @@ uart_init proc
 	push rdx
 
 	; set io range
+	; Each copy below applies the same "source_base - live_base" correction io_init uses
+	; (see the comment there): io_read/io_readwrite/io_write hold link-time-constant
+	; deltas relative to their own position, so the correction turns them into deltas
+	; relative to the live table being patched -- no absolute address involved anywhere,
+	; so this is correct regardless of where this module ends up loaded.
 	mov rcx, rax
 	and rcx, 0ffh ; need io range address
 	shl rcx, 3
@@ -113,9 +118,12 @@ uart_init proc
 
 	lea r8, io_read
 	lea r9, io_registers_read
+	mov r10, r8
+	sub r10, r9							; r10 = source_base - live_base
 	add r9, rcx						; add on output offset
 copy_read_loop:
 	mov rcx, [r8 + rbx * 8]
+	add rcx, r10
 	mov [r9 + rbx * 8], rcx
 	inc rbx
 	cmp rbx, 8
@@ -128,9 +136,12 @@ copy_read_loop:
 
 	lea r8, io_readwrite
 	lea r9, io_registers_readwrite
+	mov r10, r8
+	sub r10, r9
 	add r9, rcx						; add on output offset
 copy_readwrite_loop:
 	mov rcx, [r8 + rbx * 8]
+	add rcx, r10
 	mov [r9 + rbx * 8], rcx
 	inc rbx
 	cmp rbx, 8
@@ -143,9 +154,12 @@ copy_readwrite_loop:
 
 	lea r8, io_write
 	lea r9, io_registers_write
+	mov r10, r8
+	sub r10, r9
 	add r9, rcx						; add on output offset
 copy_write_loop:
 	mov rcx, [r8 + rbx * 8]
+	add rcx, r10
 	mov [r9 + rbx * 8], rcx
 	inc rbx
 	cmp rbx, 8
@@ -180,34 +194,34 @@ copy_write_loop:
 uart_init endp
 
 io_read:
-	wifi_r_9fe0 qword uart_read_00
-	wifi_r_9fe1 qword io_r_readmemory
-	wifi_r_9fe2 qword uart_iir_afterread
-	wifi_r_9fe3 qword io_r_readmemory
-	wifi_r_9fe4 qword io_r_readmemory
-	wifi_r_9fe5 qword io_r_readmemory
-	wifi_r_9fe6 qword uart_msr_afterread
-	wifi_r_9fe7 qword io_r_readmemory
+	wifi_r_9fe0 qword uart_read_00 - io_read
+	wifi_r_9fe1 qword io_r_readmemory - io_read
+	wifi_r_9fe2 qword uart_iir_afterread - io_read
+	wifi_r_9fe3 qword io_r_readmemory - io_read
+	wifi_r_9fe4 qword io_r_readmemory - io_read
+	wifi_r_9fe5 qword io_r_readmemory - io_read
+	wifi_r_9fe6 qword uart_msr_afterread - io_read
+	wifi_r_9fe7 qword io_r_readmemory - io_read
 
 io_readwrite:
-	wifi_rw_9fe0 qword uart_write_00
-	wifi_rw_9fe1 qword uart_dlm_ier_write ; todo: make this RW work properly
-	wifi_rw_9fe2 qword uart_fcr_write
-	wifi_rw_9fe3 qword uart_lcr_write
-	wifi_rw_9fe4 qword uart_mcr_write
-	wifi_rw_9fe5 qword uart_lsr_write
-	wifi_rw_9fe6 qword uart_msr_write
-	wifi_rw_9fe7 qword io_rw_readmemory
+	wifi_rw_9fe0 qword uart_write_00 - io_readwrite
+	wifi_rw_9fe1 qword uart_dlm_ier_write - io_readwrite ; todo: make this RW work properly
+	wifi_rw_9fe2 qword uart_fcr_write - io_readwrite
+	wifi_rw_9fe3 qword uart_lcr_write - io_readwrite
+	wifi_rw_9fe4 qword uart_mcr_write - io_readwrite
+	wifi_rw_9fe5 qword uart_lsr_write - io_readwrite
+	wifi_rw_9fe6 qword uart_msr_write - io_readwrite
+	wifi_rw_9fe7 qword io_rw_readmemory - io_readwrite
 
 io_write:
-	wifi_w_9fe0 qword uart_write_00 
-	wifi_w_9fe1 qword uart_dlm_ier_write 
-	wifi_w_9fe2 qword uart_fcr_write 
-	wifi_w_9fe3 qword uart_lcr_write 
-	wifi_w_9fe4 qword uart_mcr_write 
-	wifi_w_9fe5 qword uart_lsr_write 
-	wifi_w_9fe6 qword uart_msr_write 
-	wifi_w_9fe7 qword io_w_unsupported 
+	wifi_w_9fe0 qword uart_write_00 - io_write 
+	wifi_w_9fe1 qword uart_dlm_ier_write - io_write 
+	wifi_w_9fe2 qword uart_fcr_write - io_write 
+	wifi_w_9fe3 qword uart_lcr_write - io_write 
+	wifi_w_9fe4 qword uart_mcr_write - io_write 
+	wifi_w_9fe5 qword uart_lsr_write - io_write 
+	wifi_w_9fe6 qword uart_msr_write - io_write 
+	wifi_w_9fe7 qword io_w_unsupported - io_write 
 
 ; ticks at the baud rate of the modem
 ; pull one byte from zimodem if available

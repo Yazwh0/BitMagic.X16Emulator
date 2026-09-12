@@ -81,19 +81,41 @@ uart_read_00 proc
 	ret
 uart_read_00 endp
 
-; copy the default io data to the io region
+; Copy the default io data into the live (writable) io region, converting each entry
+; from "handler - source_table" to "handler - live_table" as it's copied.
+;
+; The *_source tables hold link-time-constant deltas relative to their own (immutable,
+; .code-resident) position -- see the entries below, e.g. "io_r_readmemory -
+; io_registers_read_source". That's a same-segment subtraction the assembler folds to a
+; constant with no relocation involved at all, so it's correct on any platform/load
+; address without any loader help.
+;
+; live_base and source_base are both obtained via lea (rip-relative), so they're also
+; always correct regardless of where this module ends up loaded. Per table, the
+; correction (source_base - live_base) is the same for all 256 entries, so it's computed
+; once and just added on as we copy:
+;   entry_for_live = (handler - source_base) + (source_base - live_base) = handler - live_base
+; which is exactly the "table_base + entry" shape io_afterread/io_afterwrite/
+; io_afterreadwrite already expect. There is no absolute address anywhere in this
+; computation, so unlike the old copy-then-finalise design, this doesn't depend on the
+; loader having fixed up anything -- it was the finalise step's "sub rax, rbx" against an
+; unrelocated copied value that broke on Linux, where no such fixup is ever applied.
 io_init proc
 
 	push rax
 	push rbx
 	push rcx
 	push r8
+	push r9
 
 	lea rbx, io_registers_read_source
 	lea r8, io_registers_read
+	mov r9, rbx
+	sub r9, r8							; r9 = source_base - live_base
 	mov rcx, 0
 loop_read:
 	mov rax, [rbx + rcx * 8]
+	add rax, r9
 	mov [r8 + rcx * 8], rax
 	inc rcx
 	cmp rcx, 0100h
@@ -101,9 +123,12 @@ loop_read:
 
 	lea rbx, io_registers_readwrite_source
 	lea r8, io_registers_readwrite
+	mov r9, rbx
+	sub r9, r8
 	mov rcx, 0
 loop_readwrite:
 	mov rax, [rbx + rcx * 8]
+	add rax, r9
 	mov [r8 + rcx * 8], rax
 	inc rcx
 	cmp rcx, 0100h
@@ -111,14 +136,18 @@ loop_readwrite:
 
 	lea rbx, io_registers_write_source
 	lea r8, io_registers_write
+	mov r9, rbx
+	sub r9, r8
 	mov rcx, 0
 loop_write:
 	mov rax, [rbx + rcx * 8]
+	add rax, r9
 	mov [r8 + rcx * 8], rax
 	inc rcx
 	cmp rcx, 0100h
 	jne loop_write
 
+	pop r9
 	pop r8
 	pop rcx
 	pop rbx
@@ -127,50 +156,6 @@ loop_write:
 	ret
 
 io_init endp
-
-; update the io table to make it relative. call once all cards have initialised.
-io_finalise proc
-
-	push rax
-	push rbx
-	push rcx
-
-	lea rbx, io_registers_read
-	mov rcx, 0
-loop_read:
-	mov rax, [rbx + rcx * 8]
-	sub rax, rbx
-	mov [rbx + rcx * 8], rax
-	inc rcx
-	cmp rcx, 0100h
-	jne loop_read
-
-	lea rbx, io_registers_readwrite
-	mov rcx, 0
-loop_readwrite:
-	mov rax, [rbx + rcx * 8]
-	sub rax, rbx
-	mov [rbx + rcx * 8], rax
-	inc rcx
-	cmp rcx, 0100h
-	jne loop_readwrite
-
-	lea rbx, io_registers_write
-	mov rcx, 0
-loop_write:
-	mov rax, [rbx + rcx * 8]
-	sub rax, rbx
-	mov [rbx + rcx * 8], rax
-	inc rcx
-	cmp rcx, 0100h
-	jne loop_write
-
-	pop rcx
-	pop rbx
-	pop rax
-
-	ret
-io_finalise endp
 
 .data
 io_registers_read:
@@ -182,804 +167,804 @@ qword 100h dup (?)
 
 .code
 io_registers_read_source:
-	io_r_9f00 qword io_r_readmemory
-	io_r_9f01 qword io_r_readmemory
-	io_r_9f02 qword io_r_readmemory
-	io_r_9f03 qword io_r_readmemory
-	io_r_9f04 qword via_timer1_counter_l_read
-	io_r_9f05 qword io_r_readmemory
-	io_r_9f06 qword io_r_readmemory
-	io_r_9f07 qword io_r_readmemory
-	io_r_9f08 qword io_r_readmemory
-	io_r_9f09 qword io_r_readmemory
-	io_r_9f0a qword io_r_readmemory
-	io_r_9f0b qword io_r_readmemory
-	io_r_9f0c qword io_r_readmemory
-	io_r_9f0d qword io_r_readmemory
-	io_r_9f0e qword io_r_readmemory
-	io_r_9f0f qword io_r_readmemory
+	io_r_9f00 qword io_r_readmemory - io_registers_read_source
+	io_r_9f01 qword io_r_readmemory - io_registers_read_source
+	io_r_9f02 qword io_r_readmemory - io_registers_read_source
+	io_r_9f03 qword io_r_readmemory - io_registers_read_source
+	io_r_9f04 qword via_timer1_counter_l_read - io_registers_read_source
+	io_r_9f05 qword io_r_readmemory - io_registers_read_source
+	io_r_9f06 qword io_r_readmemory - io_registers_read_source
+	io_r_9f07 qword io_r_readmemory - io_registers_read_source
+	io_r_9f08 qword io_r_readmemory - io_registers_read_source
+	io_r_9f09 qword io_r_readmemory - io_registers_read_source
+	io_r_9f0a qword io_r_readmemory - io_registers_read_source
+	io_r_9f0b qword io_r_readmemory - io_registers_read_source
+	io_r_9f0c qword io_r_readmemory - io_registers_read_source
+	io_r_9f0d qword io_r_readmemory - io_registers_read_source
+	io_r_9f0e qword io_r_readmemory - io_registers_read_source
+	io_r_9f0f qword io_r_readmemory - io_registers_read_source
 
 	; Unused
-	io_r_9f10 qword io_r_readmemory
-	io_r_9f11 qword io_r_readmemory
-	io_r_9f12 qword io_r_readmemory
-	io_r_9f13 qword io_r_readmemory
-	io_r_9f14 qword io_r_readmemory
-	io_r_9f15 qword io_r_readmemory
-	io_r_9f16 qword io_r_readmemory
-	io_r_9f17 qword io_r_readmemory
-	io_r_9f18 qword io_r_readmemory
-	io_r_9f19 qword io_r_readmemory
-	io_r_9f1a qword io_r_readmemory
-	io_r_9f1b qword io_r_readmemory
-	io_r_9f1c qword io_r_readmemory
-	io_r_9f1d qword io_r_readmemory
-	io_r_9f1e qword io_r_readmemory
-	io_r_9f1f qword io_r_readmemory
+	io_r_9f10 qword io_r_readmemory - io_registers_read_source
+	io_r_9f11 qword io_r_readmemory - io_registers_read_source
+	io_r_9f12 qword io_r_readmemory - io_registers_read_source
+	io_r_9f13 qword io_r_readmemory - io_registers_read_source
+	io_r_9f14 qword io_r_readmemory - io_registers_read_source
+	io_r_9f15 qword io_r_readmemory - io_registers_read_source
+	io_r_9f16 qword io_r_readmemory - io_registers_read_source
+	io_r_9f17 qword io_r_readmemory - io_registers_read_source
+	io_r_9f18 qword io_r_readmemory - io_registers_read_source
+	io_r_9f19 qword io_r_readmemory - io_registers_read_source
+	io_r_9f1a qword io_r_readmemory - io_registers_read_source
+	io_r_9f1b qword io_r_readmemory - io_registers_read_source
+	io_r_9f1c qword io_r_readmemory - io_registers_read_source
+	io_r_9f1d qword io_r_readmemory - io_registers_read_source
+	io_r_9f1e qword io_r_readmemory - io_registers_read_source
+	io_r_9f1f qword io_r_readmemory - io_registers_read_source
 
-	vera_r_9f20 qword io_r_readmemory
-	vera_r_9f21 qword io_r_readmemory
-	vera_r_9f22 qword io_r_readmemory
-	vera_r_9f23 qword vera_afterread
-	vera_r_9f24 qword vera_afterread
-	vera_r_9f25 qword io_r_readmemory
-	vera_r_9f26 qword vera_afterread_9f26 ; todo: add scaline read
-	vera_r_9f27 qword io_r_readmemory
-	vera_r_9f28 qword vera_afterread_9f28 ; todo: add scaline read
-	vera_r_9f29 qword vera_afterread_9f29
-	vera_r_9f2a qword vera_afterread_9f2a
-	vera_r_9f2b qword io_r_readmemory
-	vera_r_9f2c qword io_r_readmemory
-	vera_r_9f2d qword io_r_readmemory
-	vera_r_9f2e qword io_r_readmemory
-	vera_r_9f2f qword io_r_readmemory
-	vera_r_9f30 qword io_r_readmemory
-	vera_r_9f31 qword io_r_readmemory
-	vera_r_9f32 qword io_r_readmemory
-	vera_r_9f33 qword io_r_readmemory
-	vera_r_9f34 qword io_r_readmemory
-	vera_r_9f35 qword io_r_readmemory
-	vera_r_9f36 qword io_r_readmemory
-	vera_r_9f37 qword io_r_readmemory
-	vera_r_9f38 qword io_r_readmemory
-	vera_r_9f39 qword io_r_readmemory
-	vera_r_9f3a qword io_r_readmemory
-	vera_r_9f3b qword io_r_readmemory
-	vera_r_9f3c qword io_r_readmemory
-	vera_r_9f3d qword io_r_readmemory
-	vera_r_9f3e qword vera_afterread_spidata
-	vera_r_9f3f qword io_r_readmemory
+	vera_r_9f20 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f21 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f22 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f23 qword vera_afterread - io_registers_read_source
+	vera_r_9f24 qword vera_afterread - io_registers_read_source
+	vera_r_9f25 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f26 qword vera_afterread_9f26 - io_registers_read_source ; todo: add scaline read
+	vera_r_9f27 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f28 qword vera_afterread_9f28 - io_registers_read_source ; todo: add scaline read
+	vera_r_9f29 qword vera_afterread_9f29 - io_registers_read_source
+	vera_r_9f2a qword vera_afterread_9f2a - io_registers_read_source
+	vera_r_9f2b qword io_r_readmemory - io_registers_read_source
+	vera_r_9f2c qword io_r_readmemory - io_registers_read_source
+	vera_r_9f2d qword io_r_readmemory - io_registers_read_source
+	vera_r_9f2e qword io_r_readmemory - io_registers_read_source
+	vera_r_9f2f qword io_r_readmemory - io_registers_read_source
+	vera_r_9f30 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f31 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f32 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f33 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f34 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f35 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f36 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f37 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f38 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f39 qword io_r_readmemory - io_registers_read_source
+	vera_r_9f3a qword io_r_readmemory - io_registers_read_source
+	vera_r_9f3b qword io_r_readmemory - io_registers_read_source
+	vera_r_9f3c qword io_r_readmemory - io_registers_read_source
+	vera_r_9f3d qword io_r_readmemory - io_registers_read_source
+	vera_r_9f3e qword vera_afterread_spidata - io_registers_read_source
+	vera_r_9f3f qword io_r_readmemory - io_registers_read_source
 
-	ym_r_9f40 qword io_r_readmemory
-	ym_r_9f41 qword io_r_readmemory
-	io_r_9f42 qword io_r_readmemory
-	io_r_9f43 qword io_r_readmemory
-	io_r_9f44 qword io_r_readmemory
-	io_r_9f45 qword io_r_readmemory
-	io_r_9f46 qword io_r_readmemory
-	io_r_9f47 qword io_r_readmemory
-	io_r_9f48 qword io_r_readmemory
-	io_r_9f49 qword io_r_readmemory
-	io_r_9f4a qword io_r_readmemory
-	io_r_9f4b qword io_r_readmemory
-	io_r_9f4c qword io_r_readmemory
-	io_r_9f4d qword io_r_readmemory
-	io_r_9f4e qword io_r_readmemory
-	io_r_9f4f qword io_r_readmemory
-	io_r_9f50 qword io_r_readmemory
-	io_r_9f51 qword io_r_readmemory
-	io_r_9f52 qword io_r_readmemory
-	io_r_9f53 qword io_r_readmemory
-	io_r_9f54 qword io_r_readmemory
-	io_r_9f55 qword io_r_readmemory
-	io_r_9f56 qword io_r_readmemory
-	io_r_9f57 qword io_r_readmemory
-	io_r_9f58 qword io_r_readmemory
-	io_r_9f59 qword io_r_readmemory
-	io_r_9f5a qword io_r_readmemory
-	io_r_9f5b qword io_r_readmemory
-	io_r_9f5c qword io_r_readmemory
-	io_r_9f5d qword io_r_readmemory
-	io_r_9f5e qword io_r_readmemory
-	io_r_9f5f qword io_r_readmemory
-	io_r_9f60 qword io_r_readmemory
-	io_r_9f61 qword io_r_readmemory
-	io_r_9f62 qword io_r_readmemory
-	io_r_9f63 qword io_r_readmemory
-	io_r_9f64 qword io_r_readmemory
-	io_r_9f65 qword io_r_readmemory
-	io_r_9f66 qword io_r_readmemory
-	io_r_9f67 qword io_r_readmemory
-	io_r_9f68 qword io_r_readmemory
-	io_r_9f69 qword io_r_readmemory
-	io_r_9f6a qword io_r_readmemory
-	io_r_9f6b qword io_r_readmemory
-	io_r_9f6c qword io_r_readmemory
-	io_r_9f6d qword io_r_readmemory
-	io_r_9f6e qword io_r_readmemory
-	io_r_9f6f qword io_r_readmemory
-	io_r_9f70 qword io_r_readmemory
-	io_r_9f71 qword io_r_readmemory
-	io_r_9f72 qword io_r_readmemory
-	io_r_9f73 qword io_r_readmemory
-	io_r_9f74 qword io_r_readmemory
-	io_r_9f75 qword io_r_readmemory
-	io_r_9f76 qword io_r_readmemory
-	io_r_9f77 qword io_r_readmemory
-	io_r_9f78 qword io_r_readmemory
-	io_r_9f79 qword io_r_readmemory
-	io_r_9f7a qword io_r_readmemory
-	io_r_9f7b qword io_r_readmemory
-	io_r_9f7c qword io_r_readmemory
-	io_r_9f7d qword io_r_readmemory
-	io_r_9f7e qword io_r_readmemory
-	io_r_9f7f qword io_r_readmemory
-	io_r_9f80 qword io_r_readmemory
-	io_r_9f81 qword io_r_readmemory
-	io_r_9f82 qword io_r_readmemory
-	io_r_9f83 qword io_r_readmemory
-	io_r_9f84 qword io_r_readmemory
-	io_r_9f85 qword io_r_readmemory
-	io_r_9f86 qword io_r_readmemory
-	io_r_9f87 qword io_r_readmemory
-	io_r_9f88 qword io_r_readmemory
-	io_r_9f89 qword io_r_readmemory
-	io_r_9f8a qword io_r_readmemory
-	io_r_9f8b qword io_r_readmemory
-	io_r_9f8c qword io_r_readmemory
-	io_r_9f8d qword io_r_readmemory
-	io_r_9f8e qword io_r_readmemory
-	io_r_9f8f qword io_r_readmemory
-	io_r_9f90 qword io_r_readmemory
-	io_r_9f91 qword io_r_readmemory
-	io_r_9f92 qword io_r_readmemory
-	io_r_9f93 qword io_r_readmemory
-	io_r_9f94 qword io_r_readmemory
-	io_r_9f95 qword io_r_readmemory
-	io_r_9f96 qword io_r_readmemory
-	io_r_9f97 qword io_r_readmemory
-	io_r_9f98 qword io_r_readmemory
-	io_r_9f99 qword io_r_readmemory
-	io_r_9f9a qword io_r_readmemory
-	io_r_9f9b qword io_r_readmemory
-	io_r_9f9c qword io_r_readmemory
-	io_r_9f9d qword io_r_readmemory
-	io_r_9f9e qword io_r_readmemory
-	io_r_9f9f qword io_r_readmemory
-	io_r_9fa0 qword io_r_readmemory
-	io_r_9fa1 qword io_r_readmemory
-	io_r_9fa2 qword io_r_readmemory
-	io_r_9fa3 qword io_r_readmemory
-	io_r_9fa4 qword io_r_readmemory
-	io_r_9fa5 qword io_r_readmemory
-	io_r_9fa6 qword io_r_readmemory
-	io_r_9fa7 qword io_r_readmemory
-	io_r_9fa8 qword io_r_readmemory
-	io_r_9fa9 qword io_r_readmemory
-	io_r_9faa qword io_r_readmemory
-	io_r_9fab qword io_r_readmemory
-	io_r_9fac qword io_r_readmemory
-	io_r_9fad qword io_r_readmemory
-	io_r_9fae qword io_r_readmemory
-	io_r_9faf qword io_r_readmemory
-	io_r_9fb0 qword io_r_readmemory
-	io_r_9fb1 qword io_r_readmemory
-	io_r_9fb2 qword io_r_readmemory
-	io_r_9fb3 qword io_r_readmemory
-	io_r_9fb4 qword io_r_readmemory
-	io_r_9fb5 qword io_r_readmemory
-	io_r_9fb6 qword io_r_readmemory
-	io_r_9fb7 qword io_r_readmemory
-	io_r_9fb8 qword io_r_readmemory
-	io_r_9fb9 qword io_r_readmemory
-	io_r_9fba qword io_r_readmemory
-	io_r_9fbb qword io_r_readmemory
-	io_r_9fbc qword io_r_readmemory
-	io_r_9fbd qword io_r_readmemory
-	io_r_9fbe qword io_r_readmemory
-	io_r_9fbf qword io_r_readmemory
-	io_r_9fc0 qword io_r_readmemory
-	io_r_9fc1 qword io_r_readmemory
-	io_r_9fc2 qword io_r_readmemory
-	io_r_9fc3 qword io_r_readmemory
-	io_r_9fc4 qword io_r_readmemory
-	io_r_9fc5 qword io_r_readmemory
-	io_r_9fc6 qword io_r_readmemory
-	io_r_9fc7 qword io_r_readmemory
-	io_r_9fc8 qword io_r_readmemory
-	io_r_9fc9 qword io_r_readmemory
-	io_r_9fca qword io_r_readmemory
-	io_r_9fcb qword io_r_readmemory
-	io_r_9fcc qword io_r_readmemory
-	io_r_9fcd qword io_r_readmemory
-	io_r_9fce qword io_r_readmemory
-	io_r_9fcf qword io_r_readmemory
-	io_r_9fd0 qword io_r_readmemory
-	io_r_9fd1 qword io_r_readmemory
-	io_r_9fd2 qword io_r_readmemory
-	io_r_9fd3 qword io_r_readmemory
-	io_r_9fd4 qword io_r_readmemory
-	io_r_9fd5 qword io_r_readmemory
-	io_r_9fd6 qword io_r_readmemory
-	io_r_9fd7 qword io_r_readmemory
-	io_r_9fd8 qword io_r_readmemory
-	io_r_9fd9 qword io_r_readmemory
-	io_r_9fda qword io_r_readmemory
-	io_r_9fdb qword io_r_readmemory
-	io_r_9fdc qword io_r_readmemory
-	io_r_9fdd qword io_r_readmemory
-	io_r_9fde qword io_r_readmemory
-	io_r_9fdf qword io_r_readmemory
+	ym_r_9f40 qword io_r_readmemory - io_registers_read_source
+	ym_r_9f41 qword io_r_readmemory - io_registers_read_source
+	io_r_9f42 qword io_r_readmemory - io_registers_read_source
+	io_r_9f43 qword io_r_readmemory - io_registers_read_source
+	io_r_9f44 qword io_r_readmemory - io_registers_read_source
+	io_r_9f45 qword io_r_readmemory - io_registers_read_source
+	io_r_9f46 qword io_r_readmemory - io_registers_read_source
+	io_r_9f47 qword io_r_readmemory - io_registers_read_source
+	io_r_9f48 qword io_r_readmemory - io_registers_read_source
+	io_r_9f49 qword io_r_readmemory - io_registers_read_source
+	io_r_9f4a qword io_r_readmemory - io_registers_read_source
+	io_r_9f4b qword io_r_readmemory - io_registers_read_source
+	io_r_9f4c qword io_r_readmemory - io_registers_read_source
+	io_r_9f4d qword io_r_readmemory - io_registers_read_source
+	io_r_9f4e qword io_r_readmemory - io_registers_read_source
+	io_r_9f4f qword io_r_readmemory - io_registers_read_source
+	io_r_9f50 qword io_r_readmemory - io_registers_read_source
+	io_r_9f51 qword io_r_readmemory - io_registers_read_source
+	io_r_9f52 qword io_r_readmemory - io_registers_read_source
+	io_r_9f53 qword io_r_readmemory - io_registers_read_source
+	io_r_9f54 qword io_r_readmemory - io_registers_read_source
+	io_r_9f55 qword io_r_readmemory - io_registers_read_source
+	io_r_9f56 qword io_r_readmemory - io_registers_read_source
+	io_r_9f57 qword io_r_readmemory - io_registers_read_source
+	io_r_9f58 qword io_r_readmemory - io_registers_read_source
+	io_r_9f59 qword io_r_readmemory - io_registers_read_source
+	io_r_9f5a qword io_r_readmemory - io_registers_read_source
+	io_r_9f5b qword io_r_readmemory - io_registers_read_source
+	io_r_9f5c qword io_r_readmemory - io_registers_read_source
+	io_r_9f5d qword io_r_readmemory - io_registers_read_source
+	io_r_9f5e qword io_r_readmemory - io_registers_read_source
+	io_r_9f5f qword io_r_readmemory - io_registers_read_source
+	io_r_9f60 qword io_r_readmemory - io_registers_read_source
+	io_r_9f61 qword io_r_readmemory - io_registers_read_source
+	io_r_9f62 qword io_r_readmemory - io_registers_read_source
+	io_r_9f63 qword io_r_readmemory - io_registers_read_source
+	io_r_9f64 qword io_r_readmemory - io_registers_read_source
+	io_r_9f65 qword io_r_readmemory - io_registers_read_source
+	io_r_9f66 qword io_r_readmemory - io_registers_read_source
+	io_r_9f67 qword io_r_readmemory - io_registers_read_source
+	io_r_9f68 qword io_r_readmemory - io_registers_read_source
+	io_r_9f69 qword io_r_readmemory - io_registers_read_source
+	io_r_9f6a qword io_r_readmemory - io_registers_read_source
+	io_r_9f6b qword io_r_readmemory - io_registers_read_source
+	io_r_9f6c qword io_r_readmemory - io_registers_read_source
+	io_r_9f6d qword io_r_readmemory - io_registers_read_source
+	io_r_9f6e qword io_r_readmemory - io_registers_read_source
+	io_r_9f6f qword io_r_readmemory - io_registers_read_source
+	io_r_9f70 qword io_r_readmemory - io_registers_read_source
+	io_r_9f71 qword io_r_readmemory - io_registers_read_source
+	io_r_9f72 qword io_r_readmemory - io_registers_read_source
+	io_r_9f73 qword io_r_readmemory - io_registers_read_source
+	io_r_9f74 qword io_r_readmemory - io_registers_read_source
+	io_r_9f75 qword io_r_readmemory - io_registers_read_source
+	io_r_9f76 qword io_r_readmemory - io_registers_read_source
+	io_r_9f77 qword io_r_readmemory - io_registers_read_source
+	io_r_9f78 qword io_r_readmemory - io_registers_read_source
+	io_r_9f79 qword io_r_readmemory - io_registers_read_source
+	io_r_9f7a qword io_r_readmemory - io_registers_read_source
+	io_r_9f7b qword io_r_readmemory - io_registers_read_source
+	io_r_9f7c qword io_r_readmemory - io_registers_read_source
+	io_r_9f7d qword io_r_readmemory - io_registers_read_source
+	io_r_9f7e qword io_r_readmemory - io_registers_read_source
+	io_r_9f7f qword io_r_readmemory - io_registers_read_source
+	io_r_9f80 qword io_r_readmemory - io_registers_read_source
+	io_r_9f81 qword io_r_readmemory - io_registers_read_source
+	io_r_9f82 qword io_r_readmemory - io_registers_read_source
+	io_r_9f83 qword io_r_readmemory - io_registers_read_source
+	io_r_9f84 qword io_r_readmemory - io_registers_read_source
+	io_r_9f85 qword io_r_readmemory - io_registers_read_source
+	io_r_9f86 qword io_r_readmemory - io_registers_read_source
+	io_r_9f87 qword io_r_readmemory - io_registers_read_source
+	io_r_9f88 qword io_r_readmemory - io_registers_read_source
+	io_r_9f89 qword io_r_readmemory - io_registers_read_source
+	io_r_9f8a qword io_r_readmemory - io_registers_read_source
+	io_r_9f8b qword io_r_readmemory - io_registers_read_source
+	io_r_9f8c qword io_r_readmemory - io_registers_read_source
+	io_r_9f8d qword io_r_readmemory - io_registers_read_source
+	io_r_9f8e qword io_r_readmemory - io_registers_read_source
+	io_r_9f8f qword io_r_readmemory - io_registers_read_source
+	io_r_9f90 qword io_r_readmemory - io_registers_read_source
+	io_r_9f91 qword io_r_readmemory - io_registers_read_source
+	io_r_9f92 qword io_r_readmemory - io_registers_read_source
+	io_r_9f93 qword io_r_readmemory - io_registers_read_source
+	io_r_9f94 qword io_r_readmemory - io_registers_read_source
+	io_r_9f95 qword io_r_readmemory - io_registers_read_source
+	io_r_9f96 qword io_r_readmemory - io_registers_read_source
+	io_r_9f97 qword io_r_readmemory - io_registers_read_source
+	io_r_9f98 qword io_r_readmemory - io_registers_read_source
+	io_r_9f99 qword io_r_readmemory - io_registers_read_source
+	io_r_9f9a qword io_r_readmemory - io_registers_read_source
+	io_r_9f9b qword io_r_readmemory - io_registers_read_source
+	io_r_9f9c qword io_r_readmemory - io_registers_read_source
+	io_r_9f9d qword io_r_readmemory - io_registers_read_source
+	io_r_9f9e qword io_r_readmemory - io_registers_read_source
+	io_r_9f9f qword io_r_readmemory - io_registers_read_source
+	io_r_9fa0 qword io_r_readmemory - io_registers_read_source
+	io_r_9fa1 qword io_r_readmemory - io_registers_read_source
+	io_r_9fa2 qword io_r_readmemory - io_registers_read_source
+	io_r_9fa3 qword io_r_readmemory - io_registers_read_source
+	io_r_9fa4 qword io_r_readmemory - io_registers_read_source
+	io_r_9fa5 qword io_r_readmemory - io_registers_read_source
+	io_r_9fa6 qword io_r_readmemory - io_registers_read_source
+	io_r_9fa7 qword io_r_readmemory - io_registers_read_source
+	io_r_9fa8 qword io_r_readmemory - io_registers_read_source
+	io_r_9fa9 qword io_r_readmemory - io_registers_read_source
+	io_r_9faa qword io_r_readmemory - io_registers_read_source
+	io_r_9fab qword io_r_readmemory - io_registers_read_source
+	io_r_9fac qword io_r_readmemory - io_registers_read_source
+	io_r_9fad qword io_r_readmemory - io_registers_read_source
+	io_r_9fae qword io_r_readmemory - io_registers_read_source
+	io_r_9faf qword io_r_readmemory - io_registers_read_source
+	io_r_9fb0 qword io_r_readmemory - io_registers_read_source
+	io_r_9fb1 qword io_r_readmemory - io_registers_read_source
+	io_r_9fb2 qword io_r_readmemory - io_registers_read_source
+	io_r_9fb3 qword io_r_readmemory - io_registers_read_source
+	io_r_9fb4 qword io_r_readmemory - io_registers_read_source
+	io_r_9fb5 qword io_r_readmemory - io_registers_read_source
+	io_r_9fb6 qword io_r_readmemory - io_registers_read_source
+	io_r_9fb7 qword io_r_readmemory - io_registers_read_source
+	io_r_9fb8 qword io_r_readmemory - io_registers_read_source
+	io_r_9fb9 qword io_r_readmemory - io_registers_read_source
+	io_r_9fba qword io_r_readmemory - io_registers_read_source
+	io_r_9fbb qword io_r_readmemory - io_registers_read_source
+	io_r_9fbc qword io_r_readmemory - io_registers_read_source
+	io_r_9fbd qword io_r_readmemory - io_registers_read_source
+	io_r_9fbe qword io_r_readmemory - io_registers_read_source
+	io_r_9fbf qword io_r_readmemory - io_registers_read_source
+	io_r_9fc0 qword io_r_readmemory - io_registers_read_source
+	io_r_9fc1 qword io_r_readmemory - io_registers_read_source
+	io_r_9fc2 qword io_r_readmemory - io_registers_read_source
+	io_r_9fc3 qword io_r_readmemory - io_registers_read_source
+	io_r_9fc4 qword io_r_readmemory - io_registers_read_source
+	io_r_9fc5 qword io_r_readmemory - io_registers_read_source
+	io_r_9fc6 qword io_r_readmemory - io_registers_read_source
+	io_r_9fc7 qword io_r_readmemory - io_registers_read_source
+	io_r_9fc8 qword io_r_readmemory - io_registers_read_source
+	io_r_9fc9 qword io_r_readmemory - io_registers_read_source
+	io_r_9fca qword io_r_readmemory - io_registers_read_source
+	io_r_9fcb qword io_r_readmemory - io_registers_read_source
+	io_r_9fcc qword io_r_readmemory - io_registers_read_source
+	io_r_9fcd qword io_r_readmemory - io_registers_read_source
+	io_r_9fce qword io_r_readmemory - io_registers_read_source
+	io_r_9fcf qword io_r_readmemory - io_registers_read_source
+	io_r_9fd0 qword io_r_readmemory - io_registers_read_source
+	io_r_9fd1 qword io_r_readmemory - io_registers_read_source
+	io_r_9fd2 qword io_r_readmemory - io_registers_read_source
+	io_r_9fd3 qword io_r_readmemory - io_registers_read_source
+	io_r_9fd4 qword io_r_readmemory - io_registers_read_source
+	io_r_9fd5 qword io_r_readmemory - io_registers_read_source
+	io_r_9fd6 qword io_r_readmemory - io_registers_read_source
+	io_r_9fd7 qword io_r_readmemory - io_registers_read_source
+	io_r_9fd8 qword io_r_readmemory - io_registers_read_source
+	io_r_9fd9 qword io_r_readmemory - io_registers_read_source
+	io_r_9fda qword io_r_readmemory - io_registers_read_source
+	io_r_9fdb qword io_r_readmemory - io_registers_read_source
+	io_r_9fdc qword io_r_readmemory - io_registers_read_source
+	io_r_9fdd qword io_r_readmemory - io_registers_read_source
+	io_r_9fde qword io_r_readmemory - io_registers_read_source
+	io_r_9fdf qword io_r_readmemory - io_registers_read_source
 
 	; WIFI Card
-	io_r_9fe0 qword io_r_readmemory
-	io_r_9fe1 qword io_r_readmemory
-	io_r_9fe2 qword io_r_readmemory
-	io_r_9fe3 qword io_r_readmemory
-	io_r_9fe4 qword io_r_readmemory
-	io_r_9fe5 qword io_r_readmemory
-	io_r_9fe6 qword io_r_readmemory
-	io_r_9fe7 qword io_r_readmemory
+	io_r_9fe0 qword io_r_readmemory - io_registers_read_source
+	io_r_9fe1 qword io_r_readmemory - io_registers_read_source
+	io_r_9fe2 qword io_r_readmemory - io_registers_read_source
+	io_r_9fe3 qword io_r_readmemory - io_registers_read_source
+	io_r_9fe4 qword io_r_readmemory - io_registers_read_source
+	io_r_9fe5 qword io_r_readmemory - io_registers_read_source
+	io_r_9fe6 qword io_r_readmemory - io_registers_read_source
+	io_r_9fe7 qword io_r_readmemory - io_registers_read_source
 
-	io_r_9fe8 qword io_r_readmemory
-	io_r_9fe9 qword io_r_readmemory
-	io_r_9fea qword io_r_readmemory
-	io_r_9feb qword io_r_readmemory
-	io_r_9fec qword io_r_readmemory
-	io_r_9fed qword io_r_readmemory
-	io_r_9fee qword io_r_readmemory
-	io_r_9fef qword io_r_readmemory
+	io_r_9fe8 qword io_r_readmemory - io_registers_read_source
+	io_r_9fe9 qword io_r_readmemory - io_registers_read_source
+	io_r_9fea qword io_r_readmemory - io_registers_read_source
+	io_r_9feb qword io_r_readmemory - io_registers_read_source
+	io_r_9fec qword io_r_readmemory - io_registers_read_source
+	io_r_9fed qword io_r_readmemory - io_registers_read_source
+	io_r_9fee qword io_r_readmemory - io_registers_read_source
+	io_r_9fef qword io_r_readmemory - io_registers_read_source
 
-	io_r_9ff0 qword io_r_readmemory
-	io_r_9ff1 qword io_r_readmemory
-	io_r_9ff2 qword io_r_readmemory
-	io_r_9ff3 qword io_r_readmemory
-	io_r_9ff4 qword io_r_readmemory
-	io_r_9ff5 qword io_r_readmemory
-	io_r_9ff6 qword io_r_readmemory
-	io_r_9ff7 qword io_r_readmemory
-	io_r_9ff8 qword io_r_readmemory
-	io_r_9ff9 qword io_r_readmemory
-	io_r_9ffa qword io_r_readmemory
-	io_r_9ffb qword io_r_readmemory
-	io_r_9ffc qword io_r_readmemory
-	io_r_9ffd qword io_r_readmemory
-	io_r_9ffe qword io_r_readmemory
-	io_r_9fff qword io_r_readmemory
+	io_r_9ff0 qword io_r_readmemory - io_registers_read_source
+	io_r_9ff1 qword io_r_readmemory - io_registers_read_source
+	io_r_9ff2 qword io_r_readmemory - io_registers_read_source
+	io_r_9ff3 qword io_r_readmemory - io_registers_read_source
+	io_r_9ff4 qword io_r_readmemory - io_registers_read_source
+	io_r_9ff5 qword io_r_readmemory - io_registers_read_source
+	io_r_9ff6 qword io_r_readmemory - io_registers_read_source
+	io_r_9ff7 qword io_r_readmemory - io_registers_read_source
+	io_r_9ff8 qword io_r_readmemory - io_registers_read_source
+	io_r_9ff9 qword io_r_readmemory - io_registers_read_source
+	io_r_9ffa qword io_r_readmemory - io_registers_read_source
+	io_r_9ffb qword io_r_readmemory - io_registers_read_source
+	io_r_9ffc qword io_r_readmemory - io_registers_read_source
+	io_r_9ffd qword io_r_readmemory - io_registers_read_source
+	io_r_9ffe qword io_r_readmemory - io_registers_read_source
+	io_r_9fff qword io_r_readmemory - io_registers_read_source
 
 
 
 io_registers_readwrite_source:
-	io_rw_9f00 qword via_prb
-	io_rw_9f01 qword via_pra
-	io_rw_9f02 qword io_rw_readmemory
-	io_rw_9f03 qword via_dra
-	io_rw_9f04 qword via_timer1_counter_l
-	io_rw_9f05 qword via_timer1_counter_h
-	io_rw_9f06 qword via_timer1_latch_l
-	io_rw_9f07 qword via_timer1_latch_h
-	io_rw_9f08 qword via_timer2_latch_l
-	io_rw_9f09 qword via_timer2_latch_h
-	io_rw_9f0a qword io_rw_readmemory
-	io_rw_9f0b qword via_acl
-	io_rw_9f0c qword io_rw_readmemory
-	io_rw_9f0d qword via_ifr
-	io_rw_9f0e qword via_ier
-	io_rw_9f0f qword via_pra
+	io_rw_9f00 qword via_prb - io_registers_readwrite_source
+	io_rw_9f01 qword via_pra - io_registers_readwrite_source
+	io_rw_9f02 qword io_rw_readmemory - io_registers_readwrite_source
+	io_rw_9f03 qword via_dra - io_registers_readwrite_source
+	io_rw_9f04 qword via_timer1_counter_l - io_registers_readwrite_source
+	io_rw_9f05 qword via_timer1_counter_h - io_registers_readwrite_source
+	io_rw_9f06 qword via_timer1_latch_l - io_registers_readwrite_source
+	io_rw_9f07 qword via_timer1_latch_h - io_registers_readwrite_source
+	io_rw_9f08 qword via_timer2_latch_l - io_registers_readwrite_source
+	io_rw_9f09 qword via_timer2_latch_h - io_registers_readwrite_source
+	io_rw_9f0a qword io_rw_readmemory - io_registers_readwrite_source
+	io_rw_9f0b qword via_acl - io_registers_readwrite_source
+	io_rw_9f0c qword io_rw_readmemory - io_registers_readwrite_source
+	io_rw_9f0d qword via_ifr - io_registers_readwrite_source
+	io_rw_9f0e qword via_ier - io_registers_readwrite_source
+	io_rw_9f0f qword via_pra - io_registers_readwrite_source
 
 	; Unused
-	io_rw_9f10 qword io_cantwrite 
-	io_rw_9f11 qword io_cantwrite 
-	io_rw_9f12 qword io_cantwrite 
-	io_rw_9f13 qword io_cantwrite 
-	io_rw_9f14 qword io_cantwrite 
-	io_rw_9f15 qword io_cantwrite 
-	io_rw_9f16 qword io_cantwrite 
-	io_rw_9f17 qword io_cantwrite 
-	io_rw_9f18 qword io_cantwrite 
-	io_rw_9f19 qword io_cantwrite 
-	io_rw_9f1a qword io_cantwrite 
-	io_rw_9f1b qword io_cantwrite 
-	io_rw_9f1c qword io_cantwrite 
-	io_rw_9f1d qword io_cantwrite 
-	io_rw_9f1e qword io_cantwrite 
-	io_rw_9f1f qword io_cantwrite 
+	io_rw_9f10 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f11 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f12 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f13 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f14 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f15 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f16 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f17 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f18 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f19 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f1a qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f1b qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f1c qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f1d qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f1e qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f1f qword io_cantwrite - io_registers_readwrite_source 
 
-	vera_rw_9f20 qword vera_update_addrl
-	vera_rw_9f21 qword vera_update_addrm
-	vera_rw_9f22 qword vera_update_addrh
-	vera_rw_9f23 qword vera_afterreadwrite
-	vera_rw_9f24 qword vera_afterreadwrite
-	vera_rw_9f25 qword vera_update_ctrl
-	vera_rw_9f26 qword vera_update_ien
-	vera_rw_9f27 qword vera_update_isr
-	vera_rw_9f28 qword vera_update_irqline_l
-	vera_rw_9f29 qword vera_update_9f29
-	vera_rw_9f2a qword vera_update_9f2a
-	vera_rw_9f2b qword vera_update_9f2b
-	vera_rw_9f2c qword vera_update_9f2c
-	vera_rw_9f2d qword vera_update_l0config
-	vera_rw_9f2e qword vera_update_l0mapbase
-	vera_rw_9f2f qword vera_update_l0tilebase
-	vera_rw_9f30 qword vera_update_l0hscroll_l
-	vera_rw_9f31 qword vera_update_l0hscroll_h
-	vera_rw_9f32 qword vera_update_l0vscroll_l
-	vera_rw_9f33 qword vera_update_l0vscroll_h
-	vera_rw_9f34 qword vera_update_l1config
-	vera_rw_9f35 qword vera_update_l1mapbase
-	vera_rw_9f36 qword vera_update_l1tilebase
-	vera_rw_9f37 qword vera_update_l1hscroll_l
-	vera_rw_9f38 qword vera_update_l1hscroll_h
-	vera_rw_9f39 qword vera_update_l1vscroll_l
-	vera_rw_9f3a qword vera_update_l1vscroll_h
-	vera_rw_9f3b qword vera_update_audioctrl
-	vera_rw_9f3c qword vera_update_audiorate
-	vera_rw_9f3d qword vera_update_audiodata
-	vera_rw_9f3e qword vera_update_spi_data
-	vera_rw_9f3f qword vera_update_spi_ctrl
+	vera_rw_9f20 qword vera_update_addrl - io_registers_readwrite_source
+	vera_rw_9f21 qword vera_update_addrm - io_registers_readwrite_source
+	vera_rw_9f22 qword vera_update_addrh - io_registers_readwrite_source
+	vera_rw_9f23 qword vera_afterreadwrite - io_registers_readwrite_source
+	vera_rw_9f24 qword vera_afterreadwrite - io_registers_readwrite_source
+	vera_rw_9f25 qword vera_update_ctrl - io_registers_readwrite_source
+	vera_rw_9f26 qword vera_update_ien - io_registers_readwrite_source
+	vera_rw_9f27 qword vera_update_isr - io_registers_readwrite_source
+	vera_rw_9f28 qword vera_update_irqline_l - io_registers_readwrite_source
+	vera_rw_9f29 qword vera_update_9f29 - io_registers_readwrite_source
+	vera_rw_9f2a qword vera_update_9f2a - io_registers_readwrite_source
+	vera_rw_9f2b qword vera_update_9f2b - io_registers_readwrite_source
+	vera_rw_9f2c qword vera_update_9f2c - io_registers_readwrite_source
+	vera_rw_9f2d qword vera_update_l0config - io_registers_readwrite_source
+	vera_rw_9f2e qword vera_update_l0mapbase - io_registers_readwrite_source
+	vera_rw_9f2f qword vera_update_l0tilebase - io_registers_readwrite_source
+	vera_rw_9f30 qword vera_update_l0hscroll_l - io_registers_readwrite_source
+	vera_rw_9f31 qword vera_update_l0hscroll_h - io_registers_readwrite_source
+	vera_rw_9f32 qword vera_update_l0vscroll_l - io_registers_readwrite_source
+	vera_rw_9f33 qword vera_update_l0vscroll_h - io_registers_readwrite_source
+	vera_rw_9f34 qword vera_update_l1config - io_registers_readwrite_source
+	vera_rw_9f35 qword vera_update_l1mapbase - io_registers_readwrite_source
+	vera_rw_9f36 qword vera_update_l1tilebase - io_registers_readwrite_source
+	vera_rw_9f37 qword vera_update_l1hscroll_l - io_registers_readwrite_source
+	vera_rw_9f38 qword vera_update_l1hscroll_h - io_registers_readwrite_source
+	vera_rw_9f39 qword vera_update_l1vscroll_l - io_registers_readwrite_source
+	vera_rw_9f3a qword vera_update_l1vscroll_h - io_registers_readwrite_source
+	vera_rw_9f3b qword vera_update_audioctrl - io_registers_readwrite_source
+	vera_rw_9f3c qword vera_update_audiorate - io_registers_readwrite_source
+	vera_rw_9f3d qword vera_update_audiodata - io_registers_readwrite_source
+	vera_rw_9f3e qword vera_update_spi_data - io_registers_readwrite_source
+	vera_rw_9f3f qword vera_update_spi_ctrl - io_registers_readwrite_source
 
 
-	ym_rw_9f40 qword ym_write_address
-	ym_rw_9f41 qword ym_write_data
-	io_rw_9f42 qword io_cantwrite 
-	io_rw_9f43 qword io_cantwrite 
-	io_rw_9f44 qword io_cantwrite 
-	io_rw_9f45 qword io_cantwrite 
-	io_rw_9f46 qword io_cantwrite 
-	io_rw_9f47 qword io_cantwrite 
-	io_rw_9f48 qword io_cantwrite 
-	io_rw_9f49 qword io_cantwrite 
-	io_rw_9f4a qword io_cantwrite 
-	io_rw_9f4b qword io_cantwrite 
-	io_rw_9f4c qword io_cantwrite 
-	io_rw_9f4d qword io_cantwrite 
-	io_rw_9f4e qword io_cantwrite 
-	io_rw_9f4f qword io_cantwrite 
-	io_rw_9f50 qword io_cantwrite 
-	io_rw_9f51 qword io_cantwrite 
-	io_rw_9f52 qword io_cantwrite 
-	io_rw_9f53 qword io_cantwrite 
-	io_rw_9f54 qword io_cantwrite 
-	io_rw_9f55 qword io_cantwrite 
-	io_rw_9f56 qword io_cantwrite 
-	io_rw_9f57 qword io_cantwrite 
-	io_rw_9f58 qword io_cantwrite 
-	io_rw_9f59 qword io_cantwrite 
-	io_rw_9f5a qword io_cantwrite 
-	io_rw_9f5b qword io_cantwrite 
-	io_rw_9f5c qword io_cantwrite 
-	io_rw_9f5d qword io_cantwrite 
-	io_rw_9f5e qword io_cantwrite 
-	io_rw_9f5f qword io_cantwrite 
-	io_rw_9f60 qword io_cantwrite 
-	io_rw_9f61 qword io_cantwrite 
-	io_rw_9f62 qword io_cantwrite 
-	io_rw_9f63 qword io_cantwrite 
-	io_rw_9f64 qword io_cantwrite 
-	io_rw_9f65 qword io_cantwrite 
-	io_rw_9f66 qword io_cantwrite 
-	io_rw_9f67 qword io_cantwrite 
-	io_rw_9f68 qword io_cantwrite 
-	io_rw_9f69 qword io_cantwrite 
-	io_rw_9f6a qword io_cantwrite 
-	io_rw_9f6b qword io_cantwrite 
-	io_rw_9f6c qword io_cantwrite 
-	io_rw_9f6d qword io_cantwrite 
-	io_rw_9f6e qword io_cantwrite 
-	io_rw_9f6f qword io_cantwrite 
-	io_rw_9f70 qword io_cantwrite 
-	io_rw_9f71 qword io_cantwrite 
-	io_rw_9f72 qword io_cantwrite 
-	io_rw_9f73 qword io_cantwrite 
-	io_rw_9f74 qword io_cantwrite 
-	io_rw_9f75 qword io_cantwrite 
-	io_rw_9f76 qword io_cantwrite 
-	io_rw_9f77 qword io_cantwrite 
-	io_rw_9f78 qword io_cantwrite 
-	io_rw_9f79 qword io_cantwrite 
-	io_rw_9f7a qword io_cantwrite 
-	io_rw_9f7b qword io_cantwrite 
-	io_rw_9f7c qword io_cantwrite 
-	io_rw_9f7d qword io_cantwrite 
-	io_rw_9f7e qword io_cantwrite 
-	io_rw_9f7f qword io_cantwrite 
-	io_rw_9f80 qword io_cantwrite 
-	io_rw_9f81 qword io_cantwrite 
-	io_rw_9f82 qword io_cantwrite 
-	io_rw_9f83 qword io_cantwrite 
-	io_rw_9f84 qword io_cantwrite 
-	io_rw_9f85 qword io_cantwrite 
-	io_rw_9f86 qword io_cantwrite 
-	io_rw_9f87 qword io_cantwrite 
-	io_rw_9f88 qword io_cantwrite 
-	io_rw_9f89 qword io_cantwrite 
-	io_rw_9f8a qword io_cantwrite 
-	io_rw_9f8b qword io_cantwrite 
-	io_rw_9f8c qword io_cantwrite 
-	io_rw_9f8d qword io_cantwrite 
-	io_rw_9f8e qword io_cantwrite 
-	io_rw_9f8f qword io_cantwrite 
-	io_rw_9f90 qword io_cantwrite 
-	io_rw_9f91 qword io_cantwrite 
-	io_rw_9f92 qword io_cantwrite 
-	io_rw_9f93 qword io_cantwrite 
-	io_rw_9f94 qword io_cantwrite 
-	io_rw_9f95 qword io_cantwrite 
-	io_rw_9f96 qword io_cantwrite 
-	io_rw_9f97 qword io_cantwrite 
-	io_rw_9f98 qword io_cantwrite 
-	io_rw_9f99 qword io_cantwrite 
-	io_rw_9f9a qword io_cantwrite 
-	io_rw_9f9b qword io_cantwrite 
-	io_rw_9f9c qword io_cantwrite 
-	io_rw_9f9d qword io_cantwrite 
-	io_rw_9f9e qword io_cantwrite 
-	io_rw_9f9f qword io_cantwrite 
-	io_rw_9fa0 qword io_cantwrite 
-	io_rw_9fa1 qword io_cantwrite 
-	io_rw_9fa2 qword io_cantwrite 
-	io_rw_9fa3 qword io_cantwrite 
-	io_rw_9fa4 qword io_cantwrite 
-	io_rw_9fa5 qword io_cantwrite 
-	io_rw_9fa6 qword io_cantwrite 
-	io_rw_9fa7 qword io_cantwrite 
-	io_rw_9fa8 qword io_cantwrite 
-	io_rw_9fa9 qword io_cantwrite 
-	io_rw_9faa qword io_cantwrite 
-	io_rw_9fab qword io_cantwrite 
-	io_rw_9fac qword io_cantwrite 
-	io_rw_9fad qword io_cantwrite 
-	io_rw_9fae qword io_cantwrite 
-	io_rw_9faf qword io_cantwrite 
-	io_rw_9fb0 qword io_cantwrite 
-	io_rw_9fb1 qword io_cantwrite 
-	io_rw_9fb2 qword io_cantwrite 
-	io_rw_9fb3 qword io_cantwrite 
-	io_rw_9fb4 qword io_cantwrite 
-	io_rw_9fb5 qword io_cantwrite 
-	io_rw_9fb6 qword io_cantwrite 
-	io_rw_9fb7 qword io_cantwrite 
-	io_rw_9fb8 qword io_cantwrite 
-	io_rw_9fb9 qword io_cantwrite 
-	io_rw_9fba qword io_cantwrite 
-	io_rw_9fbb qword io_cantwrite 
-	io_rw_9fbc qword io_cantwrite 
-	io_rw_9fbd qword io_cantwrite 
-	io_rw_9fbe qword io_cantwrite 
-	io_rw_9fbf qword io_cantwrite 
-	io_rw_9fc0 qword io_cantwrite 
-	io_rw_9fc1 qword io_cantwrite 
-	io_rw_9fc2 qword io_cantwrite 
-	io_rw_9fc3 qword io_cantwrite 
-	io_rw_9fc4 qword io_cantwrite 
-	io_rw_9fc5 qword io_cantwrite 
-	io_rw_9fc6 qword io_cantwrite 
-	io_rw_9fc7 qword io_cantwrite 
-	io_rw_9fc8 qword io_cantwrite 
-	io_rw_9fc9 qword io_cantwrite 
-	io_rw_9fca qword io_cantwrite 
-	io_rw_9fcb qword io_cantwrite 
-	io_rw_9fcc qword io_cantwrite 
-	io_rw_9fcd qword io_cantwrite 
-	io_rw_9fce qword io_cantwrite 
-	io_rw_9fcf qword io_cantwrite 
-	io_rw_9fd0 qword io_cantwrite 
-	io_rw_9fd1 qword io_cantwrite 
-	io_rw_9fd2 qword io_cantwrite 
-	io_rw_9fd3 qword io_cantwrite 
-	io_rw_9fd4 qword io_cantwrite 
-	io_rw_9fd5 qword io_cantwrite 
-	io_rw_9fd6 qword io_cantwrite 
-	io_rw_9fd7 qword io_cantwrite 
-	io_rw_9fd8 qword io_cantwrite 
-	io_rw_9fd9 qword io_cantwrite 
-	io_rw_9fda qword io_cantwrite 
-	io_rw_9fdb qword io_cantwrite 
-	io_rw_9fdc qword io_cantwrite 
-	io_rw_9fdd qword io_cantwrite 
-	io_rw_9fde qword io_cantwrite 
-	io_rw_9fdf qword io_cantwrite 
+	ym_rw_9f40 qword ym_write_address - io_registers_readwrite_source
+	ym_rw_9f41 qword ym_write_data - io_registers_readwrite_source
+	io_rw_9f42 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f43 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f44 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f45 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f46 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f47 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f48 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f49 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f4a qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f4b qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f4c qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f4d qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f4e qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f4f qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f50 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f51 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f52 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f53 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f54 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f55 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f56 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f57 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f58 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f59 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f5a qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f5b qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f5c qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f5d qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f5e qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f5f qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f60 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f61 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f62 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f63 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f64 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f65 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f66 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f67 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f68 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f69 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f6a qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f6b qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f6c qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f6d qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f6e qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f6f qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f70 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f71 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f72 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f73 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f74 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f75 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f76 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f77 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f78 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f79 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f7a qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f7b qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f7c qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f7d qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f7e qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f7f qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f80 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f81 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f82 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f83 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f84 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f85 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f86 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f87 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f88 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f89 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f8a qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f8b qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f8c qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f8d qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f8e qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f8f qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f90 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f91 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f92 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f93 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f94 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f95 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f96 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f97 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f98 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f99 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f9a qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f9b qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f9c qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f9d qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f9e qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9f9f qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fa0 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fa1 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fa2 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fa3 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fa4 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fa5 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fa6 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fa7 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fa8 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fa9 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9faa qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fab qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fac qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fad qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fae qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9faf qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fb0 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fb1 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fb2 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fb3 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fb4 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fb5 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fb6 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fb7 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fb8 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fb9 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fba qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fbb qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fbc qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fbd qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fbe qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fbf qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fc0 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fc1 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fc2 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fc3 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fc4 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fc5 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fc6 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fc7 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fc8 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fc9 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fca qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fcb qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fcc qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fcd qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fce qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fcf qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fd0 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fd1 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fd2 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fd3 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fd4 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fd5 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fd6 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fd7 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fd8 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fd9 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fda qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fdb qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fdc qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fdd qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fde qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fdf qword io_cantwrite - io_registers_readwrite_source 
 
 	; WIFI Card
-	io_rw_9fe0 qword io_cantwrite
-	io_rw_9fe1 qword io_cantwrite
-	io_rw_9fe2 qword io_cantwrite
-	io_rw_9fe3 qword io_cantwrite
-	io_rw_9fe4 qword io_cantwrite
-	io_rw_9fe5 qword io_cantwrite
-	io_rw_9fe6 qword io_cantwrite
-	io_rw_9fe7 qword io_cantwrite
+	io_rw_9fe0 qword io_cantwrite - io_registers_readwrite_source
+	io_rw_9fe1 qword io_cantwrite - io_registers_readwrite_source
+	io_rw_9fe2 qword io_cantwrite - io_registers_readwrite_source
+	io_rw_9fe3 qword io_cantwrite - io_registers_readwrite_source
+	io_rw_9fe4 qword io_cantwrite - io_registers_readwrite_source
+	io_rw_9fe5 qword io_cantwrite - io_registers_readwrite_source
+	io_rw_9fe6 qword io_cantwrite - io_registers_readwrite_source
+	io_rw_9fe7 qword io_cantwrite - io_registers_readwrite_source
 
-	io_rw_9fe8 qword io_cantwrite 
-	io_rw_9fe9 qword io_cantwrite 
-	io_rw_9fea qword io_cantwrite 
-	io_rw_9feb qword io_cantwrite 
-	io_rw_9fec qword io_cantwrite 
-	io_rw_9fed qword io_cantwrite 
-	io_rw_9fee qword io_cantwrite 
-	io_rw_9fef qword io_cantwrite 
+	io_rw_9fe8 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fe9 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fea qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9feb qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fec qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fed qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fee qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fef qword io_cantwrite - io_registers_readwrite_source 
 
-	io_rw_9ff0 qword io_cantwrite 
-	io_rw_9ff1 qword io_cantwrite 
-	io_rw_9ff2 qword io_cantwrite 
-	io_rw_9ff3 qword io_cantwrite 
-	io_rw_9ff4 qword io_cantwrite 
-	io_rw_9ff5 qword io_cantwrite 
-	io_rw_9ff6 qword io_cantwrite 
-	io_rw_9ff7 qword io_cantwrite 
-	io_rw_9ff8 qword io_cantwrite 
-	io_rw_9ff9 qword io_cantwrite 
-	io_rw_9ffa qword io_cantwrite 
-	io_rw_9ffb qword io_cantwrite 
-	io_rw_9ffc qword io_cantwrite 
-	io_rw_9ffd qword io_cantwrite 
-	io_rw_9ffe qword io_cantwrite 
-	io_rw_9fff qword io_cantwrite 
+	io_rw_9ff0 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ff1 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ff2 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ff3 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ff4 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ff5 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ff6 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ff7 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ff8 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ff9 qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ffa qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ffb qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ffc qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ffd qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9ffe qword io_cantwrite - io_registers_readwrite_source 
+	io_rw_9fff qword io_cantwrite - io_registers_readwrite_source 
 
 io_registers_write_source:
 	; VIA1
-	io_w_9f00 qword via_prb 
-	io_w_9f01 qword via_pra 
-	io_w_9f02 qword io_w_unsupported 
-	io_w_9f03 qword via_dra 
-	io_w_9f04 qword via_timer1_counter_l 
-	io_w_9f05 qword via_timer1_counter_h 
-	io_w_9f06 qword via_timer1_latch_l 
-	io_w_9f07 qword via_timer1_latch_h 
-	io_w_9f08 qword via_timer2_latch_l 
-	io_w_9f09 qword via_timer2_latch_h 
-	io_w_9f0a qword io_w_unsupported 
-	io_w_9f0b qword via_acl 
-	io_w_9f0c qword io_w_unsupported 
-	io_w_9f0d qword via_ifr 
-	io_w_9f0e qword via_ier 
-	io_w_9f0f qword via_pra 
+	io_w_9f00 qword via_prb - io_registers_write_source 
+	io_w_9f01 qword via_pra - io_registers_write_source 
+	io_w_9f02 qword io_w_unsupported - io_registers_write_source 
+	io_w_9f03 qword via_dra - io_registers_write_source 
+	io_w_9f04 qword via_timer1_counter_l - io_registers_write_source 
+	io_w_9f05 qword via_timer1_counter_h - io_registers_write_source 
+	io_w_9f06 qword via_timer1_latch_l - io_registers_write_source 
+	io_w_9f07 qword via_timer1_latch_h - io_registers_write_source 
+	io_w_9f08 qword via_timer2_latch_l - io_registers_write_source 
+	io_w_9f09 qword via_timer2_latch_h - io_registers_write_source 
+	io_w_9f0a qword io_w_unsupported - io_registers_write_source 
+	io_w_9f0b qword via_acl - io_registers_write_source 
+	io_w_9f0c qword io_w_unsupported - io_registers_write_source 
+	io_w_9f0d qword via_ifr - io_registers_write_source 
+	io_w_9f0e qword via_ier - io_registers_write_source 
+	io_w_9f0f qword via_pra - io_registers_write_source 
 
 	; Unused
-	io_w_9f10 qword io_cantwrite  
-	io_w_9f11 qword io_cantwrite  
-	io_w_9f12 qword io_cantwrite  
-	io_w_9f13 qword io_cantwrite  
-	io_w_9f14 qword io_cantwrite  
-	io_w_9f15 qword io_cantwrite  
-	io_w_9f16 qword io_cantwrite  
-	io_w_9f17 qword io_cantwrite  
-	io_w_9f18 qword io_cantwrite  
-	io_w_9f19 qword io_cantwrite  
-	io_w_9f1a qword io_cantwrite  
-	io_w_9f1b qword io_cantwrite  
-	io_w_9f1c qword io_cantwrite  
-	io_w_9f1d qword io_cantwrite  
-	io_w_9f1e qword io_cantwrite  
-	io_w_9f1f qword io_cantwrite  
+	io_w_9f10 qword io_cantwrite - io_registers_write_source  
+	io_w_9f11 qword io_cantwrite - io_registers_write_source  
+	io_w_9f12 qword io_cantwrite - io_registers_write_source  
+	io_w_9f13 qword io_cantwrite - io_registers_write_source  
+	io_w_9f14 qword io_cantwrite - io_registers_write_source  
+	io_w_9f15 qword io_cantwrite - io_registers_write_source  
+	io_w_9f16 qword io_cantwrite - io_registers_write_source  
+	io_w_9f17 qword io_cantwrite - io_registers_write_source  
+	io_w_9f18 qword io_cantwrite - io_registers_write_source  
+	io_w_9f19 qword io_cantwrite - io_registers_write_source  
+	io_w_9f1a qword io_cantwrite - io_registers_write_source  
+	io_w_9f1b qword io_cantwrite - io_registers_write_source  
+	io_w_9f1c qword io_cantwrite - io_registers_write_source  
+	io_w_9f1d qword io_cantwrite - io_registers_write_source  
+	io_w_9f1e qword io_cantwrite - io_registers_write_source  
+	io_w_9f1f qword io_cantwrite - io_registers_write_source  
 
-	vera_w_9f20 qword vera_update_addrl 
-	vera_w_9f21 qword vera_update_addrm 
-	vera_w_9f22 qword vera_update_addrh 
-	vera_w_9f23 qword vera_update_data 
-	vera_w_9f24 qword vera_update_data 
-	vera_w_9f25 qword vera_update_ctrl 
-	vera_w_9f26 qword vera_update_ien 
-	vera_w_9f27 qword vera_update_isr 
-	vera_w_9f28 qword vera_update_irqline_l 
-	vera_w_9f29 qword vera_update_9f29 
-	vera_w_9f2a qword vera_update_9f2a 
-	vera_w_9f2b qword vera_update_9f2b 
-	vera_w_9f2c qword vera_update_9f2c 
-	vera_w_9f2d qword vera_update_l0config 
-	vera_w_9f2e qword vera_update_l0mapbase 
-	vera_w_9f2f qword vera_update_l0tilebase 
-	vera_w_9f30 qword vera_update_l0hscroll_l 
-	vera_w_9f31 qword vera_update_l0hscroll_h 
-	vera_w_9f32 qword vera_update_l0vscroll_l 
-	vera_w_9f33 qword vera_update_l0vscroll_h 
-	vera_w_9f34 qword vera_update_l1config 
-	vera_w_9f35 qword vera_update_l1mapbase 
-	vera_w_9f36 qword vera_update_l1tilebase 
-	vera_w_9f37 qword vera_update_l1hscroll_l 
-	vera_w_9f38 qword vera_update_l1hscroll_h 
-	vera_w_9f39 qword vera_update_l1vscroll_l 
-	vera_w_9f3a qword vera_update_l1vscroll_h 
-	vera_w_9f3b qword vera_update_audioctrl 
-	vera_w_9f3c qword vera_update_audiorate 
-	vera_w_9f3d qword vera_update_audiodata 
-	vera_w_9f3e qword vera_update_spi_data 
-	vera_w_9f3f qword vera_update_spi_ctrl 
+	vera_w_9f20 qword vera_update_addrl - io_registers_write_source 
+	vera_w_9f21 qword vera_update_addrm - io_registers_write_source 
+	vera_w_9f22 qword vera_update_addrh - io_registers_write_source 
+	vera_w_9f23 qword vera_update_data - io_registers_write_source 
+	vera_w_9f24 qword vera_update_data - io_registers_write_source 
+	vera_w_9f25 qword vera_update_ctrl - io_registers_write_source 
+	vera_w_9f26 qword vera_update_ien - io_registers_write_source 
+	vera_w_9f27 qword vera_update_isr - io_registers_write_source 
+	vera_w_9f28 qword vera_update_irqline_l - io_registers_write_source 
+	vera_w_9f29 qword vera_update_9f29 - io_registers_write_source 
+	vera_w_9f2a qword vera_update_9f2a - io_registers_write_source 
+	vera_w_9f2b qword vera_update_9f2b - io_registers_write_source 
+	vera_w_9f2c qword vera_update_9f2c - io_registers_write_source 
+	vera_w_9f2d qword vera_update_l0config - io_registers_write_source 
+	vera_w_9f2e qword vera_update_l0mapbase - io_registers_write_source 
+	vera_w_9f2f qword vera_update_l0tilebase - io_registers_write_source 
+	vera_w_9f30 qword vera_update_l0hscroll_l - io_registers_write_source 
+	vera_w_9f31 qword vera_update_l0hscroll_h - io_registers_write_source 
+	vera_w_9f32 qword vera_update_l0vscroll_l - io_registers_write_source 
+	vera_w_9f33 qword vera_update_l0vscroll_h - io_registers_write_source 
+	vera_w_9f34 qword vera_update_l1config - io_registers_write_source 
+	vera_w_9f35 qword vera_update_l1mapbase - io_registers_write_source 
+	vera_w_9f36 qword vera_update_l1tilebase - io_registers_write_source 
+	vera_w_9f37 qword vera_update_l1hscroll_l - io_registers_write_source 
+	vera_w_9f38 qword vera_update_l1hscroll_h - io_registers_write_source 
+	vera_w_9f39 qword vera_update_l1vscroll_l - io_registers_write_source 
+	vera_w_9f3a qword vera_update_l1vscroll_h - io_registers_write_source 
+	vera_w_9f3b qword vera_update_audioctrl - io_registers_write_source 
+	vera_w_9f3c qword vera_update_audiorate - io_registers_write_source 
+	vera_w_9f3d qword vera_update_audiodata - io_registers_write_source 
+	vera_w_9f3e qword vera_update_spi_data - io_registers_write_source 
+	vera_w_9f3f qword vera_update_spi_ctrl - io_registers_write_source 
 	
-	ym_w_9f40 qword ym_write_address 
-	ym_w_9f41 qword ym_write_data 
-	io_w_9f42 qword io_cantwrite  
-	io_w_9f43 qword io_cantwrite  
-	io_w_9f44 qword io_cantwrite  
-	io_w_9f45 qword io_cantwrite  
-	io_w_9f46 qword io_cantwrite  
-	io_w_9f47 qword io_cantwrite  
-	io_w_9f48 qword io_cantwrite  
-	io_w_9f49 qword io_cantwrite  
-	io_w_9f4a qword io_cantwrite  
-	io_w_9f4b qword io_cantwrite  
-	io_w_9f4c qword io_cantwrite  
-	io_w_9f4d qword io_cantwrite  
-	io_w_9f4e qword io_cantwrite  
-	io_w_9f4f qword io_cantwrite  
-	io_w_9f50 qword io_cantwrite  
-	io_w_9f51 qword io_cantwrite  
-	io_w_9f52 qword io_cantwrite  
-	io_w_9f53 qword io_cantwrite  
-	io_w_9f54 qword io_cantwrite  
-	io_w_9f55 qword io_cantwrite  
-	io_w_9f56 qword io_cantwrite  
-	io_w_9f57 qword io_cantwrite  
-	io_w_9f58 qword io_cantwrite  
-	io_w_9f59 qword io_cantwrite  
-	io_w_9f5a qword io_cantwrite  
-	io_w_9f5b qword io_cantwrite  
-	io_w_9f5c qword io_cantwrite  
-	io_w_9f5d qword io_cantwrite  
-	io_w_9f5e qword io_cantwrite  
-	io_w_9f5f qword io_cantwrite  
-	io_w_9f60 qword io_cantwrite  
-	io_w_9f61 qword io_cantwrite  
-	io_w_9f62 qword io_cantwrite  
-	io_w_9f63 qword io_cantwrite  
-	io_w_9f64 qword io_cantwrite  
-	io_w_9f65 qword io_cantwrite  
-	io_w_9f66 qword io_cantwrite  
-	io_w_9f67 qword io_cantwrite  
-	io_w_9f68 qword io_cantwrite  
-	io_w_9f69 qword io_cantwrite  
-	io_w_9f6a qword io_cantwrite  
-	io_w_9f6b qword io_cantwrite  
-	io_w_9f6c qword io_cantwrite  
-	io_w_9f6d qword io_cantwrite  
-	io_w_9f6e qword io_cantwrite  
-	io_w_9f6f qword io_cantwrite  
-	io_w_9f70 qword io_cantwrite  
-	io_w_9f71 qword io_cantwrite  
-	io_w_9f72 qword io_cantwrite  
-	io_w_9f73 qword io_cantwrite  
-	io_w_9f74 qword io_cantwrite  
-	io_w_9f75 qword io_cantwrite  
-	io_w_9f76 qword io_cantwrite  
-	io_w_9f77 qword io_cantwrite  
-	io_w_9f78 qword io_cantwrite  
-	io_w_9f79 qword io_cantwrite  
-	io_w_9f7a qword io_cantwrite  
-	io_w_9f7b qword io_cantwrite  
-	io_w_9f7c qword io_cantwrite  
-	io_w_9f7d qword io_cantwrite  
-	io_w_9f7e qword io_cantwrite  
-	io_w_9f7f qword io_cantwrite  
-	io_w_9f80 qword io_cantwrite  
-	io_w_9f81 qword io_cantwrite  
-	io_w_9f82 qword io_cantwrite  
-	io_w_9f83 qword io_cantwrite  
-	io_w_9f84 qword io_cantwrite  
-	io_w_9f85 qword io_cantwrite  
-	io_w_9f86 qword io_cantwrite  
-	io_w_9f87 qword io_cantwrite  
-	io_w_9f88 qword io_cantwrite  
-	io_w_9f89 qword io_cantwrite  
-	io_w_9f8a qword io_cantwrite  
-	io_w_9f8b qword io_cantwrite  
-	io_w_9f8c qword io_cantwrite  
-	io_w_9f8d qword io_cantwrite  
-	io_w_9f8e qword io_cantwrite  
-	io_w_9f8f qword io_cantwrite  
-	io_w_9f90 qword io_cantwrite  
-	io_w_9f91 qword io_cantwrite  
-	io_w_9f92 qword io_cantwrite  
-	io_w_9f93 qword io_cantwrite  
-	io_w_9f94 qword io_cantwrite  
-	io_w_9f95 qword io_cantwrite  
-	io_w_9f96 qword io_cantwrite  
-	io_w_9f97 qword io_cantwrite  
-	io_w_9f98 qword io_cantwrite  
-	io_w_9f99 qword io_cantwrite  
-	io_w_9f9a qword io_cantwrite  
-	io_w_9f9b qword io_cantwrite  
-	io_w_9f9c qword io_cantwrite  
-	io_w_9f9d qword io_cantwrite  
-	io_w_9f9e qword io_cantwrite  
-	io_w_9f9f qword io_cantwrite  
-	io_w_9fa0 qword io_cantwrite  
-	io_w_9fa1 qword io_cantwrite  
-	io_w_9fa2 qword io_cantwrite  
-	io_w_9fa3 qword io_cantwrite  
-	io_w_9fa4 qword io_cantwrite  
-	io_w_9fa5 qword io_cantwrite  
-	io_w_9fa6 qword io_cantwrite  
-	io_w_9fa7 qword io_cantwrite  
-	io_w_9fa8 qword io_cantwrite  
-	io_w_9fa9 qword io_cantwrite  
-	io_w_9faa qword io_cantwrite  
-	io_w_9fab qword io_cantwrite  
-	io_w_9fac qword io_cantwrite  
-	io_w_9fad qword io_cantwrite  
-	io_w_9fae qword io_cantwrite  
-	io_w_9faf qword io_cantwrite  
-	io_w_9fb0 qword io_cantwrite  
-	io_w_9fb1 qword io_cantwrite  
-	io_w_9fb2 qword io_cantwrite  
-	io_w_9fb3 qword io_cantwrite  
-	io_w_9fb4 qword io_cantwrite  
-	io_w_9fb5 qword io_cantwrite  
-	io_w_9fb6 qword io_cantwrite  
-	io_w_9fb7 qword io_cantwrite  
-	io_w_9fb8 qword io_cantwrite  
-	io_w_9fb9 qword io_cantwrite  
-	io_w_9fba qword io_cantwrite  
-	io_w_9fbb qword io_cantwrite  
-	io_w_9fbc qword io_cantwrite  
-	io_w_9fbd qword io_cantwrite  
-	io_w_9fbe qword io_cantwrite  
-	io_w_9fbf qword io_cantwrite  
-	io_w_9fc0 qword io_cantwrite  
-	io_w_9fc1 qword io_cantwrite  
-	io_w_9fc2 qword io_cantwrite  
-	io_w_9fc3 qword io_cantwrite  
-	io_w_9fc4 qword io_cantwrite  
-	io_w_9fc5 qword io_cantwrite  
-	io_w_9fc6 qword io_cantwrite  
-	io_w_9fc7 qword io_cantwrite  
-	io_w_9fc8 qword io_cantwrite  
-	io_w_9fc9 qword io_cantwrite  
-	io_w_9fca qword io_cantwrite  
-	io_w_9fcb qword io_cantwrite  
-	io_w_9fcc qword io_cantwrite  
-	io_w_9fcd qword io_cantwrite  
-	io_w_9fce qword io_cantwrite  
-	io_w_9fcf qword io_cantwrite  
-	io_w_9fd0 qword io_cantwrite  
-	io_w_9fd1 qword io_cantwrite  
-	io_w_9fd2 qword io_cantwrite  
-	io_w_9fd3 qword io_cantwrite  
-	io_w_9fd4 qword io_cantwrite  
-	io_w_9fd5 qword io_cantwrite  
-	io_w_9fd6 qword io_cantwrite  
-	io_w_9fd7 qword io_cantwrite  
-	io_w_9fd8 qword io_cantwrite  
-	io_w_9fd9 qword io_cantwrite  
-	io_w_9fda qword io_cantwrite  
-	io_w_9fdb qword io_cantwrite  
-	io_w_9fdc qword io_cantwrite  
-	io_w_9fdd qword io_cantwrite  
-	io_w_9fde qword io_cantwrite  
-	io_w_9fdf qword io_cantwrite  
+	ym_w_9f40 qword ym_write_address - io_registers_write_source 
+	ym_w_9f41 qword ym_write_data - io_registers_write_source 
+	io_w_9f42 qword io_cantwrite - io_registers_write_source  
+	io_w_9f43 qword io_cantwrite - io_registers_write_source  
+	io_w_9f44 qword io_cantwrite - io_registers_write_source  
+	io_w_9f45 qword io_cantwrite - io_registers_write_source  
+	io_w_9f46 qword io_cantwrite - io_registers_write_source  
+	io_w_9f47 qword io_cantwrite - io_registers_write_source  
+	io_w_9f48 qword io_cantwrite - io_registers_write_source  
+	io_w_9f49 qword io_cantwrite - io_registers_write_source  
+	io_w_9f4a qword io_cantwrite - io_registers_write_source  
+	io_w_9f4b qword io_cantwrite - io_registers_write_source  
+	io_w_9f4c qword io_cantwrite - io_registers_write_source  
+	io_w_9f4d qword io_cantwrite - io_registers_write_source  
+	io_w_9f4e qword io_cantwrite - io_registers_write_source  
+	io_w_9f4f qword io_cantwrite - io_registers_write_source  
+	io_w_9f50 qword io_cantwrite - io_registers_write_source  
+	io_w_9f51 qword io_cantwrite - io_registers_write_source  
+	io_w_9f52 qword io_cantwrite - io_registers_write_source  
+	io_w_9f53 qword io_cantwrite - io_registers_write_source  
+	io_w_9f54 qword io_cantwrite - io_registers_write_source  
+	io_w_9f55 qword io_cantwrite - io_registers_write_source  
+	io_w_9f56 qword io_cantwrite - io_registers_write_source  
+	io_w_9f57 qword io_cantwrite - io_registers_write_source  
+	io_w_9f58 qword io_cantwrite - io_registers_write_source  
+	io_w_9f59 qword io_cantwrite - io_registers_write_source  
+	io_w_9f5a qword io_cantwrite - io_registers_write_source  
+	io_w_9f5b qword io_cantwrite - io_registers_write_source  
+	io_w_9f5c qword io_cantwrite - io_registers_write_source  
+	io_w_9f5d qword io_cantwrite - io_registers_write_source  
+	io_w_9f5e qword io_cantwrite - io_registers_write_source  
+	io_w_9f5f qword io_cantwrite - io_registers_write_source  
+	io_w_9f60 qword io_cantwrite - io_registers_write_source  
+	io_w_9f61 qword io_cantwrite - io_registers_write_source  
+	io_w_9f62 qword io_cantwrite - io_registers_write_source  
+	io_w_9f63 qword io_cantwrite - io_registers_write_source  
+	io_w_9f64 qword io_cantwrite - io_registers_write_source  
+	io_w_9f65 qword io_cantwrite - io_registers_write_source  
+	io_w_9f66 qword io_cantwrite - io_registers_write_source  
+	io_w_9f67 qword io_cantwrite - io_registers_write_source  
+	io_w_9f68 qword io_cantwrite - io_registers_write_source  
+	io_w_9f69 qword io_cantwrite - io_registers_write_source  
+	io_w_9f6a qword io_cantwrite - io_registers_write_source  
+	io_w_9f6b qword io_cantwrite - io_registers_write_source  
+	io_w_9f6c qword io_cantwrite - io_registers_write_source  
+	io_w_9f6d qword io_cantwrite - io_registers_write_source  
+	io_w_9f6e qword io_cantwrite - io_registers_write_source  
+	io_w_9f6f qword io_cantwrite - io_registers_write_source  
+	io_w_9f70 qword io_cantwrite - io_registers_write_source  
+	io_w_9f71 qword io_cantwrite - io_registers_write_source  
+	io_w_9f72 qword io_cantwrite - io_registers_write_source  
+	io_w_9f73 qword io_cantwrite - io_registers_write_source  
+	io_w_9f74 qword io_cantwrite - io_registers_write_source  
+	io_w_9f75 qword io_cantwrite - io_registers_write_source  
+	io_w_9f76 qword io_cantwrite - io_registers_write_source  
+	io_w_9f77 qword io_cantwrite - io_registers_write_source  
+	io_w_9f78 qword io_cantwrite - io_registers_write_source  
+	io_w_9f79 qword io_cantwrite - io_registers_write_source  
+	io_w_9f7a qword io_cantwrite - io_registers_write_source  
+	io_w_9f7b qword io_cantwrite - io_registers_write_source  
+	io_w_9f7c qword io_cantwrite - io_registers_write_source  
+	io_w_9f7d qword io_cantwrite - io_registers_write_source  
+	io_w_9f7e qword io_cantwrite - io_registers_write_source  
+	io_w_9f7f qword io_cantwrite - io_registers_write_source  
+	io_w_9f80 qword io_cantwrite - io_registers_write_source  
+	io_w_9f81 qword io_cantwrite - io_registers_write_source  
+	io_w_9f82 qword io_cantwrite - io_registers_write_source  
+	io_w_9f83 qword io_cantwrite - io_registers_write_source  
+	io_w_9f84 qword io_cantwrite - io_registers_write_source  
+	io_w_9f85 qword io_cantwrite - io_registers_write_source  
+	io_w_9f86 qword io_cantwrite - io_registers_write_source  
+	io_w_9f87 qword io_cantwrite - io_registers_write_source  
+	io_w_9f88 qword io_cantwrite - io_registers_write_source  
+	io_w_9f89 qword io_cantwrite - io_registers_write_source  
+	io_w_9f8a qword io_cantwrite - io_registers_write_source  
+	io_w_9f8b qword io_cantwrite - io_registers_write_source  
+	io_w_9f8c qword io_cantwrite - io_registers_write_source  
+	io_w_9f8d qword io_cantwrite - io_registers_write_source  
+	io_w_9f8e qword io_cantwrite - io_registers_write_source  
+	io_w_9f8f qword io_cantwrite - io_registers_write_source  
+	io_w_9f90 qword io_cantwrite - io_registers_write_source  
+	io_w_9f91 qword io_cantwrite - io_registers_write_source  
+	io_w_9f92 qword io_cantwrite - io_registers_write_source  
+	io_w_9f93 qword io_cantwrite - io_registers_write_source  
+	io_w_9f94 qword io_cantwrite - io_registers_write_source  
+	io_w_9f95 qword io_cantwrite - io_registers_write_source  
+	io_w_9f96 qword io_cantwrite - io_registers_write_source  
+	io_w_9f97 qword io_cantwrite - io_registers_write_source  
+	io_w_9f98 qword io_cantwrite - io_registers_write_source  
+	io_w_9f99 qword io_cantwrite - io_registers_write_source  
+	io_w_9f9a qword io_cantwrite - io_registers_write_source  
+	io_w_9f9b qword io_cantwrite - io_registers_write_source  
+	io_w_9f9c qword io_cantwrite - io_registers_write_source  
+	io_w_9f9d qword io_cantwrite - io_registers_write_source  
+	io_w_9f9e qword io_cantwrite - io_registers_write_source  
+	io_w_9f9f qword io_cantwrite - io_registers_write_source  
+	io_w_9fa0 qword io_cantwrite - io_registers_write_source  
+	io_w_9fa1 qword io_cantwrite - io_registers_write_source  
+	io_w_9fa2 qword io_cantwrite - io_registers_write_source  
+	io_w_9fa3 qword io_cantwrite - io_registers_write_source  
+	io_w_9fa4 qword io_cantwrite - io_registers_write_source  
+	io_w_9fa5 qword io_cantwrite - io_registers_write_source  
+	io_w_9fa6 qword io_cantwrite - io_registers_write_source  
+	io_w_9fa7 qword io_cantwrite - io_registers_write_source  
+	io_w_9fa8 qword io_cantwrite - io_registers_write_source  
+	io_w_9fa9 qword io_cantwrite - io_registers_write_source  
+	io_w_9faa qword io_cantwrite - io_registers_write_source  
+	io_w_9fab qword io_cantwrite - io_registers_write_source  
+	io_w_9fac qword io_cantwrite - io_registers_write_source  
+	io_w_9fad qword io_cantwrite - io_registers_write_source  
+	io_w_9fae qword io_cantwrite - io_registers_write_source  
+	io_w_9faf qword io_cantwrite - io_registers_write_source  
+	io_w_9fb0 qword io_cantwrite - io_registers_write_source  
+	io_w_9fb1 qword io_cantwrite - io_registers_write_source  
+	io_w_9fb2 qword io_cantwrite - io_registers_write_source  
+	io_w_9fb3 qword io_cantwrite - io_registers_write_source  
+	io_w_9fb4 qword io_cantwrite - io_registers_write_source  
+	io_w_9fb5 qword io_cantwrite - io_registers_write_source  
+	io_w_9fb6 qword io_cantwrite - io_registers_write_source  
+	io_w_9fb7 qword io_cantwrite - io_registers_write_source  
+	io_w_9fb8 qword io_cantwrite - io_registers_write_source  
+	io_w_9fb9 qword io_cantwrite - io_registers_write_source  
+	io_w_9fba qword io_cantwrite - io_registers_write_source  
+	io_w_9fbb qword io_cantwrite - io_registers_write_source  
+	io_w_9fbc qword io_cantwrite - io_registers_write_source  
+	io_w_9fbd qword io_cantwrite - io_registers_write_source  
+	io_w_9fbe qword io_cantwrite - io_registers_write_source  
+	io_w_9fbf qword io_cantwrite - io_registers_write_source  
+	io_w_9fc0 qword io_cantwrite - io_registers_write_source  
+	io_w_9fc1 qword io_cantwrite - io_registers_write_source  
+	io_w_9fc2 qword io_cantwrite - io_registers_write_source  
+	io_w_9fc3 qword io_cantwrite - io_registers_write_source  
+	io_w_9fc4 qword io_cantwrite - io_registers_write_source  
+	io_w_9fc5 qword io_cantwrite - io_registers_write_source  
+	io_w_9fc6 qword io_cantwrite - io_registers_write_source  
+	io_w_9fc7 qword io_cantwrite - io_registers_write_source  
+	io_w_9fc8 qword io_cantwrite - io_registers_write_source  
+	io_w_9fc9 qword io_cantwrite - io_registers_write_source  
+	io_w_9fca qword io_cantwrite - io_registers_write_source  
+	io_w_9fcb qword io_cantwrite - io_registers_write_source  
+	io_w_9fcc qword io_cantwrite - io_registers_write_source  
+	io_w_9fcd qword io_cantwrite - io_registers_write_source  
+	io_w_9fce qword io_cantwrite - io_registers_write_source  
+	io_w_9fcf qword io_cantwrite - io_registers_write_source  
+	io_w_9fd0 qword io_cantwrite - io_registers_write_source  
+	io_w_9fd1 qword io_cantwrite - io_registers_write_source  
+	io_w_9fd2 qword io_cantwrite - io_registers_write_source  
+	io_w_9fd3 qword io_cantwrite - io_registers_write_source  
+	io_w_9fd4 qword io_cantwrite - io_registers_write_source  
+	io_w_9fd5 qword io_cantwrite - io_registers_write_source  
+	io_w_9fd6 qword io_cantwrite - io_registers_write_source  
+	io_w_9fd7 qword io_cantwrite - io_registers_write_source  
+	io_w_9fd8 qword io_cantwrite - io_registers_write_source  
+	io_w_9fd9 qword io_cantwrite - io_registers_write_source  
+	io_w_9fda qword io_cantwrite - io_registers_write_source  
+	io_w_9fdb qword io_cantwrite - io_registers_write_source  
+	io_w_9fdc qword io_cantwrite - io_registers_write_source  
+	io_w_9fdd qword io_cantwrite - io_registers_write_source  
+	io_w_9fde qword io_cantwrite - io_registers_write_source  
+	io_w_9fdf qword io_cantwrite - io_registers_write_source  
 
 	; WIFI Card
-	io_w_9fe0 qword io_cantwrite 
-	io_w_9fe1 qword io_cantwrite 
-	io_w_9fe2 qword io_cantwrite 
-	io_w_9fe3 qword io_cantwrite 
-	io_w_9fe4 qword io_cantwrite 
-	io_w_9fe5 qword io_cantwrite 
-	io_w_9fe6 qword io_cantwrite 
-	io_w_9fe7 qword io_cantwrite 
+	io_w_9fe0 qword io_cantwrite - io_registers_write_source 
+	io_w_9fe1 qword io_cantwrite - io_registers_write_source 
+	io_w_9fe2 qword io_cantwrite - io_registers_write_source 
+	io_w_9fe3 qword io_cantwrite - io_registers_write_source 
+	io_w_9fe4 qword io_cantwrite - io_registers_write_source 
+	io_w_9fe5 qword io_cantwrite - io_registers_write_source 
+	io_w_9fe6 qword io_cantwrite - io_registers_write_source 
+	io_w_9fe7 qword io_cantwrite - io_registers_write_source 
 
-	io_w_9fe8 qword io_cantwrite  
-	io_w_9fe9 qword io_cantwrite  
-	io_w_9fea qword io_cantwrite  
-	io_w_9feb qword io_cantwrite  
-	io_w_9fec qword io_cantwrite  
-	io_w_9fed qword io_cantwrite  
-	io_w_9fee qword io_cantwrite  
-	io_w_9fef qword io_cantwrite  
+	io_w_9fe8 qword io_cantwrite - io_registers_write_source  
+	io_w_9fe9 qword io_cantwrite - io_registers_write_source  
+	io_w_9fea qword io_cantwrite - io_registers_write_source  
+	io_w_9feb qword io_cantwrite - io_registers_write_source  
+	io_w_9fec qword io_cantwrite - io_registers_write_source  
+	io_w_9fed qword io_cantwrite - io_registers_write_source  
+	io_w_9fee qword io_cantwrite - io_registers_write_source  
+	io_w_9fef qword io_cantwrite - io_registers_write_source  
 
-	io_w_9ff0 qword io_cantwrite  
-	io_w_9ff1 qword io_cantwrite  
-	io_w_9ff2 qword io_cantwrite  
-	io_w_9ff3 qword io_cantwrite  
-	io_w_9ff4 qword io_cantwrite  
-	io_w_9ff5 qword io_cantwrite  
-	io_w_9ff6 qword io_cantwrite  
-	io_w_9ff7 qword io_cantwrite  
-	io_w_9ff8 qword io_cantwrite  
-	io_w_9ff9 qword io_cantwrite  
-	io_w_9ffa qword io_cantwrite  
-	io_w_9ffb qword io_cantwrite  
-	io_w_9ffc qword io_cantwrite  
-	io_w_9ffd qword io_cantwrite  
-	io_w_9ffe qword io_cantwrite  
-	io_w_9fff qword io_cantwrite  
+	io_w_9ff0 qword io_cantwrite - io_registers_write_source  
+	io_w_9ff1 qword io_cantwrite - io_registers_write_source  
+	io_w_9ff2 qword io_cantwrite - io_registers_write_source  
+	io_w_9ff3 qword io_cantwrite - io_registers_write_source  
+	io_w_9ff4 qword io_cantwrite - io_registers_write_source  
+	io_w_9ff5 qword io_cantwrite - io_registers_write_source  
+	io_w_9ff6 qword io_cantwrite - io_registers_write_source  
+	io_w_9ff7 qword io_cantwrite - io_registers_write_source  
+	io_w_9ff8 qword io_cantwrite - io_registers_write_source  
+	io_w_9ff9 qword io_cantwrite - io_registers_write_source  
+	io_w_9ffa qword io_cantwrite - io_registers_write_source  
+	io_w_9ffb qword io_cantwrite - io_registers_write_source  
+	io_w_9ffc qword io_cantwrite - io_registers_write_source  
+	io_w_9ffd qword io_cantwrite - io_registers_write_source  
+	io_w_9ffe qword io_cantwrite - io_registers_write_source  
+	io_w_9fff qword io_cantwrite - io_registers_write_source  
 .code

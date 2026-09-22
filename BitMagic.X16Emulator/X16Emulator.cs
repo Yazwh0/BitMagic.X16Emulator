@@ -291,13 +291,13 @@ public class Emulator : IDisposable
         public ushort Timer2_Latch { get => _emulator._state.Via_Timer2_Latch; set => _emulator._state.Via_Timer2_Latch = value; }
         public ushort Timer2_Counter { get => _emulator._state.Via_Timer2_Counter; set => _emulator._state.Via_Timer2_Counter = value; }
 
-        public bool Interrupt_Timer1 { get => (_emulator.Memory[0x9f0e] & 0b01000000) != 0; set => _emulator.Memory[0x9f0e] |= (value ? (byte)0b01000000 : (byte)0); }
-        public bool Interrupt_Timer2 { get => (_emulator.Memory[0x9f0e] & 0b00100000) != 0; set => _emulator.Memory[0x9f0e] |= (value ? (byte)0b00100000 : (byte)0); }
-        public bool Interrupt_Cb1 { get => (_emulator.Memory[0x9f0e] & 0b00010000) != 0; set => _emulator.Memory[0x9f0e] |= (value ? (byte)0b00010000 : (byte)0); }
-        public bool Interrupt_Cb2 { get => (_emulator.Memory[0x9f0e] & 0b00001000) != 0; set => _emulator.Memory[0x9f0e] |= (value ? (byte)0b00001000 : (byte)0); }
-        public bool Interrupt_ShiftRegister { get => (_emulator.Memory[0x9f0e] & 0b0000100) != 0; set => _emulator.Memory[0x9f0e] |= (value ? (byte)0b0000100 : (byte)0); }
-        public bool Interrupt_Ca1 { get => (_emulator.Memory[0x9f0e] & 0b0000010) != 0; set => _emulator.Memory[0x9f0e] |= (value ? (byte)0b0000010 : (byte)0); }
-        public bool Interrupt_Ca2 { get => (_emulator.Memory[0x9f0e] & 0b0000001) != 0; set => _emulator.Memory[0x9f0e] |= (value ? (byte)0b0000001 : (byte)0); }
+        public bool Interrupt_Timer1 { get => (_emulator.Memory[0x9f0e] & 0b01000000) != 0; set => SetMemoryBit(0x9f0e, 0b01000000, value); }
+        public bool Interrupt_Timer2 { get => (_emulator.Memory[0x9f0e] & 0b00100000) != 0; set => SetMemoryBit(0x9f0e, 0b00100000, value); }
+        public bool Interrupt_Cb1 { get => (_emulator.Memory[0x9f0e] & 0b00010000) != 0; set => SetMemoryBit(0x9f0e, 0b00010000, value); }
+        public bool Interrupt_Cb2 { get => (_emulator.Memory[0x9f0e] & 0b00001000) != 0; set => SetMemoryBit(0x9f0e, 0b00001000, value); }
+        public bool Interrupt_ShiftRegister { get => (_emulator.Memory[0x9f0e] & 0b0000100) != 0; set => SetMemoryBit(0x9f0e, 0b0000100, value); }
+        public bool Interrupt_Ca1 { get => (_emulator.Memory[0x9f0e] & 0b0000010) != 0; set => SetMemoryBit(0x9f0e, 0b0000010, value); }
+        public bool Interrupt_Ca2 { get => (_emulator.Memory[0x9f0e] & 0b0000001) != 0; set => SetMemoryBit(0x9f0e, 0b0000001, value); }
 
         public bool Timer1_Continous { get => _emulator._state.Via_Timer1_Continuous != 0; set => _emulator._state.Via_Timer1_Continuous = (value ? (byte)1 : (byte)0); }
         public bool Timer1_Pb7 { get => _emulator._state.Via_Timer1_Pb7 != 0; set => _emulator._state.Via_Timer1_Pb7 = (value ? (byte)1 : (byte)0); }
@@ -309,6 +309,17 @@ public class Emulator : IDisposable
         public byte Register_A_InValue { get => _emulator._state.Via_Register_A_InValue; set => _emulator._state.Via_Register_A_InValue = value; }
         public byte Register_A_Direction { get => _emulator._state.Via_Register_A_Direction; set => _emulator._state.Via_Register_A_Direction = value; }
         public bool Interrupt { get => (_emulator._state.Interrupt_Hit & (uint)InterruptSource.Via) != 0; }
+
+        private void SetMemoryBit(int address, byte mask, bool set)
+        {
+            if (set)
+            {
+                _emulator.Memory[address] |= mask;
+                return;
+            }
+
+            _emulator.Memory[address] &= unchecked((byte)~mask);
+        }
     }
 
     public class I2cState

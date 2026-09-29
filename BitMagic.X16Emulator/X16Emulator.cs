@@ -866,8 +866,8 @@ public class Emulator : IDisposable
         public uint Layer1_Wait = 0;
         public uint Layer0_TileDone = 0;
         public uint Layer1_TileDone = 0;
-        public ushort Beam_x = 0;
-        public ushort Beam_y = 0;
+        public ushort Beam_x = 0;               
+        public ushort Beam_y = 0;               
         public byte DisplayDirty = 2;           // always draw the first render
         public byte RenderReady = 0;            // used to signal to GL to redaw
 
@@ -1427,10 +1427,19 @@ public class Emulator : IDisposable
         }
     }
 
-    private void SetPointers() => _state.SetPointers(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,
+    private void SetPointers()
+    {
+        _state.SetPointers(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,
             _sprite_ptr, _display_buffer_ptr_rounded, _history_ptr, _i2cBuffer_ptr, _smcKeyboard_ptr, _smcMouse_ptr, _spiHistory_ptr,
             _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded, _stackInfo_Ptr, _stackBreakpoint_Ptr, _rtcNvram_Ptr,
             _pcm_Ptr, _audioOutput_ptr, _psg_ptr, _vramBreakpoint_ptr, _debug_sprite_colours_ptr);
+
+        // Not part of SetPointers' fixed set: SdCardPtr points at whichever SdCard instance is
+        // loaded (or none), rather than at a buffer this Emulator always owns. Re-derive it from
+        // the live SdCard here too, the same as every other pointer, so SetState() (used to
+        // restore a deserialized CpuState) can't leave it pointing at another process's memory.
+        _state.SdCardPtr = SdCard?.MemoryPtr ?? 0;
+    }
 
     public ulong DisplayPtr => _display_ptr;
 

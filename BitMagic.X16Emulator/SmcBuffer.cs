@@ -69,7 +69,7 @@ public class SmcBuffer
             xDelta -= toSendX;
             yDelta -= toSendY;
 
-            byte btns = (byte)((byte)buttons + (byte)0b1000 + (byte)((toSendX & 0x100) != 0 ? 010000 : 0) + (byte)((toSendY & 0x100) != 0 ? 0100000 : 0));
+            byte btns = (byte)((byte)buttons | 0b1000 | ((toSendX & 0x100) != 0 ? 0x10 : 0) | ((toSendY & 0x100) != 0 ? 0x20 : 0));
 
             //Console.WriteLine($"{Convert.ToString(btns, 2)} {(byte)toSendX:X2} {(byte)toSendY:X2}");
             PushMouseByte(btns);

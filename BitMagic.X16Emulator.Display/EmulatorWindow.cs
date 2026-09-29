@@ -59,10 +59,13 @@ public class EmulatorWindow : IDisposable
     private Vector2 _lastMousePosition;
     private IGamepad[]? _joysticks;
 
-    private IMouse? _mouse = null;
     private int _mouseX = 0;
     private int _mouseY = 0;
     private Timer? _mouseTimer = null;
+    private readonly object _mouseLock = new();
+    private int _mouseButtonsDown = 0;      // buttons currently held
+    private int _mouseButtonsClicked = 0;   // buttons pressed since the last packet, so short clicks aren't lost
+    private int _mouseButtonsSent = 0;      // button state in the last packet sent
 
     public event EventHandler<ControlKeyPressedEventArgs>? ControlKeyPressed;
 
@@ -278,6 +281,18 @@ public class EmulatorWindow : IDisposable
         _input!.Mice[0].Cursor.CursorMode = CursorMode.Normal;
         _hasMouse = false;
         _mouseTimer?.Dispose();
+        _mouseTimer = null;
+
+        // release anything the X16 still thinks is held
+        lock (_mouseLock)
+        {
+            if (_mouseButtonsSent != 0)
+                _emulator?.SmcBuffer.PushMouse(0, 0, SmcBuffer.MouseButtons.None);
+            _mouseButtonsDown = 0;
+            _mouseButtonsClicked = 0;
+            _mouseButtonsSent = 0;
+            _lastMousePosition = default;
+        }
     }
 
     // If we click then we capture the mouse and pass movement to the emulator.
@@ -288,11 +303,17 @@ public class EmulatorWindow : IDisposable
 
         //var input = _window.CreateInput();
         _input!.Mice[0].Cursor.CursorMode = CursorMode.Raw;
+        lock (_mouseLock)
+        {
+            _mouseX = 0;
+            _mouseY = 0;
+            _mouseButtonsDown = 0;
+            _mouseButtonsClicked = 0;
+            _mouseButtonsSent = 0;
+            _lastMousePosition = default;
+        }
         _hasMouse = true;
-        _mouse = arg1;
         _mouseTimer = new Timer(CheckMouseMove, null, 20, 20);
-        _mouseX = 0;
-        _mouseX = 1;
     }
 
     private void EmulatorWindow_MouseMove(IMouse arg1, System.Numerics.Vector2 position)
@@ -300,17 +321,17 @@ public class EmulatorWindow : IDisposable
         if (!_hasMouse)
             return;
 
-        if (_lastMousePosition == default)
-            _lastMousePosition = position;
-        else
+        lock (_mouseLock)
         {
-            var xDelta = (int)(position.X - _lastMousePosition.X);
-            var yDelta = (int)(position.Y - _lastMousePosition.Y);
+            if (_lastMousePosition == default)
+            {
+                _lastMousePosition = position;
+                return;
+            }
 
+            _mouseX += (int)(position.X - _lastMousePosition.X);
+            _mouseY += (int)(position.Y - _lastMousePosition.Y);
             _lastMousePosition = position;
-            _mouseX += xDelta;
-            _mouseY += yDelta;
-            //_emulator.SmcBuffer.PushMouse(xDelta, yDelta, GetButtons(arg1));
         }
     }
 
@@ -319,7 +340,12 @@ public class EmulatorWindow : IDisposable
         if (!_hasMouse)
             return;
 
-        // _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
+        var button = ToX16Button(arg2);
+        lock (_mouseLock)
+        {
+            _mouseButtonsDown |= button;
+            _mouseButtonsClicked |= button;
+        }
     }
 
     private void EmulatorWindow_MouseUp(IMouse arg1, Silk.NET.Input.MouseButton arg2)
@@ -327,26 +353,37 @@ public class EmulatorWindow : IDisposable
         if (!_hasMouse)
             return;
 
-        //   _emulator.SmcBuffer.PushMouse(0, 0, GetButtons(arg1));
+        lock (_mouseLock)
+            _mouseButtonsDown &= ~ToX16Button(arg2);
     }
 
-    private SmcBuffer.MouseButtons GetButtons(IMouse mouse) =>
-        (SmcBuffer.MouseButtons)((mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Left) ? (int)SmcBuffer.MouseButtons.Left : 0) +
-            (mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Right) ? (int)SmcBuffer.MouseButtons.Right : 0) +
-            (mouse.IsButtonPressed(Silk.NET.Input.MouseButton.Middle) ? (int)SmcBuffer.MouseButtons.Middle : 0));
-
+    private static int ToX16Button(Silk.NET.Input.MouseButton button) => button switch
+    {
+        Silk.NET.Input.MouseButton.Left => (int)SmcBuffer.MouseButtons.Left,
+        Silk.NET.Input.MouseButton.Right => (int)SmcBuffer.MouseButtons.Right,
+        Silk.NET.Input.MouseButton.Middle => (int)SmcBuffer.MouseButtons.Middle,
+        _ => 0
+    };
 
     private void CheckMouseMove(Object? stateInfo)
     {
         if (_emulator == null)          // timer can still fire once after Dispose()
             return;
 
-        if (_mouseX == 0 && _mouseY == 0)
-            return;
+        lock (_mouseLock)
+        {
+            // include buttons clicked since the last packet, so a press+release inside one tick is still seen
+            var buttons = _mouseButtonsDown | _mouseButtonsClicked;
+            _mouseButtonsClicked = 0;
 
-        _emulator.SmcBuffer.PushMouse(_mouseX, _mouseY, _mouse != null ? GetButtons(_mouse) : SmcBuffer.MouseButtons.None);
-        _mouseX = 0;
-        _mouseY = 0;
+            if (_mouseX == 0 && _mouseY == 0 && buttons == _mouseButtonsSent)
+                return;
+
+            _emulator.SmcBuffer.PushMouse(_mouseX, _mouseY, (SmcBuffer.MouseButtons)buttons);
+            _mouseButtonsSent = buttons;
+            _mouseX = 0;
+            _mouseY = 0;
+        }
     }
 
     private unsafe void OnRender(double deltaTime)

@@ -1408,7 +1408,7 @@ vera_afterread_9f28 proc
 
     lea rax, [scanline_lookup]
 
-    movzx ecx, word ptr [rdx].state.display_y
+    movzx ecx, word ptr [rdx].state.beam_y
     movzx eax, byte ptr [rax + rcx * 2]
 
     mov dword ptr [rdx].state.vram_data, eax
@@ -1422,7 +1422,7 @@ vera_afterread_9f26 proc
 
     lea rax, [scanline_lookup]
 
-    movzx ecx, word ptr [rdx].state.display_y
+    movzx ecx, word ptr [rdx].state.beam_y
     movzx ecx, byte ptr [rax + rcx * 2 + 1]
 
     mov eax, dword ptr [rdx].state.vram_data    ; get existing value and mask off bit 6

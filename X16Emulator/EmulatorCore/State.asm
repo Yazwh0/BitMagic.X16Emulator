@@ -325,7 +325,7 @@ state struct
 	drawing					byte ?
 
 	; Rendering
-	display_position		dword ?
+	beam_position		dword ?
 	frame_count				dword ?
 	frame_count_breakpoint	dword ?
 	buffer_render_position	dword ?
@@ -353,8 +353,8 @@ state struct
 	layer0_tiledone			dword ?
 	layer1_tiledone			dword ?
 
-	display_x				word ?
-	display_y				word ?
+	beam_x				word ?
+	beam_y				word ?
 
 	display_dirty			byte ?
 	render_ready			byte ?

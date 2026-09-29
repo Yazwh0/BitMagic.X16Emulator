@@ -124,12 +124,12 @@ change:
 
 	mov rsi, [rdx].state.display_buffer_ptr
 	mov rdi, [rdx].state.display_ptr
-	mov r9d, [rdx].state.display_position
-	;mov r11w, [rdx].state.display_x
+	mov r9d, [rdx].state.beam_position
+	;mov r11w, [rdx].state.beam_x
 	mov r15d, [rdx].state.buffer_render_position
 
 	; this also gets set at the end of the display loop
-	;movzx r12, word ptr [rdx].state.display_y
+	;movzx r12, word ptr [rdx].state.beam_y
 
 display_loop:
 	;
@@ -137,8 +137,8 @@ display_loop:
 	;
 	; needs actual x, y coordinates
 
-	movzx r12, word ptr [rdx].state.display_y
-	movzx r11, word ptr [rdx].state.display_x
+	movzx r12, word ptr [rdx].state.beam_y
+	movzx r11, word ptr [rdx].state.beam_x
 
 	; check if we're in the visible area as a trivial skip
 	lea r10, should_display_table
@@ -175,8 +175,8 @@ renders_end::
 done:
 	;mov rsi, [rdx].state.vram_ptr
 
-	mov dword ptr [rdx].state.display_position, r9d
-	;mov word ptr [rdx].state.display_x, r11w
+	mov dword ptr [rdx].state.beam_position, r9d
+	;mov word ptr [rdx].state.beam_x, r11w
 	mov dword ptr [rdx].state.buffer_render_position, r15d
 
 	pop r15
@@ -256,10 +256,10 @@ renderstep_read_from_buffer proc
 
 	add r15, 1
 
-	inc word ptr [rdx].state.display_x
+	inc word ptr [rdx].state.beam_x
 	;mov rax, r15
 	;and rax, 0011111111111b	; dont consider the top bit
-	;mov word ptr [rdx].state.display_x, ax
+	;mov word ptr [rdx].state.beam_x, ax
 
 	add r9, 1
 	jmp renders_end
@@ -273,10 +273,10 @@ renderstep_normal proc
 
 	add r15, 1
 
-	inc word ptr [rdx].state.display_x
+	inc word ptr [rdx].state.beam_x
 	;mov rax, r15
 	;and rax, 0011111111111b	; dont consider the top bit
-	;mov word ptr [rdx].state.display_x, ax
+	;mov word ptr [rdx].state.beam_x, ax
 
 	add r9, 1
 	jmp renders_end
@@ -294,10 +294,10 @@ renderstep_all_to_buffer proc
 
 	add r15, 1
 
-	inc word ptr [rdx].state.display_x
+	inc word ptr [rdx].state.beam_x
 	;mov rax, r15
 	;and rax, 0011111111111b	; dont consider the top bit
-	;mov word ptr [rdx].state.display_x, ax
+	;mov word ptr [rdx].state.beam_x, ax
 	
 	add r9, 1
 	jmp renders_end
@@ -313,16 +313,16 @@ renderstep_sprites_to_buffer endp
 
 renderstep_next_line proc	
 	; Add 1 to act y
-	movzx r12, word ptr [rdx].state.display_y
+	movzx r12, word ptr [rdx].state.beam_y
 	add r12, 1
-	mov word ptr [rdx].state.display_y, r12w
+	mov word ptr [rdx].state.beam_y, r12w
 
 	; next line, reset counters
 	xor r15, 0100000000000b	; flip top bit
 	and r15, 0100000000000b	; and clear count
 	
 	xor r11, r11
-	mov word ptr [rdx].state.display_x, r11w	; zero
+	mov word ptr [rdx].state.beam_x, r11w	; zero
 	mov dword ptr [rdx].state.layer0_x, r11d
 	mov dword ptr [rdx].state.layer1_x, r11d
 	mov dword ptr [rdx].state.layer0_tilecount, r11d
@@ -360,7 +360,7 @@ no_y_inc_vstart:
 	mov dword ptr [rdx].state.sprite_width, eax
 	mov dword ptr [rdx].state.sprite_wait, eax
 	mov dword ptr [rdx].state.vram_wait, eax
-	mov word ptr [rdx].state.display_x, ax
+	mov word ptr [rdx].state.beam_x, ax
 	; clear sprite buffer
 	
 	call clear_sprite_buffer
@@ -392,10 +392,10 @@ renderstep_next_line endp
 ; reset scaled x as we're at the end of a line
 renderstep_next_frame proc
 	xor r12, r12
-	mov word ptr [rdx].state.display_y, r12w
+	mov word ptr [rdx].state.beam_y, r12w
 
 	xor r11, r11
-	mov word ptr [rdx].state.display_x, r11w	; zero
+	mov word ptr [rdx].state.beam_x, r11w	; zero
 	mov dword ptr [rdx].state.layer0_x, r11d
 	mov dword ptr [rdx].state.layer1_x, r11d
 	mov dword ptr [rdx].state.layer0_tilecount, r11d
@@ -455,13 +455,13 @@ renderstep_reset_buffer proc
 	add r9, 1
 
 	; Add 1 to act y
-	movzx r12, word ptr [rdx].state.display_y
+	movzx r12, word ptr [rdx].state.beam_y
 	add r12, 1
-	mov word ptr [rdx].state.display_y, r12w
+	mov word ptr [rdx].state.beam_y, r12w
 
 
 	xor r11, r11
-	mov word ptr [rdx].state.display_x, r11w	; zero
+	mov word ptr [rdx].state.beam_x, r11w	; zero
 	mov dword ptr [rdx].state.layer0_x, r11d
 	mov dword ptr [rdx].state.layer1_x, r11d
 	mov dword ptr [rdx].state.layer0_tilecount, r11d
@@ -514,8 +514,8 @@ renderstep_reset_buffer endp
 
 
 render_from_buffer proc
-	movzx r12, word ptr [rdx].state.display_y
-	movzx r11, word ptr [rdx].state.display_x
+	movzx r12, word ptr [rdx].state.beam_y
+	movzx r11, word ptr [rdx].state.beam_x
 
 	movzx rax, word ptr [rdx].state.dc_vstart
 	cmp r12, rax

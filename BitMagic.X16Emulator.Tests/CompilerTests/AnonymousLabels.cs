@@ -6,30 +6,27 @@ namespace BitMagic.X16Emulator.Tests;
 [TestClass]
 public class AnonymousLabels
 {
-    // `.: dex` puts the anonymous label on dex's own address, then `.: bne -` puts a second
-    // anonymous label on the bne's own address before resolving "-". Before the fix, "-"
-    // matched that second (self) label, branching the bne to itself and looping forever.
+    // `.: bne -` puts an anonymous label on the bne's own address before resolving "-". Backwards,
+    // that label is the loop the bne is in, so "-" matches it rather than the earlier nop label.
     [TestMethod]
-    public async Task SharedOpcode_Backward_DoesNotReferenceSelf()
+    public async Task SharedOpcode_Backward_ReferencesSelf()
     {
         var emulator = new Emulator();
+        emulator.Zero = true; // the branch isn't taken, otherwise it would loop forever
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
-                ldx #$03
-            .: dex
+            .: nop
             .: bne -
                 stp",
                 emulator);
 
-        // compilation: "-" must resolve to the dex label at $812, not to bne's own address ($813)
-        Assert.AreEqual(0xd0, emulator.Memory[0x813]);
-        Assert.AreEqual(0xfd, emulator.Memory[0x814]); // offset back to $812
+        // compilation: "-" resolves to bne's own address ($811), not the nop label at $810
+        Assert.AreEqual(0xd0, emulator.Memory[0x811]);
+        Assert.AreEqual(0xfe, emulator.Memory[0x812]); // offset back to $811
 
-        // emulation: the loop runs to completion. It would never reach stp if "-" branched to itself.
-        emulator.AssertState(0x00, 0x00, 0x00, 0x816, 16); // ldx(2) + 2x[dex(2)+bne taken(3)] + dex(2)+bne not taken(2)
-        emulator.AssertFlags(true, false, false, false);
+        emulator.AssertState(Pc: 0x814, Clock: 4); // nop(2) + bne not taken(2)
     }
 
     // Same bug, forward direction: `.: bne +` puts the anonymous label on bne's own address
@@ -58,19 +55,27 @@ public class AnonymousLabels
         emulator.AssertFlags(false, false, false, false);
     }
 
-    // With no other anonymous label to find in that direction, the self-reference must now be
-    // a compile error rather than silently resolving to the opcode's own address.
+    // With no other anonymous label, the label is unique so is resolved explicitly rather than as an
+    // ambiguous label; backwards it still matches its own line, giving a jump to itself.
     [TestMethod]
-    public async Task SharedOpcode_Backward_NoOtherLabel_ThrowsOnCompile()
+    public async Task SharedOpcode_Backward_NoOtherLabel_ReferencesSelf()
     {
-        await Assert.ThrowsExceptionAsync<RelativeLabelException>(() =>
-            X16TestHelper.EmulateChanges(@"
+        var emulator = new Emulator();
+
+        // the stp stops the emulation before the jmp, which would otherwise loop forever
+        await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
-            .: bne -
-                stp"));
+                stp
+            .: jmp -",
+                emulator);
+
+        Assert.AreEqual(0x4c, emulator.Memory[0x811]); // jmp $0811
+        Assert.AreEqual(0x11, emulator.Memory[0x812]);
+        Assert.AreEqual(0x08, emulator.Memory[0x813]);
     }
 
+    // Forwards a label never matches its own line, so with no later label it is a compile error.
     [TestMethod]
     public async Task SharedOpcode_Forward_NoOtherLabel_ThrowsOnCompile()
     {

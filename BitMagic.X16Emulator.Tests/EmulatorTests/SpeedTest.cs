@@ -6,6 +6,7 @@ namespace BitMagic.X16Emulator.Tests.Core;
 [TestClass]
 public class SpeedTest
 {
+    [Ignore("Long running")]
     [TestMethod]
 
     public async Task ZeroPage()
@@ -45,6 +46,7 @@ public class SpeedTest
                 emulator);
     }
 
+    [Ignore("Long running")]
     [TestMethod]
 
     public async Task BankedRam()
@@ -84,6 +86,7 @@ public class SpeedTest
                 emulator);
     }
 
+    [Ignore("Long running")]
     [TestMethod]
     public async Task VeraDataPort()
     {

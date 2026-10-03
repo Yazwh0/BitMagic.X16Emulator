@@ -103,7 +103,7 @@ public class EmulatorWindow : IDisposable
         _window.Render += OnRender;
         _window.Closing += OnClose;
 
-        _audio = new EmulatorAudio(_emulator);
+        _audio = new EmulatorAudio(_emulator) { Muted = _emulator.MuteAudio };
 
         _stopwatch.Start();
 

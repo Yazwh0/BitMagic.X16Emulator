@@ -20,6 +20,8 @@ public unsafe class EmulatorAudio : IDisposable
     private readonly uint _bufferSize;
     private readonly ulong _ptr;
     public uint Delay { get; private set; }
+    // When set the buffer is still consumed as normal, but silence is sent to the device.
+    public bool Muted { get; set; }
     private bool _disposed;
     private readonly object _disposeLock = new();
     #if LOG_OUTPUT
@@ -113,6 +115,9 @@ public unsafe class EmulatorAudio : IDisposable
         try
         {
             RenderAudio(stream, length);
+
+            if (Muted)
+                new Span<byte>(stream, length).Clear();
         }
         catch
         {

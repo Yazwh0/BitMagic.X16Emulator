@@ -86,6 +86,9 @@ static class Program
         [Option("scale", Required = false, HelpText = "Window scale, e.g. 2 for double size.")]
         public double Scale { get; set; } = 1;
 
+        [Option("mute", Required = false, HelpText = "Don't play audio. Emulation is unaffected.")]
+        public bool Mute { get; set; } = false;
+
         //[Option('m', "autorun", Required = false, HelpText = "Automatically run at startup. Ignored if address is specified. NOT YET IMPLEMENTED")]
         public bool AutoRun { get; set; } = false;
     }
@@ -306,6 +309,7 @@ static class Program
         emulator.Brk_Causes_Stop = false;
         emulator.EnableWifi = options.Wifi;
         emulator.WindowScale = options.Scale;
+        emulator.MuteAudio = options.Mute;
 
         SdCard sdCard = string.IsNullOrEmpty(options.SdCardFileName) ? new SdCard(options.SdCardSize, new ConsoleLogger()) : new SdCard(options.SdCardFileName , new ConsoleLogger());
 

@@ -1138,6 +1138,9 @@ public class Emulator : IDisposable
 
     public double WindowScale { get; set; }
 
+    // Silences the audio at the output stage only, emulation is unaffected.
+    public bool MuteAudio { get; set; }
+
     public void LoadSdCard(SdCard sdCard)
     {
         SdCard = sdCard;
@@ -1156,6 +1159,7 @@ public class Emulator : IDisposable
             throw new Exception("History size must be a multiple of 2 and not zero");
 
         WindowScale = Options.WindowScale;
+        MuteAudio = Options.MuteAudio;
 
         _stateHandle = GCHandle.Alloc(_stateStorage, GCHandleType.Pinned);
 
@@ -1508,6 +1512,7 @@ public class Emulator : IDisposable
         Options = options;
 
         WindowScale = options.WindowScale;
+        MuteAudio = options.MuteAudio;
 
         if (oldOptions.HistorySize != options.HistorySize)
         {
@@ -1612,6 +1617,7 @@ public class EmulatorOptions
 {
     public int HistorySize { get; set; } = 0x80000;
     public double WindowScale { get; set; } = 1;
+    public bool MuteAudio { get; set; } = false;
     public string ZiModemFolder { get; set; } = Path.Combine(Path.GetTempPath(), "ZiModem");
 
     /// <summary>

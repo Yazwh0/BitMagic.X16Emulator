@@ -22,9 +22,78 @@ public class SmcBuffer
         _emulator = emulator;
     }
 
-    public void KeyDown(Key key) => AddKey(true, KeyToIbmScanCode(key));
+    // Typematic repeat. On hardware the PS/2 keyboard repeats the make code of the last key held, but the host only
+    // gives us key down/up, so we generate the repeats here. Timed in emulated cycles so nothing repeats while the
+    // debugger is paused. Defaults are the PS/2 power on settings: 500ms delay, then 10.9 characters per second.
+    private const ulong KeyRepeatDelay = 4_000_000;         // 500ms at 8MHz
+    private const ulong KeyRepeatInterval = 734_000;        // ~10.9cps at 8MHz
 
-    public void KeyUp(Key key) => AddKey(false, KeyToIbmScanCode(key));
+    private Key _repeatKey = Key.Unknown;
+    private byte _repeatScancode = 0;
+    private ulong _repeatNextClock = 0;
+
+    public void KeyDown(Key key)
+    {
+        var scancode = KeyToIbmScanCode(key);
+        AddKey(true, scancode);
+
+        if (scancode != 0 && CanRepeat(key))
+        {
+            _repeatKey = key;
+            _repeatScancode = scancode;
+            _repeatNextClock = _emulator.Clock + KeyRepeatDelay;
+        }
+    }
+
+    public void KeyUp(Key key)
+    {
+        // releasing the repeating key stops repeat, even if other keys are still held, same as hardware.
+        if (key == _repeatKey)
+            StopKeyRepeat();
+
+        AddKey(false, KeyToIbmScanCode(key));
+    }
+
+    public void StopKeyRepeat()
+    {
+        _repeatKey = Key.Unknown;
+        _repeatScancode = 0;
+    }
+
+    /// <summary>
+    /// Sends a repeat of the held key if one is due. Called regularly from the window thread, the same thread that
+    /// calls KeyDown and KeyUp.
+    /// </summary>
+    public void TickKeyRepeat()
+    {
+        if (_repeatScancode == 0)
+            return;
+
+        var clock = _emulator.Clock;
+        if (clock < _repeatNextClock)
+            return;
+
+        // at most one repeat per tick, a long host stall shouldn't release a burst of repeats.
+        _repeatNextClock = clock + KeyRepeatInterval;
+
+        // like a keyboard, drop the repeat if the host isn't keeping up rather than warn about a full buffer.
+        var next = (_emulator.Keyboard_WritePosition + 1) & (Emulator.SmcKeyboardBufferSize - 1);
+        if (next == _emulator.Keyboard_ReadPosition)
+            return;
+
+        AddKey(true, _repeatScancode);
+    }
+
+    // modifiers don't usefully repeat, and repeating caps lock would toggle it.
+    private static bool CanRepeat(Key key) => key switch
+    {
+        Key.ShiftLeft or Key.ShiftRight or
+        Key.ControlLeft or Key.ControlRight or
+        Key.AltLeft or Key.AltRight or
+        Key.SuperLeft or Key.SuperRight or
+        Key.CapsLock or Key.NumLock or Key.ScrollLock => false,
+        _ => true
+    };
 
     public void AddKey(bool keyDown, byte scancode)
     {

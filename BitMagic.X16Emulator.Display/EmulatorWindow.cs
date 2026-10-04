@@ -102,6 +102,7 @@ public class EmulatorWindow : IDisposable
         _window.Load += OnLoad;
         _window.Render += OnRender;
         _window.Closing += OnClose;
+        _window.FocusChanged += OnFocusChanged;
 
         _audio = new EmulatorAudio(_emulator) { Muted = _emulator.MuteAudio };
 
@@ -386,11 +387,20 @@ public class EmulatorWindow : IDisposable
         }
     }
 
+    // the key up for a held key never arrives once focus has gone, so stop it repeating forever.
+    private void OnFocusChanged(bool focused)
+    {
+        if (!focused)
+            _emulator?.SmcBuffer.StopKeyRepeat();
+    }
+
     private unsafe void OnRender(double deltaTime)
     {
         //lock (_lock)
         //{
             if (_closing) return;
+
+            _emulator?.SmcBuffer.TickKeyRepeat();
             if (_gl == null) throw new ArgumentNullException(nameof(_gl));
             if (_shader == null) throw new ArgumentNullException(nameof(_shader));
             if (_layers == null) throw new ArgumentNullException(nameof(_layers));

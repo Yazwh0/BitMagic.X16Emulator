@@ -498,8 +498,6 @@ static class Program
                 //DisplayMemory(0x800-1, 0xd00 - 0x800);
                 //DisplayMemory(0x9f30, 16);
 
-                //var fsImage = new FsImage(Emulator.RamBank.Slice(0xb40c - 0xa000, 100).ToArray());
-
                 if (Return == Emulator.EmulatorResult.DebugOpCode || Return == Emulator.EmulatorResult.Stepping)
                 {
                     Console.WriteLine("(C)ontinue, (S)tep?");

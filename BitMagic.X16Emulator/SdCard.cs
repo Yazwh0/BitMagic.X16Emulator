@@ -287,32 +287,66 @@ public unsafe class SdCard : IDisposable
         }
     }
 
-    public void AddCompiledFile(string filename, byte[] data)
+    public void AddCompiledFile(string filename, byte[] data) => WriteFile(GetSdCardPath(filename), data, false);
+
+    /// <summary>
+    /// Where a file goes on the card when put in a folder, eg 'DATA\LEVEL1.BIN'. Only the name is taken from filename.
+    /// </summary>
+    public static string GetSdCardPath(string filename, string destFolder)
+    {
+        var actName = GetFilename(filename);
+
+        if (!destFolder.EndsWith('\\'))
+            return $"{destFolder}\\{actName}";
+
+        return $"{destFolder}{actName}";
+    }
+
+    /// <summary>
+    /// Where a file named with a path goes on the card, eg 'DAT/PSM.DAT' gives 'DAT\PSM.DAT'.
+    /// </summary>
+    public static string GetSdCardPath(string path)
+    {
+        path = path.Replace('/', '\\');
+        var idx = path.LastIndexOf('\\');
+
+        return idx == -1 ? GetFilename(path) : GetSdCardPath(path[(idx + 1)..], path[..idx]);
+    }
+
+    /// <summary>
+    /// Writes a file to the card, creating its folder. Every file put on the card goes through here.
+    /// Returns where it was written, or null if it already exists and can't be overwritten.
+    /// </summary>
+    public string? WriteFile(string sdCardPath, byte[] data, bool allowOverwrite)
     {
         lock (Lock)
         {
-            var actName = GetFilename(filename);
-
-            var idx = filename.LastIndexOfAny(['\\', '/']);
-
-            var destFolder = "";
+            sdCardPath = sdCardPath.Replace('/', '\\').TrimStart('\\');
+            var idx = sdCardPath.LastIndexOf('\\');
 
             if (idx != -1)
+                EnsureDirectoryExists(sdCardPath[..idx]);
+
+            if (FileSystem.FileExists(sdCardPath))
             {
-                destFolder = filename[..idx];
-                filename = filename[(idx+1)..];
+                if (!allowOverwrite)
+                {
+                    _logger.LogLine($"[PC] >> [16] Already exists : {sdCardPath}");
+                    return null;
+                }
 
-                EnsureDirectoryExists(destFolder);
-
-                actName = $"{destFolder}\\{actName}";
+                FileSystem.DeleteFile(sdCardPath);
             }
 
-            _logger.LogLine($"[PC] >> [16] Creating : {actName}");
+            _logger.LogLine($"[PC] >> [16] Creating : {sdCardPath}");
 
-            using var file = FileSystem.OpenFile(actName, FileMode.CreateNew, FileAccess.Write);
+            using var file = FileSystem.OpenFile(sdCardPath, FileMode.CreateNew, FileAccess.Write);
             file.Write(data);
-
             file.Close();
+
+            FileSystem.UpdateFsInfoFreeSpace();
+
+            return sdCardPath;
         }
     }
 
@@ -320,12 +354,7 @@ public unsafe class SdCard : IDisposable
     {
         lock (Lock)
         {
-            var actName = GetFilename(filename);
-
-            if (!destFolder.EndsWith('\\'))
-                actName = $"{destFolder}\\{actName}";
-            else
-                actName = $"{destFolder}{actName}";
+            var actName = GetSdCardPath(filename, destFolder);
 
             if (FileUpdates.Contains(actName))
             {
@@ -333,7 +362,7 @@ public unsafe class SdCard : IDisposable
                 return;
             }
 
-            _logger.Log($"[PC] >> [16] Adding: '{filename}'");
+            _logger.LogLine($"[PC] >> [16] Adding: '{filename}'");
             byte[] source;
             try
             {
@@ -341,48 +370,23 @@ public unsafe class SdCard : IDisposable
             }
             catch (IOException e)
             {
-                _logger.LogLine(" Error.");
                 _logger.LogLine($"Error opening file, ({e.Message}) trying again in 1s.");
                 Thread.Sleep(1000);
 
-                _logger.Log($"[PC] >> [16] Adding: '{filename}'");
                 source = File.ReadAllBytes(filename);
             }
 
-            _logger.Log($" -> '{actName}'...");
-
-            EnsureDirectoryExists(destFolder);
-
-            if (FileSystem.FileExists(actName))
-            {
-                if (allowOverwrite)
-                    FileSystem.DeleteFile(actName);
-                else
-                {
-                    _logger.LogLine("Alread Exists.");
-                    return;
-                }
-            }
-            using var file = FileSystem.OpenFile(actName, FileMode.CreateNew, FileAccess.Write);
-            file.Write(source);
-
-            file.Close();
-
-            FileSystem.UpdateFsInfoFreeSpace();
-
-            _logger.LogLine(" Done.");
+            WriteFile(actName, source, allowOverwrite);
         }
     }
 
     private void EnsureDirectoryExists(string folder)
     {
-        var path = folder.Split('\\');
-
         var toCreate = "";
 
-        for (var i = 0; i < path.Length; i++)
+        foreach (var part in folder.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries))
         {
-            toCreate += '\\' + path[0];
+            toCreate += '\\' + part;
 
             if (!FileSystem.DirectoryExists(toCreate))
                 FileSystem.CreateDirectory(toCreate);

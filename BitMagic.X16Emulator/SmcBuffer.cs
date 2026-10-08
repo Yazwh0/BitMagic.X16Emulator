@@ -23,14 +23,17 @@ public class SmcBuffer
     }
 
     // Typematic repeat. On hardware the PS/2 keyboard repeats the make code of the last key held, but the host only
-    // gives us key down/up, so we generate the repeats here. Timed in emulated cycles so nothing repeats while the
-    // debugger is paused. Defaults are the PS/2 power on settings: 500ms delay, then 10.9 characters per second.
-    private const ulong KeyRepeatDelay = 4_000_000;         // 500ms at 8MHz
-    private const ulong KeyRepeatInterval = 734_000;        // ~10.9cps at 8MHz
+    // gives us key down/up, so we generate the repeats here. Timed in emulated frames, so nothing repeats while the
+    // debugger is paused or handling a breakpoint, as emulated time stands still then. Not the emulated clock, as the
+    // core only writes that back when it stops, so it's stale while running; the frame count is written every vsync.
+    // Defaults are the PS/2 power on settings, to the nearest frame at ~59.5Hz: 500ms delay, then 10.9 characters
+    // per second.
+    private const uint KeyRepeatDelay = 30;                 // 504ms
+    private const uint KeyRepeatInterval = 5;               // 84ms, ~11.9cps
 
     private Key _repeatKey = Key.Unknown;
     private byte _repeatScancode = 0;
-    private ulong _repeatNextClock = 0;
+    private uint _repeatNextFrame = 0;
 
     public void KeyDown(Key key)
     {
@@ -41,7 +44,7 @@ public class SmcBuffer
         {
             _repeatKey = key;
             _repeatScancode = scancode;
-            _repeatNextClock = _emulator.Clock + KeyRepeatDelay;
+            _repeatNextFrame = _emulator.Vera.Frame_Count + KeyRepeatDelay;
         }
     }
 
@@ -69,12 +72,13 @@ public class SmcBuffer
         if (_repeatScancode == 0)
             return;
 
-        var clock = _emulator.Clock;
-        if (clock < _repeatNextClock)
+        // signed difference, so the frame count wrapping doesn't matter
+        var frame = _emulator.Vera.Frame_Count;
+        if ((int)(frame - _repeatNextFrame) < 0)
             return;
 
         // at most one repeat per tick, a long host stall shouldn't release a burst of repeats.
-        _repeatNextClock = clock + KeyRepeatInterval;
+        _repeatNextFrame = frame + KeyRepeatInterval;
 
         // like a keyboard, drop the repeat if the host isn't keeping up rather than warn about a full buffer.
         var next = (_emulator.Keyboard_WritePosition + 1) & (Emulator.SmcKeyboardBufferSize - 1);
@@ -102,7 +106,7 @@ public class SmcBuffer
 
     public void PushKeyboard(byte value)
     {
-        //Console.WriteLine($"Key press : {value:X2} {value & 0x7f}");
+        Console.WriteLine($"Key press : {value:X2} {value & 0x7f:X2}");
         var next = (_emulator.Keyboard_WritePosition + 1) & (Emulator.SmcKeyboardBufferSize - 1);
         if (next != _emulator.Keyboard_ReadPosition)
         {

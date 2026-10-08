@@ -106,7 +106,7 @@ public class SmcBuffer
 
     public void PushKeyboard(byte value)
     {
-        Console.WriteLine($"Key press : {value:X2} {value & 0x7f:X2}");
+        //Console.WriteLine($"Key press : {value:X2} {value & 0x7f:X2}");
         var next = (_emulator.Keyboard_WritePosition + 1) & (Emulator.SmcKeyboardBufferSize - 1);
         if (next != _emulator.Keyboard_ReadPosition)
         {

@@ -240,6 +240,25 @@ bitmap:
 done:
 endm
 
+; A change to a layer's mode mid line leaves the fetch already made for the old mode, eg the position through the
+; tile or a bitmap's VRAM address, which the new renderer can't use; the 4bpp renderer indexes past its jump table.
+; So start the fetch again in the new mode from the current x, the same as a new line does.
+restart_layer_fetch macro num
+    local done
+    cmp dword ptr [rdx].state.layer&num&_state, STATE_WAIT_START
+    je done                                         ; line already complete
+
+    mov dword ptr [rdx].state.layer&num&_tiledone, -1
+    mov dword ptr [rdx].state.layer&num&_tilecount, 0
+
+    mov eax, STATE_FETCH_MAP
+    mov ebx, STATE_FETCH_BITMAP
+    cmp byte ptr [rdx].state.layer&num&_bitmapMode, 0
+    cmovne eax, ebx
+    mov dword ptr [rdx].state.layer&num&_state, eax
+done:
+endm
+
 layer0_tileshifts macro
     ; Multipliers
     ; Y tile height
@@ -2510,6 +2529,7 @@ vera_update_l0config proc
     ;mov word ptr [rdx].state.layer0_config, r13w
 
     set_layer0_jump
+    restart_layer_fetch 0
 
     ret
 vera_update_l0config endp
@@ -2547,6 +2567,7 @@ vera_update_l0tilebase proc
     mov dword ptr [rdx].state.layer0_tileAddress, r13d
 
     set_layer0_jump
+    restart_layer_fetch 0
 
     ret
 vera_update_l0tilebase endp
@@ -2627,6 +2648,7 @@ vera_update_l1config proc
     ;mov word ptr [rdx].state.layer1_config, r13w
 
     set_layer1_jump
+    restart_layer_fetch 1
     
     ret
 vera_update_l1config endp
@@ -2666,6 +2688,7 @@ vera_update_l1tilebase proc
     mov dword ptr [rdx].state.layer1_tileAddress, r13d
 
     set_layer1_jump
+    restart_layer_fetch 1
 
     ret
 vera_update_l1tilebase endp

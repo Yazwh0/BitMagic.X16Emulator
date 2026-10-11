@@ -141,6 +141,115 @@ section code
     }
 
     [TestMethod]
+    public async Task SectionsSeeWhatTheAppSets()
+    {
+        // the library runs once the app has, so even a setting made at the end of the app is seen
+        var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
+            ("main.bmasm", "import Lib=\"lib.bmasm\";\n" + Header + "    jsr lib:get\n    stp\nLib.Value = 0x42;\n"),
+            ("lib.bmasm", "file library code\n.scope lib\n    .proc get\n        lda #@(Value)\n        rts\n    .endproc\n.endscope\n\nmembers\npublic static int Value = 1;\n")));
+
+        Assert.AreEqual(0x42, emulator.A);
+    }
+
+    [TestMethod]
+    public async Task MembersWithABuilderAndAMacro()
+    {
+        var library = """
+            file library code
+            .scope lib
+                .proc get
+                    if (Settings.Double)
+                    {
+                        lda #@(Settings.Value * 2)
+                    }
+                    else
+                    {
+                        lda #@(Settings.Value)
+                    }
+                    rts
+                .endproc
+            .endscope
+
+            members
+            private static Options Settings = new();
+
+            public static Options Create() => Settings = new Options();
+
+            // a macro: writes into the app, where the app calls it
+            public static void LoadValue()
+            {
+                jsr lib:get
+            }
+
+            public class Options
+            {
+                internal int Value = 1;
+                internal bool Double;
+
+                public Options WithValue(int value) { Value = value; return this; }
+                public Options Doubled() { Double = true; return this; }
+                public void Build() { }
+            }
+            """;
+
+        var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
+            ("main.bmasm", "import Lib=\"lib.bmasm\";\nLib.Create().WithValue(0x21).Doubled().Build();\n" + Header + "    Lib.LoadValue();\n    stp\n"),
+            ("lib.bmasm", library)));
+
+        Assert.AreEqual(0x42, emulator.A);
+    }
+
+    [TestMethod]
+    public async Task SectionsAfterMembers()
+    {
+        var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
+            ("main.bmasm", "import Lib=\"lib.bmasm\";\n" + Header + "    jsr lib:get\n    stp\n"),
+            ("lib.bmasm", "file library code\n.scope lib\n    .proc get\n        lda #LIB_VALUE + @(Offset)\n        rts\n    .endproc\n.endscope\n\nmembers\npublic static int Offset = 0;\n\nsection setup\n.scope lib\n    .const LIB_VALUE $33\n.endscope\n")));
+
+        Assert.AreEqual(0x33, emulator.A);
+    }
+
+    [TestMethod]
+    public async Task LibraryLineNamesTheClass()
+    {
+        var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
+            ("main.bmasm", "import Lib=\"lib.bmasm\";\n" + Header + "    lda #@(Test.Named.Value)\n    stp\n"),
+            ("lib.bmasm", "file library code\nlibrary Test.Named;\n    rts\n\nmembers\npublic static int Value = 0x55;\n")));
+
+        Assert.AreEqual(0x55, emulator.A);
+    }
+
+    [TestMethod]
+    [DataRow("library Test.NoSemi", DisplayName = "no ;")]
+    [DataRow("library Test.NoSemi ; a comment", DisplayName = "no ;, with a comment")]
+    [DataRow("library Test.NoSemi;", DisplayName = "with ;")]
+    public async Task LibraryLineSemicolonOptional(string libraryLine)
+    {
+        var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
+            ("main.bmasm", "import Lib=\"lib.bmasm\";\n" + Header + "    lda #@(Test.NoSemi.Value)\n    stp\n"),
+            ("lib.bmasm", "file library code\n" + libraryLine + "\n    rts\n\nmembers\npublic static int Value = 0x56;\n")));
+
+        Assert.AreEqual(0x56, emulator.A);
+    }
+
+    [TestMethod]
+    [DataRow(true, DisplayName = "file library imported first")]
+    [DataRow(false, DisplayName = "C# library imported first")]
+    public async Task LibrariesKeepImportOrder(bool fileFirst)
+    {
+        // a file library's code is captured later than a C# library's, but still goes in import order
+        var file = "import FileLib=\"filelib.bmasm\";\n";
+        var csharp = "import CsLib=\"cslib.bmasm\";\n";
+
+        var result = await X16TestHelper.BuildTemplateFiles(Files(
+            ("main.bmasm", (fileFirst ? file + csharp : csharp + file) + Header + "    stp\n"),
+            ("filelib.bmasm", "file library code\n.file_part:\n    .byte $aa\n"),
+            ("cslib.bmasm", "library Test.CsLib;\n\nprivate static void Code()\n{\n.cs_part:\n    .byte $bb\n}\n\npublic override void Initialise()\n{\n    Section.Get(\"code\").Add(Owner, Code);\n}\n")));
+
+        Assert.AreEqual(fileFirst, At(result, ".file_part:") < At(result, ".cs_part:"), result.Source.Code);
+    }
+
+    [TestMethod]
     public async Task PlaceExplicitly()
     {
         var (emulator, _, result) = await X16TestHelper.EmulateTemplateFiles(Files(

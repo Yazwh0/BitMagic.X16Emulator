@@ -61,6 +61,39 @@ public static class X16TestHelper
         return await Emulate(project, emulator, dontChangeEmulatorOptions, expectedResult);
     }
 
+    /// <summary>
+    /// Writes the files to a new folder and runs the template engine on the main one, so it
+    /// can import the others.
+    /// </summary>
+    public static async Task<MacroAssembler.ProcessResult> BuildTemplateFiles(IReadOnlyDictionary<string, string> files, string main = "main.bmasm", IEmulatorLogger? logger = null)
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "BitMagic.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+
+        foreach (var (name, content) in files)
+            File.WriteAllText(Path.Combine(folder, name), content);
+
+        var source = new BitMagicProjectFile(Path.Combine(folder, main));
+        await source.Load();
+
+        var options = new TemplateOptions { BinFolder = Path.Combine(folder, "bin"), Rebuild = true };
+
+        return await CsasmEngine.CreateEngine().ProcessFile(source, source.Path, options, logger ?? new NullLogger());
+    }
+
+    /// <summary>
+    /// <see cref="BuildTemplateFiles"/>, then assembles and runs the result from $810.
+    /// </summary>
+    public static async Task<(Emulator Emulator, Snapshot.Snapshot Snapshot, MacroAssembler.ProcessResult Template)> EmulateTemplateFiles(IReadOnlyDictionary<string, string> files, string main = "main.bmasm", Emulator? emulator = null)
+    {
+        var template = await BuildTemplateFiles(files, main);
+        var project = new Project { Code = template };
+
+        var (resultEmulator, snapshot) = await Emulate(project, emulator);
+
+        return (resultEmulator, snapshot, template);
+    }
+
     public static Task<(Emulator Emulator, Snapshot.Snapshot Snapshot)> EmulateChanges(string code, Emulator? emulator = null, bool dontChangeEmulatorOptions = false, Emulator.EmulatorResult expectedResult = Emulator.EmulatorResult.DebugOpCode, bool displayOutput = true)
     {
         if (string.IsNullOrWhiteSpace(code))

@@ -71,7 +71,11 @@ public static class X16TestHelper
         Directory.CreateDirectory(folder);
 
         foreach (var (name, content) in files)
-            File.WriteAllText(Path.Combine(folder, name), content);
+        {
+            var path = Path.Combine(folder, name);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!); // names can include a folder
+            File.WriteAllText(path, content);
+        }
 
         var source = new BitMagicProjectFile(Path.Combine(folder, main));
         await source.Load();

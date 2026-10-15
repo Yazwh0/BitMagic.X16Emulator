@@ -632,4 +632,19 @@ public static void Process(ViewFile file)
 
         Assert.AreEqual(0x30, emulator.A);
     }
+
+    [TestMethod]
+    public async Task SameImportFromDifferentFolders()
+    {
+        // 'globals.bmasm' is a different file for each importer
+        var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
+            ("main.bmasm", "import X=\"a/x.bmasm\";\nimport Y=\"b/y.bmasm\";\n" + Header + "    lda #@(FolderA.X.Value)\n    ldx #@(FolderB.Y.Value)\n    stp\n"),
+            ("a/x.bmasm", "library FolderA.X;\nimport G=\"globals.bmasm\";\npublic static int Value => G.Value;\n"),
+            ("a/globals.bmasm", "library FolderA.Globals;\npublic static int Value = 0x10;\n"),
+            ("b/y.bmasm", "library FolderB.Y;\nimport G=\"globals.bmasm\";\npublic static int Value => G.Value;\n"),
+            ("b/globals.bmasm", "library FolderB.Globals;\npublic static int Value = 0x20;\n")));
+
+        Assert.AreEqual(0x10, emulator.A);
+        Assert.AreEqual(0x20, emulator.X);
+    }
 }

@@ -568,4 +568,68 @@ public static void Process(ViewFile file)
         StringAssert.EndsWith(map.SourceFilename.Replace('\\', '/'), "/lib.bmasm");
         Assert.AreEqual(10, map.Line);   // zero based: line 11 of lib.bmasm
     }
+
+    [TestMethod]
+    public async Task ImportingItselfIsCircular()
+    {
+        var e = await BuildFails(Files(
+            ("main.bmasm", "import Me=\"main.bmasm\";\n" + Header + "    stp\n")));
+
+        AssertError(e, "main.bmasm", 1, "Circular import: main.bmasm -> main.bmasm.");
+    }
+
+    [TestMethod]
+    public async Task LibraryImportingMainIsCircular()
+    {
+        var e = await BuildFails(Files(
+            ("main.bmasm", "import A=\"a.bmasm\";\n" + Header + "    stp\n"),
+            ("a.bmasm", "library Test.A;\nimport Main=\"main.bmasm\";\n")));
+
+        AssertError(e, "a.bmasm", 2, "Circular import: main.bmasm -> a.bmasm -> main.bmasm.");
+    }
+
+    [TestMethod]
+    public async Task LibrariesImportingEachOtherIsCircular()
+    {
+        var e = await BuildFails(Files(
+            ("main.bmasm", "import A=\"a.bmasm\";\n" + Header + "    stp\n"),
+            ("a.bmasm", "library Test.A;\nimport B=\"b.bmasm\";\n"),
+            ("b.bmasm", "library Test.B;\n\nimport A=\"a.bmasm\";\n")));
+
+        AssertError(e, "b.bmasm", 3, "Circular import: main.bmasm -> a.bmasm -> b.bmasm -> a.bmasm.");
+    }
+
+    [TestMethod]
+    public async Task ViewImportingItsFileIsCircular()
+    {
+        var e = await BuildFails(Files(
+            ("main.bmasm", "import Data=\"data.bmasm\";\n" + Header + "    stp\n"),
+            ("dataview.bmasm", "import Data=\"data.bmasm\";\n" + DataView),
+            ("data.bmasm", "file dataview $21\n.data_label:\n")));
+
+        AssertError(e, "dataview.bmasm", 1, "Circular import: main.bmasm -> data.bmasm -> dataview.bmasm -> data.bmasm.");
+    }
+
+    [TestMethod]
+    public async Task SharedImportIsNotCircular()
+    {
+        // a diamond: a and b both import c
+        await X16TestHelper.BuildTemplateFiles(Files(
+            ("main.bmasm", "import A=\"a.bmasm\";\nimport B=\"b.bmasm\";\n" + Header + "    stp\n"),
+            ("a.bmasm", "library Test.A;\nimport C=\"c.bmasm\";\n"),
+            ("b.bmasm", "library Test.B;\nimport C=\"c.bmasm\";\n"),
+            ("c.bmasm", "library Test.C;\n")));
+    }
+
+    [TestMethod]
+    public async Task LibrariesCanShareANamespace()
+    {
+        // each library is its own assembly, which mustn't be named by the namespace alone
+        var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
+            ("main.bmasm", "import A=\"a.bmasm\";\nimport B=\"b.bmasm\";\n" + Header + "    lda #@(Test.A.Value + Test.B.Value)\n    stp\n"),
+            ("a.bmasm", "library Test.A;\npublic static int Value = 0x10;\n"),
+            ("b.bmasm", "library Test.B;\npublic static int Value = 0x20;\n")));
+
+        Assert.AreEqual(0x30, emulator.A);
+    }
 }

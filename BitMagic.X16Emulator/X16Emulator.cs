@@ -1138,6 +1138,9 @@ public class Emulator : IDisposable
 
     public double WindowScale { get; set; }
 
+    // Where to open the display window. Null uses the remembered position.
+    public (int X, int Y)? WindowPosition { get; set; }
+
     // Silences the audio at the output stage only, emulation is unaffected.
     public bool MuteAudio { get; set; }
 
@@ -1159,6 +1162,7 @@ public class Emulator : IDisposable
             throw new Exception("History size must be a multiple of 2 and not zero");
 
         WindowScale = Options.WindowScale;
+        WindowPosition = Options.WindowPosition;
         MuteAudio = Options.MuteAudio;
 
         _stateHandle = GCHandle.Alloc(_stateStorage, GCHandleType.Pinned);
@@ -1512,6 +1516,7 @@ public class Emulator : IDisposable
         Options = options;
 
         WindowScale = options.WindowScale;
+        WindowPosition = options.WindowPosition;
         MuteAudio = options.MuteAudio;
 
         if (oldOptions.HistorySize != options.HistorySize)
@@ -1617,6 +1622,7 @@ public class EmulatorOptions
 {
     public int HistorySize { get; set; } = 0x80000;
     public double WindowScale { get; set; } = 1;
+    public (int X, int Y)? WindowPosition { get; set; } = null;
     public bool MuteAudio { get; set; } = false;
     public string ZiModemFolder { get; set; } = Path.Combine(Path.GetTempPath(), "ZiModem");
 

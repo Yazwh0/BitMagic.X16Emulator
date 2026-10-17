@@ -67,6 +67,11 @@ public class EmulatorWindow : IDisposable
     private int _mouseButtonsClicked = 0;   // buttons pressed since the last packet, so short clicks aren't lost
     private int _mouseButtonsSent = 0;      // button state in the last packet sent
 
+    private Silk.NET.Maths.Vector2D<int>? _lastPosition;
+
+    // Key the remembered window position is stored under, so each host keeps its own.
+    public string SettingsKey { get; set; } = "x16e";
+
     public event EventHandler<ControlKeyPressedEventArgs>? ControlKeyPressed;
 
     private EmulatorAudio? _audio;
@@ -81,6 +86,11 @@ public class EmulatorWindow : IDisposable
 
         options.VSync = false;
         options.ShouldSwapAutomatically = true;
+
+        // project setting first, then where it was last time. OnLoad moves it back on screen if needed.
+        var position = emulator.WindowPosition ?? WindowSettings.LoadPosition(SettingsKey);
+        if (position.HasValue)
+            options.Position = new Silk.NET.Maths.Vector2D<int>(position.Value.X, position.Value.Y);
 
         _window = Window.Create(options);
 
@@ -103,6 +113,7 @@ public class EmulatorWindow : IDisposable
         _window.Render += OnRender;
         _window.Closing += OnClose;
         _window.FocusChanged += OnFocusChanged;
+        _window.Move += OnMove;
 
         _audio = new EmulatorAudio(_emulator) { Muted = _emulator.MuteAudio };
 
@@ -110,6 +121,41 @@ public class EmulatorWindow : IDisposable
 
         _audio.StartPlayback();
         _window.Run();
+
+        // the window is closed by now, so use the position tracked while it was open
+        if (_lastPosition.HasValue)
+            WindowSettings.SavePosition(SettingsKey, _lastPosition.Value.X, _lastPosition.Value.Y);
+    }
+
+    private void OnMove(Silk.NET.Maths.Vector2D<int> position)
+    {
+        _lastPosition = position;
+    }
+
+    // If no monitor shows the title bar (monitor unplugged, resolution changed, bad project
+    // setting) then centre the window on the main monitor so it can be found again.
+    private void EnsureVisible()
+    {
+        if (_window == null) return;
+
+        const int titleBarHeight = 30;
+        const int minimumVisibleWidth = 100;
+
+        var position = _window.Position;
+        var width = Math.Min(_window.Size.X, minimumVisibleWidth);
+        var left = position.X;
+        var top = position.Y - titleBarHeight; // Position is the client area, the title bar is above it
+        var right = position.X + width;
+        var bottom = position.Y;
+
+        var visible = Silk.NET.Windowing.Monitor.GetMonitors(_window).Any(m =>
+            left >= m.Bounds.Origin.X && right <= m.Bounds.Origin.X + m.Bounds.Size.X &&
+            top >= m.Bounds.Origin.Y && bottom <= m.Bounds.Origin.Y + m.Bounds.Size.Y);
+
+        if (!visible)
+            _window.Center(Silk.NET.Windowing.Monitor.GetMainMonitor(_window));
+
+        _lastPosition = _window.Position;
     }
 
     private void EmulatorWindow_KeyUp(IKeyboard arg1, Key arg2, int arg3)
@@ -217,6 +263,8 @@ public class EmulatorWindow : IDisposable
         }
 
         _window.FocusChanged += _window_FocusChanged;
+
+        EnsureVisible();
 
         _window.SetDefaultIcon();
         _gl = GL.GetApi(_window);

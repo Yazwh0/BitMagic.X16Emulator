@@ -148,12 +148,35 @@ public class EmulatorWindow : IDisposable
         var right = position.X + width;
         var bottom = position.Y;
 
-        var visible = Silk.NET.Windowing.Monitor.GetMonitors(_window).Any(m =>
-            left >= m.Bounds.Origin.X && right <= m.Bounds.Origin.X + m.Bounds.Size.X &&
-            top >= m.Bounds.Origin.Y && bottom <= m.Bounds.Origin.Y + m.Bounds.Size.Y);
+        // GLFW can report no monitors, or a monitor with empty bounds (e.g. after displays sleep
+        // while a long running X16D has no window open). Centring on that puts the window off
+        // screen, so if we can't see any real monitors leave the window where it is.
+        var monitors = Silk.NET.Windowing.Monitor.GetMonitors(_window)
+            .Select(m => m.Bounds)
+            .Where(b => b.Size.X > 0 && b.Size.Y > 0)
+            .ToArray();
+
+        if (monitors.Length == 0)
+        {
+            _lastPosition = _window.Position;
+            return;
+        }
+
+        var visible = monitors.Any(b =>
+            left >= b.Origin.X && right <= b.Origin.X + b.Size.X &&
+            top >= b.Origin.Y && bottom <= b.Origin.Y + b.Size.Y);
 
         if (!visible)
-            _window.Center(Silk.NET.Windowing.Monitor.GetMainMonitor(_window));
+        {
+            var main = Silk.NET.Windowing.Monitor.GetMainMonitor(_window).Bounds;
+            if (main.Size.X <= 0 || main.Size.Y <= 0)
+                main = monitors[0];
+
+            // not using Silk's Center() as its frame size calculation is wrong
+            _window.Position = new Silk.NET.Maths.Vector2D<int>(
+                main.Origin.X + Math.Max(0, (main.Size.X - _window.Size.X) / 2),
+                main.Origin.Y + Math.Max(titleBarHeight, (main.Size.Y - _window.Size.Y) / 2));
+        }
 
         _lastPosition = _window.Position;
     }

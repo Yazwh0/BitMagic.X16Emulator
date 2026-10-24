@@ -16,6 +16,7 @@ static class Program
     private static Thread? EmulatorThread;
 
     private const string RomEnvironmentVariable = "BITMAGIC_ROM";
+    private const ushort CodeStartAddress = 0x810; // where --code starts, after the BASIC stub at 0x801
     // %LOCALAPPDATA%\BitMagic on Windows, $XDG_DATA_HOME/BitMagic or ~/.local/share/BitMagic on Linux.
     // Matches the default destination of fetch-rom.bat / fetch-rom.sh.
     private static string UserRomFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BitMagic");
@@ -26,7 +27,7 @@ static class Program
 
     public class CommandLineOptions
     {
-        [Option('p', "prg", Required = false, HelpText = ".prg file to load.")]
+        [Option('p', "prg", Required = false, HelpText = ".prg file to run. It is put on the SD card and run by an AUTOBOOT.X16.")]
         public string PrgFilename { get; set; } = "";
 
         [Option('r', "rom", Required = false, HelpText = "rom file to load, will look for rom.bin locally, then using the BITMAGIC_ROM environment variable, then in the user's BitMagic folder.")]
@@ -34,9 +35,6 @@ static class Program
 
         [Option("fetch-rom", Required = false, HelpText = "Download the latest ROM into the user's BitMagic folder, then exit.")]
         public bool FetchRom { get; set; } = false;
-
-        [Option('a', "address", Required = false, HelpText = "Start address.")]
-        public ushort StartAddress { get; set; } = 0x810;
 
         [Option('c', "code", Required = false, HelpText = "Code file to compile. Result will be loaded at 0x801.")]
         public string CodeFilename { get; set; } = "";
@@ -145,24 +143,17 @@ static class Program
         }
 
         var prgLoaded = false;
+        string? autobootPrg = null;
         if (!string.IsNullOrWhiteSpace(options.PrgFilename) && string.IsNullOrWhiteSpace(options.CodeFilename) && !options.WritePrg)
         {
-            if (File.Exists(options.PrgFilename))
-            {
-                Console.WriteLine($"Loading '{options.PrgFilename}'.");
-                var prgData = await File.ReadAllBytesAsync(options.PrgFilename);
-                int destAddress = (prgData[1] << 8) + prgData[0];
-                for (var i = 2; i < prgData.Length; i++)
-                {
-                    emulator.Memory[destAddress++] = prgData[i];
-                }
-                prgLoaded = true;
-            }
-            else
+            if (!File.Exists(options.PrgFilename))
             {
                 Console.WriteLine($"PRG '{options.PrgFilename}' not found.");
                 return 2;
             }
+
+            // put on the SD card with an AUTOBOOT.X16 once the card is set up, like X16D
+            autobootPrg = options.PrgFilename;
         }
 
         if (!string.IsNullOrWhiteSpace(options.CodeFilename))
@@ -279,8 +270,8 @@ static class Program
             }
         }
 
-        if (options.StartAddress != 0 && prgLoaded)
-            emulator.Pc = options.StartAddress;
+        if (prgLoaded)
+            emulator.Pc = CodeStartAddress;
         else
         {
             emulator.Pc = (ushort)((emulator.RomBank[0x3ffd] << 8) + emulator.RomBank[0x3ffc]);
@@ -352,6 +343,24 @@ static class Program
             foreach (var file in options.SdCardFiles)
             {
                 sdCard.AddFiles(file, "\\", true);
+            }
+        }
+
+        if (autobootPrg != null)
+        {
+            // upper case, lower case ascii in the LOAD line would be PETSCII graphics characters. The card is case insensitive.
+            var prgName = Path.GetFileName(autobootPrg).ToUpperInvariant();
+            sdCard.WriteFile(prgName, await File.ReadAllBytesAsync(autobootPrg), true);
+
+            Console.Write($"Adding AUTOBOOT.X16 for '{prgName}'... ");
+            if (sdCard.FileSystem.FileExists("AUTOBOOT.X16"))
+            {
+                Console.WriteLine("Error. File already exists.");
+            }
+            else
+            {
+                sdCard.WriteFile("AUTOBOOT.X16", AutobootCreator.GetAutoboot(prgName), false);
+                Console.WriteLine("Done.");
             }
         }
 

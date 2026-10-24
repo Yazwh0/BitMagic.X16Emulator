@@ -5,6 +5,7 @@ using BitMagic.X16Emulator;
 using BitMagic.X16Emulator.Display;
 using BitMagic.X16Emulator.Serializer;
 using CommandLine;
+using System.Diagnostics;
 using System.Text;
 using Thread = System.Threading.Thread;
 
@@ -15,6 +16,9 @@ static class Program
     private static Thread? EmulatorThread;
 
     private const string RomEnvironmentVariable = "BITMAGIC_ROM";
+    // %LOCALAPPDATA%\BitMagic on Windows, $XDG_DATA_HOME/BitMagic or ~/.local/share/BitMagic on Linux.
+    // Matches the default destination of fetch-rom.bat / fetch-rom.sh.
+    private static string UserRomFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BitMagic");
     private static bool RestartOnStop = false;
     private static readonly AutoResetEvent ContinueEvent = new AutoResetEvent(false);
     private static Emulator Emulator = null!; // assigned in Main() before any use
@@ -25,8 +29,11 @@ static class Program
         [Option('p', "prg", Required = false, HelpText = ".prg file to load.")]
         public string PrgFilename { get; set; } = "";
 
-        [Option('r', "rom", Required = false, HelpText = "rom file to load, will look for rom.bin using locally or falling back to the BITMAGIC_ROM environment variable.")]
+        [Option('r', "rom", Required = false, HelpText = "rom file to load, will look for rom.bin locally, then using the BITMAGIC_ROM environment variable, then in the user's BitMagic folder.")]
         public string RomFilename { get; set; } = "rom.bin";
+
+        [Option("fetch-rom", Required = false, HelpText = "Download the latest ROM into the user's BitMagic folder, then exit.")]
+        public bool FetchRom { get; set; } = false;
 
         [Option('a', "address", Required = false, HelpText = "Start address.")]
         public ushort StartAddress { get; set; } = 0x810;
@@ -118,6 +125,11 @@ static class Program
         if (options == null)
         {
             return 1;
+        }
+
+        if (options.FetchRom)
+        {
+            return FetchRom();
         }
 
         if (options.WritePrg && string.IsNullOrWhiteSpace(options.CodeFilename))
@@ -221,9 +233,14 @@ static class Program
 
                 if (!File.Exists(rom))
                 {
-                    rom = @$"{env}\rom.bin";
+                    rom = Path.Combine(env, "rom.bin");
                 }
             }
+        }
+
+        if (!File.Exists(rom))
+        {
+            rom = Path.Combine(UserRomFolder, "rom.bin");
         }
 
         if (File.Exists(rom))
@@ -238,6 +255,7 @@ static class Program
         else
         {
             Console.WriteLine($"ROM '{rom}' not found.");
+            Console.WriteLine("Run with --fetch-rom to download the latest ROM.");
             return 2;
         }
 
@@ -387,6 +405,46 @@ static class Program
             emulator.SdCard!.Save(options.SdCardWrite, options.SdCardOverrwrite);
 
         return 0;
+    }
+
+    // Runs the fetch-rom script that ships next to the exe, so it works the same from the
+    // release zip/tar and from a dotnet tool install where the script isn't on the PATH.
+    private static int FetchRom()
+    {
+        var windows = OperatingSystem.IsWindows();
+        var script = Path.Combine(AppContext.BaseDirectory, windows ? "fetch-rom.bat" : "fetch-rom.sh");
+
+        if (!File.Exists(script))
+        {
+            Console.WriteLine($"ROM fetch script '{script}' not found.");
+            return 2;
+        }
+
+        ProcessStartInfo startInfo;
+        if (windows)
+        {
+            // cmd /c strips the outer quotes, so the whole command is wrapped in an extra pair.
+            startInfo = new ProcessStartInfo("cmd.exe", $"/c \"\"{script}\" \"{UserRomFolder}\"\"");
+        }
+        else
+        {
+            // run through bash, as nuget packages don't keep the executable bit.
+            startInfo = new ProcessStartInfo("bash");
+            startInfo.ArgumentList.Add(script);
+            startInfo.ArgumentList.Add(UserRomFolder);
+        }
+
+        startInfo.UseShellExecute = false;
+
+        using var process = Process.Start(startInfo);
+        if (process == null)
+        {
+            Console.WriteLine($"Could not start '{script}'.");
+            return 2;
+        }
+
+        process.WaitForExit();
+        return process.ExitCode;
     }
 
     private static void EmulatorWindow_ControlKeyPressed(object? sender, ControlKeyPressedEventArgs e)

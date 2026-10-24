@@ -1,7 +1,8 @@
 @echo off
 rem Downloads the latest Commander X16 ROM image from the X16Community/x16-rom
-rem GitHub releases page and installs rom.bin next to this script, or into the
-rem directory passed as the first argument.
+rem GitHub releases page and installs rom.bin into the user's BitMagic folder
+rem (%LOCALAPPDATA%\BitMagic), where X16E looks for it, or into the directory
+rem passed as the first argument. X16E --fetch-rom runs this.
 rem
 rem Deliberately avoids the api.github.com REST API (its unauthenticated rate
 rem limit is a low 60 requests/hour per IP, shared with anything else on that
@@ -13,7 +14,7 @@ setlocal EnableDelayedExpansion
 set "REPO=X16Community/x16-rom"
 
 if "%~1"=="" (
-    set "DEST_DIR=%~dp0"
+    set "DEST_DIR=%LOCALAPPDATA%\BitMagic"
 ) else (
     set "DEST_DIR=%~1"
 )

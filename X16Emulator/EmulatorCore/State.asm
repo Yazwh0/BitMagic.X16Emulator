@@ -66,6 +66,7 @@ state struct
 	pcm_ptr					qword ?
 	audiooutput_ptr			qword ?
 	debug_sprites_colours_ptr qword ?
+	beam_breakpoint_ptr		qword ?
 
 	current_bank_address	qword ?
 
@@ -121,6 +122,8 @@ state struct
 	spi_nextcpuread			qword ?
 
 	ignore_breakpoint		dword ?
+	beam_breakpoint_index	dword ?
+	beam_breakpoint_next    dword ?
 
 	exit_code				dword ?
 

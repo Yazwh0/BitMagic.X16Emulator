@@ -10,19 +10,41 @@
     <PackageProjectUrl>https://github.com/Yazwh0/BitMagic</PackageProjectUrl>
     <PackageIcon>butterfly.jpg</PackageIcon>
   </PropertyGroup>
-  
+
+  <!--
+    Published as a .NET tool, one package per RID like X16M (`dotnet tool install` picks
+    BitMagic.X16E.win-x64 or .linux-x64), so each only carries its own platform's Silk.NET
+    natives. The managed code is platform neutral; the emulator core and ZiModem host are
+    picked up via BitMagic.X16Emulator.csproj, so CI stages both platforms' native builds
+    before running `dotnet pack` (see build-test.yml's "nuget-publish" job).
+  -->
   <PropertyGroup>
-    <Version>6</Version>
-    <FileVersion>6</FileVersion>
-    <license>AGPL-3.0-or-later</license>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>x16e</ToolCommandName>
+    <PackageId>BitMagic.X16E</PackageId>
+    <Title>X16E</Title>
+    <Description>BitMagic's Commander X16 emulator.</Description>
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-  
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <!-- Shipped next to the exe, the fetch-rom option runs the one for the current platform. -->
+  <ItemGroup>
+    <None Update="fetch-rom.bat" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="fetch-rom.sh" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="check-prerequisites.sh" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <Compile Remove="GL\**" />
     <EmbeddedResource Remove="GL\**" />
     <None Remove="GL\**" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <None Remove="icon\butterfly.jpg" />
   </ItemGroup>

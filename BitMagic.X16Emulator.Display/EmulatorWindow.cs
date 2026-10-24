@@ -22,7 +22,7 @@ public class ControlKeyPressedEventArgs : EventArgs
 
 public class EmulatorWindow : IDisposable
 {
-#if OS_WINDOWS
+    // Windows only, only called behind OperatingSystem.IsWindows().
     [DllImport("dwmapi.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute, ref int pvAttribute, int cbAttribute);
 
@@ -38,7 +38,6 @@ public class EmulatorWindow : IDisposable
         GetRoot = 2,
         GetRootOwner = 3
     }
-#endif
 
     private GL? _gl;
     private IWindow? _window;
@@ -303,7 +302,8 @@ public class EmulatorWindow : IDisposable
         _shader = new Shader(_gl, @"shader.vert", @"shader.frag");
         _emulator!.Control = Control.Run;
 
-#if OS_WINDOWS
+        if (!OperatingSystem.IsWindows())
+            return;
 
         var assembly = Assembly.GetEntryAssembly();
         if (assembly != null)
@@ -340,7 +340,6 @@ public class EmulatorWindow : IDisposable
         {
             DwmSetWindowAttribute(handle.Value, 33, ref pvAttribute, Marshal.SizeOf(pvAttribute));
         }
-#endif
     }
 
     // If we lose focus, then stop capturing the mouse

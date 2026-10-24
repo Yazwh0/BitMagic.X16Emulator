@@ -14,7 +14,14 @@
     <None Remove="~%24state_object.xlsx" />
   </ItemGroup>
 
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+  <!--
+    Native libraries. The host platform's are always included (they may not exist yet at
+    evaluation time in a Debug build, the native ProjectReferences below build them). The other
+    platform's are included only if they've been staged, so the X16E NuGet pack (see
+    build-test.yml's "nuget-publish" job) can carry both from a single host. The managed code
+    picks the right one at runtime, so nothing else here is platform specific.
+  -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows')) or Exists('..\X16Emulator\EmulatorCore\x64\$(Configuration)\EmulatorCore.dll')">
     <Content Include="..\X16Emulator\EmulatorCore\x64\$(Configuration)\EmulatorCore.dll" Link="EmulatorCore.dll">
       <CopyToOutput>true</CopyToOutput>
       <PackageFlatten>false</PackageFlatten>
@@ -23,8 +30,8 @@
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
   </ItemGroup>
-  
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux')) or Exists('..\X16Emulator\EmulatorCore\x64\$(Configuration)\EmulatorCore.so')">
     <Content Include="..\X16Emulator\EmulatorCore\x64\$(Configuration)\EmulatorCore.so" Link="EmulatorCore.so">
       <CopyToOutput>true</CopyToOutput>
       <PackageFlatten>false</PackageFlatten>
@@ -35,7 +42,7 @@
   </ItemGroup>
 
   <!-- ZiModem host C ABI lib. Single-config Ninja build => one fixed output dir, not $(Configuration)-qualified. -->
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows')) or Exists('..\..\External\BitMagic.ZiModem\build\native\bin\zimodem_host.dll')">
     <Content Include="..\..\External\BitMagic.ZiModem\build\native\bin\zimodem_host.dll" Link="zimodem_host.dll">
       <CopyToOutput>true</CopyToOutput>
       <PackageFlatten>false</PackageFlatten>
@@ -45,7 +52,7 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux')) or Exists('..\..\External\BitMagic.ZiModem\build\native\bin\libzimodem_host.so')">
     <Content Include="..\..\External\BitMagic.ZiModem\build\native\bin\libzimodem_host.so" Link="libzimodem_host.so">
       <CopyToOutput>true</CopyToOutput>
       <PackageFlatten>false</PackageFlatten>
@@ -80,14 +87,6 @@
     <PackageReference Include="Silk.NET.Input" Version="2.22.0" />
   </ItemGroup>
 
-  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
-    <DefineConstants>OS_WINDOWS</DefineConstants>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-    <DefineConstants>OS_LINUX</DefineConstants>
-  </PropertyGroup>
-  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <Optimize>False</Optimize>
   </PropertyGroup>

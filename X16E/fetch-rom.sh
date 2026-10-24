@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Downloads the latest Commander X16 ROM image from the X16Community/x16-rom
-# GitHub releases page and installs rom.bin next to this script, or into the
-# directory passed as the first argument.
+# GitHub releases page and installs rom.bin into the user's BitMagic folder
+# ($XDG_DATA_HOME/BitMagic, or ~/.local/share/BitMagic), where X16E looks for it,
+# or into the directory passed as the first argument. X16E --fetch-rom runs this.
 #
 # Deliberately avoids the api.github.com REST API (its unauthenticated rate
 # limit is a low 60 requests/hour per IP, shared with anything else on that
@@ -11,7 +12,14 @@
 set -euo pipefail
 
 repo="X16Community/x16-rom"
-dest_dir="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+dest_dir="${1:-${XDG_DATA_HOME:-$HOME/.local/share}/BitMagic}"
+
+for tool in curl unzip; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        echo "$tool not found on PATH. Install it (e.g. sudo apt install $tool) and re-run." >&2
+        exit 1
+    fi
+done
 
 echo "Resolving latest ROM release for $repo..."
 tag_url=$(curl -fsSL -o /dev/null -w '%{url_effective}' -L "https://github.com/$repo/releases/latest")

@@ -101,12 +101,8 @@ public class Emulator : IDisposable
     [DllImport(@"C:\Documents\Source\BitMagic\BitMagic.X16Emulator\X16Emulator\EmulatorCore\x64\Debug\EmulatorCore.dll")]
 #endif
 #if RELEASE
-#if OS_WINDOWS
-    [DllImport(@"EmulatorCore.dll")]
-#endif
-#if OS_LINUX
-    [DllImport(@"./EmulatorCore.so")]
-#endif
+    // no extension, the runtime probes the app directory for EmulatorCore.dll on Windows or EmulatorCore.so on Linux.
+    [DllImport(@"EmulatorCore")]
 #endif
     private static extern int fnEmulatorCode(ref CpuState state);
 
@@ -581,6 +577,7 @@ public class Emulator : IDisposable
         public ulong PcmPtr = 0;
         public ulong AudioOutputPtr = 0;
         public ulong DebugSpriteColoursPtr = 0;
+        public ulong BeamBreakpointPtr = 0;
 
         public ulong CurrentBankAddress = 0;
 
@@ -634,6 +631,8 @@ public class Emulator : IDisposable
         public ulong SpiNextCpuRead = 0; // cpu tick when the next read can occur
 
         public uint IgnoreBreakpoint = 0;
+        public uint Beam_Breakpoint_Index = 0;
+        public uint Beam_Breakpoint_Next = 0xffff_ffff;
 
         public uint ExitCode = 0;
 
@@ -920,7 +919,7 @@ public class Emulator : IDisposable
             ulong display, ulong palette, ulong sprite, ulong displayBuffer, ulong history, ulong i2cBuffer,
             ulong smcKeyboardPtr, ulong smcMousePtr, ulong spiHistoryPtr, ulong spiInboundBufferPtr, ulong spiOutbandBufferPtr,
             ulong breakpointPtr, ulong stackInfoPtr, ulong stackBreakpointPtr, ulong rtcNvramPtr, ulong pcmPtr,
-            ulong audioOutputPtr, ulong psgPtr, ulong vramBreakpoint_ptr, ulong debugSpriteColoursPtr)
+            ulong audioOutputPtr, ulong psgPtr, ulong vramBreakpoint_ptr, ulong debugSpriteColoursPtr, ulong beamBreakpointPtr)
         {
             MemoryPtr = memory;
             RomPtr = rom;
@@ -946,6 +945,7 @@ public class Emulator : IDisposable
             PsgPtr = psgPtr;
             VramBreakpointPtr = vramBreakpoint_ptr;
             DebugSpriteColoursPtr = debugSpriteColoursPtr;
+            BeamBreakpointPtr = beamBreakpointPtr;
         }
     }
 
@@ -1107,6 +1107,7 @@ public class Emulator : IDisposable
     private readonly ulong _audioOutput_ptr;
     private readonly ulong _psg_ptr;
     private readonly ulong _debug_sprite_colours_ptr;
+    private readonly ulong _beam_breakpoint_ptr;
 
     public const int RamSize = 0x10000;
     public const int RomSize = 0x4000 * 256; // was 32, now 256 for cartridge
@@ -1128,6 +1129,8 @@ public class Emulator : IDisposable
     public const int StackBreakpointSize = 256;
     public const int DebugSpriteColourCount = 129;
     public const int DebugSpriteColoursSize = 4 * DebugSpriteColourCount;
+    public const int BeamBreakpointCount = 32;
+    public const int BeamBreakpointSize = 4 * BeamBreakpointCount;
     public const int RtcNvramSize = 64;
     private const int PcmSize = 1024 * 4;
     public const int AudioOutputSize = 1024 * 1024 * 2; // 2meg for both Left and Right
@@ -1208,6 +1211,7 @@ public class Emulator : IDisposable
         _psg_ptr = (ulong)NativeMemory.Alloc(PsgSize);
 
         _debug_sprite_colours_ptr = (ulong)NativeMemory.Alloc(DebugSpriteColoursSize);
+        _beam_breakpoint_ptr = (ulong)NativeMemory.Alloc(BeamBreakpointSize);
 
         _vera = new VeraState(this);
         _via = new ViaState(this);
@@ -1303,6 +1307,10 @@ public class Emulator : IDisposable
         var debugSpriteColours_span = new Span<uint>((void*)_debug_sprite_colours_ptr, DebugSpriteColourCount);
         for (var i = 0; i < DebugSpriteColourCount; i++)
             debugSpriteColours_span[i] = 0;
+
+        var beamBreakpoint_span = new Span<uint>((void*)_beam_breakpoint_ptr, BeamBreakpointCount);
+        for (var i = 0; i < BeamBreakpointCount; i++)
+            beamBreakpoint_span[i] = 0;
 
         // set defaults
         var sprite_act_span = new Span<Sprite>((void*)_sprite_ptr, 128);
@@ -1440,7 +1448,7 @@ public class Emulator : IDisposable
         _state.SetPointers(_memory_ptr_rounded, _rom_ptr_rounded, _ram_ptr_rounded, _vram_ptr, _display_ptr, _palette_ptr,
             _sprite_ptr, _display_buffer_ptr_rounded, _history_ptr, _i2cBuffer_ptr, _smcKeyboard_ptr, _smcMouse_ptr, _spiHistory_ptr,
             _spiInboundBufferPtr, _spiOutboundBufferPtr, _breakpoint_ptr_rounded, _stackInfo_Ptr, _stackBreakpoint_Ptr, _rtcNvram_Ptr,
-            _pcm_Ptr, _audioOutput_ptr, _psg_ptr, _vramBreakpoint_ptr, _debug_sprite_colours_ptr);
+            _pcm_Ptr, _audioOutput_ptr, _psg_ptr, _vramBreakpoint_ptr, _debug_sprite_colours_ptr, _beam_breakpoint_ptr);
 
         // Not part of SetPointers' fixed set: SdCardPtr points at whichever SdCard instance is
         // loaded (or none), rather than at a buffer this Emulator always owns. Re-derive it from
@@ -1471,6 +1479,7 @@ public class Emulator : IDisposable
     public unsafe Span<byte> SpiOutboundBuffer => new Span<byte>((void*)_spiOutboundBufferPtr, SpiOutboundBufferPtrSize);
     public unsafe Span<short> AudioOutputBuffer => new Span<short>((void*)_audioOutput_ptr, AudioOutputSize / 2);
     public unsafe Span<uint> DebugSpriteColours => new Span<uint>((void*)_debug_sprite_colours_ptr, DebugSpriteColourCount);
+    public unsafe Span<uint> BeamBreakpoints => new Span<uint>((void*)_beam_breakpoint_ptr, BeamBreakpointCount);
     public ulong AudioOutputPtr => _audioOutput_ptr;
     public SmcBuffer SmcBuffer { get; }
     public EmulatorResult Result { get; internal set; }
@@ -1612,6 +1621,7 @@ public class Emulator : IDisposable
         NativeMemory.Free((void*)_audioOutput_ptr);
         NativeMemory.Free((void*)_psg_ptr);
         NativeMemory.Free((void*)_debug_sprite_colours_ptr);
+        NativeMemory.Free((void*)_beam_breakpoint_ptr);
 
         if (_stateHandle.IsAllocated)
             _stateHandle.Free();

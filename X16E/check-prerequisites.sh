@@ -54,6 +54,22 @@ find_lib "SDL2 (windowing/input)" 'libSDL2-2\.0\.so\|libSDL2\.so' "libsdl2-2.0-0
 find_lib "OpenGL"                 'libGL\.so'                     "libgl1 mesa-utils"
 find_lib "OpenAL (audio)"         'libopenal\.so'                 "libopenal1"
 
+# --- ROM download (fetch-rom.sh / X16E --fetch-rom) ---
+echo
+echo "ROM download tools:"
+
+find_cmd() {
+    # $1: command, $2: apt package suggestion
+    if command -v "$1" >/dev/null 2>&1; then
+        ok "$1"
+    else
+        bad "$1 not found" "install (Debian/Ubuntu): sudo apt install $2"
+    fi
+}
+
+find_cmd curl  curl
+find_cmd unzip unzip
+
 # --- bundled native components ---
 echo
 echo "Bundled components (should ship with this build):"

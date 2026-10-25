@@ -8,7 +8,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task Abs_Step0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x0000;
@@ -37,7 +37,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task Abs_Step1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 1;
         emulator.Vera.Data1_Address = 0x0000;
@@ -66,7 +66,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task AbsX_Step0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x0000;
@@ -96,7 +96,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task AbsX_Step1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 1;
         emulator.Vera.Data1_Address = 0x0000;
@@ -127,7 +127,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task AbsY_Step0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x0000;
@@ -157,7 +157,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task AbsY_Step1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 1;
         emulator.Vera.Data1_Address = 0x0000;
@@ -187,7 +187,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task Ind_Step0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x0000;
@@ -218,7 +218,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task Ind_Step1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 1;
         emulator.Vera.Data1_Address = 0x0000;
@@ -249,7 +249,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task IndX_Step0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x0000;
@@ -281,7 +281,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task IndX_Step1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 1;
         emulator.Vera.Data1_Address = 0x0000;
@@ -314,7 +314,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task IndY_Step0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x0000;
@@ -346,7 +346,7 @@ public class ORA_Data1
     [TestMethod]
     public async Task IndY_Step1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 1;
         emulator.Vera.Data1_Address = 0x0000;

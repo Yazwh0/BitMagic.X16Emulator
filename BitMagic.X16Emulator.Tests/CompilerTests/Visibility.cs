@@ -145,7 +145,7 @@ public class Visibility
     [TestMethod]
     public async Task PrivateProc_VisibleInItsScope()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R40
@@ -403,7 +403,7 @@ public class Visibility
     [TestMethod]
     public async Task Export_PrivateThings_InItsScope()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R40

@@ -11,7 +11,7 @@ public class Interrupt_Line
     [TestMethod]
     public async Task Hit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -53,7 +53,7 @@ public class Interrupt_Line
     [TestMethod]
     public async Task Hit_Wai()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -86,7 +86,7 @@ public class Interrupt_Line
     [TestMethod]
     public async Task Hit_Wai_Twice()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -120,7 +120,7 @@ public class Interrupt_Line
     [TestMethod]
     public async Task Hit_Line0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -162,7 +162,7 @@ public class Interrupt_Line
     [TestMethod]
     public async Task Hit_Reset()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -204,7 +204,7 @@ public class Interrupt_Line
     [TestMethod]
     public async Task Hit_OnlyOnce()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -246,7 +246,7 @@ public class Interrupt_Line
     [TestMethod]
     public async Task Hit_Many()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;

@@ -8,7 +8,7 @@ public class ROL
     [TestMethod]
     public async Task A()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b00000010;
 
@@ -30,7 +30,7 @@ public class ROL
     [TestMethod]
     public async Task A_CarrySet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b00000010;
         emulator.Carry = true;
@@ -53,7 +53,7 @@ public class ROL
     [TestMethod]
     public async Task A_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b00000000;
         emulator.Carry = false;
@@ -76,7 +76,7 @@ public class ROL
     [TestMethod]
     public async Task A_NotZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b00000000;
         emulator.Carry = true;
@@ -99,7 +99,7 @@ public class ROL
     [TestMethod]
     public async Task A_SetCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000010;
         emulator.Carry = false;
@@ -122,7 +122,7 @@ public class ROL
     [TestMethod]
     public async Task Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0b00000010;
 
@@ -145,7 +145,7 @@ public class ROL
     [TestMethod]
     public async Task Abs_CarrySet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0b00000010;
         emulator.Carry = true;
@@ -169,7 +169,7 @@ public class ROL
     [TestMethod]
     public async Task Abs_SetCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0b10000010;
         emulator.Carry = false;
@@ -193,7 +193,7 @@ public class ROL
     [TestMethod]
     public async Task Abs_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0b00000000;
 
@@ -216,7 +216,7 @@ public class ROL
     [TestMethod]
     public async Task AbsX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0b00000010;
         emulator.X = 0x34;
@@ -240,7 +240,7 @@ public class ROL
     [TestMethod]
     public async Task AbsX_PageChange()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1310] = 0b00000010;
         emulator.X = 0x11;
@@ -264,7 +264,7 @@ public class ROL
     [TestMethod]
     public async Task AbsX_CarrySet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0b00000010;
         emulator.Carry = true;
@@ -289,7 +289,7 @@ public class ROL
     [TestMethod]
     public async Task AbsX_SetCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0b10000010;
         emulator.Carry = false;
@@ -314,7 +314,7 @@ public class ROL
     [TestMethod]
     public async Task Zp()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0b00000010;
 
@@ -337,7 +337,7 @@ public class ROL
     [TestMethod]
     public async Task Zp_NotZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0b00000000;
         emulator.Carry = true;
@@ -361,7 +361,7 @@ public class ROL
     [TestMethod]
     public async Task Zp_CarrySet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0b00000010;
         emulator.Carry = true;
@@ -386,7 +386,7 @@ public class ROL
     [TestMethod]
     public async Task Zp_CarrySetZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0b00000010;
         emulator.Carry = true;
@@ -410,7 +410,7 @@ public class ROL
     [TestMethod]
     public async Task Zp_SetCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0b10000010;
         emulator.Carry = false;
@@ -435,7 +435,7 @@ public class ROL
     [TestMethod]
     public async Task ZpX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0b00000010;
         emulator.X = 0x02;
@@ -459,7 +459,7 @@ public class ROL
     [TestMethod]
     public async Task ZpX_CarrySet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0b00000010;
         emulator.Carry = true;
@@ -484,7 +484,7 @@ public class ROL
     [TestMethod]
     public async Task ZpX_SetCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0b10000010;
         emulator.Carry = false;
@@ -509,7 +509,7 @@ public class ROL
     [TestMethod]
     public async Task ZpX_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0b10000010;
         emulator.Carry = false;
@@ -534,7 +534,7 @@ public class ROL
     [TestMethod]
     public async Task Readonly_Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0b00000010;
 
@@ -554,7 +554,7 @@ public class ROL
     [TestMethod]
     public async Task Readonly_AbsSet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0b10000001;
 
@@ -574,7 +574,7 @@ public class ROL
     [TestMethod]
     public async Task Readonly_AbsX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0002] = 0b00000010;
         emulator.X = 0x02;
@@ -595,7 +595,7 @@ public class ROL
     [TestMethod]
     public async Task Readonly_AbsXSet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0002] = 0b10000001;
         emulator.X = 0x02;

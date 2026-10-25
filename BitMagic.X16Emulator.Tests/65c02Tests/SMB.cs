@@ -8,7 +8,7 @@ public class SMB
     [TestMethod]
     public async Task SMB0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x00;
 
@@ -31,7 +31,7 @@ public class SMB
     [TestMethod]
     public async Task SMB1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x00;
 
@@ -54,7 +54,7 @@ public class SMB
     [TestMethod]
     public async Task SMB2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x00;
 
@@ -77,7 +77,7 @@ public class SMB
     [TestMethod]
     public async Task SMB3()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x00;
 
@@ -100,7 +100,7 @@ public class SMB
     [TestMethod]
     public async Task SMB4()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x00;
 
@@ -123,7 +123,7 @@ public class SMB
     [TestMethod]
     public async Task SMB5()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x00;
 
@@ -146,7 +146,7 @@ public class SMB
     [TestMethod]
     public async Task SMB6()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x00;
 
@@ -169,7 +169,7 @@ public class SMB
     [TestMethod]
     public async Task SMB7()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x00;
 

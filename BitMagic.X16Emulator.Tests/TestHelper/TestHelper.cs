@@ -21,7 +21,7 @@ public class TestHelper
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare()
             .Is(X16Emulator.Snapshot.MemoryAreas.BankedRam, 0x02a001, 2)
@@ -50,7 +50,7 @@ public class TestHelper
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         var changes = snapshot.Compare().IgnoreVera().IgnoreVia();
 
@@ -90,7 +90,7 @@ public class TestHelper
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare()
             .CanChange(MemoryAreas.BankedRam, 0x02a001)
@@ -126,7 +126,7 @@ public class TestHelper
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         bool exception = false;
         try
@@ -166,7 +166,7 @@ public class TestHelper
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare()
             .CanChange(MemoryAreas.BankedRam, 0x02a001)
@@ -197,7 +197,7 @@ public class TestHelper
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         var changes = snapshot.Compare().IgnoreVera().IgnoreVia();
 
@@ -237,7 +237,7 @@ public class TestHelper
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare()
             .CanChange(MemoryAreas.BankedRam, 0x02a001, 0x02a004)
@@ -268,7 +268,7 @@ public class TestHelper
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         bool exception = false;
         try
@@ -309,7 +309,7 @@ public class TestHelper
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         bool exception = false;
         try

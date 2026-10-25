@@ -8,7 +8,7 @@ public class CPX_Data0
     [TestMethod]
     public async Task Abs_Step0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x0000;
@@ -36,7 +36,7 @@ public class CPX_Data0
     [TestMethod]
     public async Task Abs_Step1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 1;
         emulator.Vera.Data0_Address = 0x0000;

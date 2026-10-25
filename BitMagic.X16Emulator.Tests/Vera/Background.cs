@@ -9,7 +9,7 @@ public class Background
     [TestMethod]
     public async Task Area()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -27,7 +27,7 @@ public class Background
     [TestMethod]
     public async Task Colour()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -53,7 +53,7 @@ public class Background
     [TestMethod]
     public async Task VStart()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -89,7 +89,7 @@ public class Background
     [TestMethod]
     public async Task VStop()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -125,7 +125,7 @@ public class Background
     [TestMethod]
     public async Task HStart()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -161,7 +161,7 @@ public class Background
     [TestMethod]
     public async Task HStop()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

@@ -8,7 +8,7 @@ public class TAX
     [TestMethod]
     public async Task Tax()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 2;
 
@@ -30,7 +30,7 @@ public class TAX
     [TestMethod]
     public async Task Tax_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 2;
         emulator.InterruptDisable = true;
@@ -51,7 +51,7 @@ public class TAX
     [TestMethod]
     public async Task Tax_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 1;
         emulator.A = 0;
@@ -74,7 +74,7 @@ public class TAX
     [TestMethod]
     public async Task Tax_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
 

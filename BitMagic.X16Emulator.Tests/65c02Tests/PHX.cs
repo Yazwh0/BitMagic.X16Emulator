@@ -13,7 +13,7 @@ public class PHX
     [TestMethod]
     public async Task Phx()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0xff;
 
@@ -36,7 +36,7 @@ public class PHX
     [TestMethod]
     public async Task Phx_Full()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0xff;
 

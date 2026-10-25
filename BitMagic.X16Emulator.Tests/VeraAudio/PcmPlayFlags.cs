@@ -8,7 +8,7 @@ public class PcmPlayFlags
     [TestMethod]
     public async Task NotEmpty_8bitMono()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PcmBufferWrite = 2;
         emulator.VeraAudio.PcmSampleRate = 0x80; // max
@@ -29,7 +29,7 @@ public class PcmPlayFlags
     [TestMethod]
     public async Task Empty_8bitMono()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PcmBufferWrite = 1;
         emulator.VeraAudio.PcmSampleRate = 0x80; // max
@@ -51,7 +51,7 @@ public class PcmPlayFlags
     [TestMethod]
     public async Task Empty_8bitMono_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PcmBufferWrite = 0xfff;
         emulator.VeraAudio.PcmBufferWrite = 0;

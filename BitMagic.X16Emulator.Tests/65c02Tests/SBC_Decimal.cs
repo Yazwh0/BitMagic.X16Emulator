@@ -8,7 +8,7 @@ public class SBC_Decimal
     [TestMethod]
     public async Task Imm()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -33,7 +33,7 @@ public class SBC_Decimal
     [TestMethod]
     public async Task Imm_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -58,7 +58,7 @@ public class SBC_Decimal
     [TestMethod]
     public async Task Imm_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;

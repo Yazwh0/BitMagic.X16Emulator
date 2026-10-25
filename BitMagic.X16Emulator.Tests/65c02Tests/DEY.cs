@@ -8,7 +8,7 @@ public class DEY
     [TestMethod]
     public async Task Dey()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 2;
 
@@ -30,7 +30,7 @@ public class DEY
     [TestMethod]
     public async Task Dey_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 1;
 
@@ -52,7 +52,7 @@ public class DEY
     [TestMethod]
     public async Task Dey_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xa0;
 
@@ -74,7 +74,7 @@ public class DEY
     [TestMethod]
     public async Task Dey_ToNegative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0;
 

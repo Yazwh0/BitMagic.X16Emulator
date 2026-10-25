@@ -9,7 +9,7 @@ public class BBR
     [TestMethod]
     public async Task BBR0_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11111110;
@@ -37,7 +37,7 @@ public class BBR
     [TestMethod]
     public async Task BBR0_No_Jump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0xff;
@@ -60,7 +60,7 @@ public class BBR
     [TestMethod]
     public async Task BBR0_Jump_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11111110;
@@ -86,7 +86,7 @@ public class BBR
     [TestMethod]
     public async Task BBR0_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11111110;
@@ -111,7 +111,7 @@ public class BBR
     [TestMethod]
     public async Task BBR1_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11111101;
@@ -139,7 +139,7 @@ public class BBR
     [TestMethod]
     public async Task BBR1_No_Jump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0xff;
@@ -162,7 +162,7 @@ public class BBR
     [TestMethod]
     public async Task BBR1_Jump_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11111101;
@@ -188,7 +188,7 @@ public class BBR
     [TestMethod]
     public async Task BBR1_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11111101;
@@ -213,7 +213,7 @@ public class BBR
     [TestMethod]
     public async Task BBR2_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11111011;
@@ -241,7 +241,7 @@ public class BBR
     [TestMethod]
     public async Task BBR2_No_Jump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0xff;
@@ -264,7 +264,7 @@ public class BBR
     [TestMethod]
     public async Task BBR2_Jump_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11111011;
@@ -290,7 +290,7 @@ public class BBR
     [TestMethod]
     public async Task BBR2_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11111011;
@@ -315,7 +315,7 @@ public class BBR
     [TestMethod]
     public async Task BBR3_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11110111;
@@ -343,7 +343,7 @@ public class BBR
     [TestMethod]
     public async Task BBR3_No_Jump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0xff;
@@ -366,7 +366,7 @@ public class BBR
     [TestMethod]
     public async Task BBR3_Jump_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11110111;
@@ -392,7 +392,7 @@ public class BBR
     [TestMethod]
     public async Task BBR3_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11110111;
@@ -417,7 +417,7 @@ public class BBR
     [TestMethod]
     public async Task BBR4_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11101111;
@@ -445,7 +445,7 @@ public class BBR
     [TestMethod]
     public async Task BBR4_No_Jump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0xff;
@@ -468,7 +468,7 @@ public class BBR
     [TestMethod]
     public async Task BBR4_Jump_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11101111;
@@ -494,7 +494,7 @@ public class BBR
     [TestMethod]
     public async Task BBR4_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11101111;
@@ -519,7 +519,7 @@ public class BBR
     [TestMethod]
     public async Task BBR5_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11011111;
@@ -547,7 +547,7 @@ public class BBR
     [TestMethod]
     public async Task BBR5_No_Jump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0xff;
@@ -570,7 +570,7 @@ public class BBR
     [TestMethod]
     public async Task BBR5_Jump_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11011111;
@@ -596,7 +596,7 @@ public class BBR
     [TestMethod]
     public async Task BBR5_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b11011111;
@@ -621,7 +621,7 @@ public class BBR
     [TestMethod]
     public async Task BBR6_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b10111111;
@@ -649,7 +649,7 @@ public class BBR
     [TestMethod]
     public async Task BBR6_No_Jump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0xff;
@@ -672,7 +672,7 @@ public class BBR
     [TestMethod]
     public async Task BBR6_Jump_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b10111111;
@@ -698,7 +698,7 @@ public class BBR
     [TestMethod]
     public async Task BBR6_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b10111111;
@@ -723,7 +723,7 @@ public class BBR
     [TestMethod]
     public async Task BBR7_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b01111111;
@@ -751,7 +751,7 @@ public class BBR
     [TestMethod]
     public async Task BBR7_No_Jump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0xff;
@@ -774,7 +774,7 @@ public class BBR
     [TestMethod]
     public async Task BBR7_Jump_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b01111111;
@@ -800,7 +800,7 @@ public class BBR
     [TestMethod]
     public async Task BBR7_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = false;
         emulator.Memory[0x10] = 0b01111111;

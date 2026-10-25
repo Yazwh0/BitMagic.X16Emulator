@@ -8,7 +8,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -128,7 +128,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -248,7 +248,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_200VScale_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -369,7 +369,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_200VScale_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -490,7 +490,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_192HScale_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                  .machine CommanderX16R40
@@ -710,7 +710,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_192HScale_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                  .machine CommanderX16R40
@@ -930,7 +930,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_8x8_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                      .machine CommanderX16R40
@@ -1068,7 +1068,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_8x8_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1206,7 +1206,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_8x16_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1363,7 +1363,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_8x16_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1520,7 +1520,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_16x8_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1682,7 +1682,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_16x8_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1844,7 +1844,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_16x16_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -2047,7 +2047,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Normal_16x16_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -2250,7 +2250,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Shifted_8x8_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                      .machine CommanderX16R40
@@ -2393,7 +2393,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Shifted_8x8_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -2536,7 +2536,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Shifted_8x16_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -2698,7 +2698,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Shifted_8x16_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -2860,7 +2860,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Shifted_16x8_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -3027,7 +3027,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Shifted_16x8_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -3195,7 +3195,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Shifted_16x16_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -3403,7 +3403,7 @@ public class Tiles_1Bpp
     [TestMethod]
     public async Task Shifted_16x16_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

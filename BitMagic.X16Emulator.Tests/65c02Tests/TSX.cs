@@ -8,7 +8,7 @@ public class TSX
     [TestMethod]
     public async Task Tsx_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.StackPointer = 0x1ff;
         emulator.X = 0x10;
@@ -31,7 +31,7 @@ public class TSX
     [TestMethod]
     public async Task Tsx_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.StackPointer = 0x112;
         emulator.X = 0x10;
@@ -54,7 +54,7 @@ public class TSX
     [TestMethod]
     public async Task Txs_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.StackPointer = 0x100;
         emulator.X = 0x10;

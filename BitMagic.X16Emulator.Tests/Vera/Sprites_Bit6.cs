@@ -8,7 +8,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetFlip_Mode_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc00 + 6;
@@ -27,7 +27,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetFlip_Mode_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc08 + 6;
@@ -46,7 +46,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetFlip_Mode_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff8 + 6;
@@ -65,7 +65,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetFlip_ExistingMode_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc00 + 6;
@@ -85,7 +85,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetFlip_ExistingMode_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc08 + 6;
@@ -105,7 +105,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetFlip_ExistingMode_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff8 + 6;
@@ -125,7 +125,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetDepth_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc00 + 6;
@@ -144,7 +144,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetDepth_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc08 + 6;
@@ -163,7 +163,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetDepth_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff8 + 6;
@@ -182,7 +182,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetCollisionMask_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc00 + 6;
@@ -201,7 +201,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetCollisionMask_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc08 + 6;
@@ -220,7 +220,7 @@ public class Sprites_Bit6
     [TestMethod]
     public async Task SetCollisionMask_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff8 + 6;

@@ -8,7 +8,7 @@ public class RomBank
     [TestMethod]
     public async Task Read()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x4000] = 0xff;
 
@@ -27,7 +27,7 @@ public class RomBank
     [TestMethod]
     public async Task Read_253()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x4000 * 0xfd] = 0xff;
 
@@ -46,7 +46,7 @@ public class RomBank
     [TestMethod]
     public async Task Read_254()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x4000 * 0xfe] = 0xff;
 
@@ -65,7 +65,7 @@ public class RomBank
     [TestMethod]
     public async Task Read_255()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x4000 * 0xff] = 0xff;
 

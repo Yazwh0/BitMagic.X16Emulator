@@ -10,7 +10,7 @@ public class CharacterLiterals
     [TestMethod]
     public async Task Space()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -25,7 +25,7 @@ public class CharacterLiterals
     [TestMethod]
     public async Task Space_Compare()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -41,7 +41,7 @@ public class CharacterLiterals
     [TestMethod]
     public async Task Letter_WithSpacesAroundIt()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

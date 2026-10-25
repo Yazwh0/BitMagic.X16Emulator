@@ -8,7 +8,7 @@ public class CMP
     [TestMethod]
     public async Task Imm_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
 
@@ -31,7 +31,7 @@ public class CMP
     [TestMethod]
     public async Task Imm_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
 
@@ -50,7 +50,7 @@ public class CMP
     [TestMethod]
     public async Task Imm_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
 
@@ -69,7 +69,7 @@ public class CMP
     [TestMethod]
     public async Task Abs_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Memory[0x1234] = 0x10;
@@ -94,7 +94,7 @@ public class CMP
     [TestMethod]
     public async Task Abs_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Memory[0x1234] = 0x20;
@@ -114,7 +114,7 @@ public class CMP
     [TestMethod]
     public async Task Abs_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Memory[0x1234] = 0x05;
@@ -134,7 +134,7 @@ public class CMP
     [TestMethod]
     public async Task AbsX_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.X = 0x04;
@@ -160,7 +160,7 @@ public class CMP
     [TestMethod]
     public async Task AbsX_EqualPagePentalty()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.X = 0x44;
@@ -181,7 +181,7 @@ public class CMP
     [TestMethod]
     public async Task AbsX_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.X = 0x04;
@@ -202,7 +202,7 @@ public class CMP
     [TestMethod]
     public async Task AbsX_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.X = 0x04;
@@ -223,7 +223,7 @@ public class CMP
     [TestMethod]
     public async Task AbsY_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Y = 0x04;
@@ -249,7 +249,7 @@ public class CMP
     [TestMethod]
     public async Task AbsY_EqualPagePentalty()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Y = 0x44;
@@ -270,7 +270,7 @@ public class CMP
     [TestMethod]
     public async Task AbsY_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Y = 0x04;
@@ -291,7 +291,7 @@ public class CMP
     [TestMethod]
     public async Task AbsY_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Y = 0x04;
@@ -312,7 +312,7 @@ public class CMP
     [TestMethod]
     public async Task Zp_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Memory[0x12] = 0x10;
@@ -336,7 +336,7 @@ public class CMP
     [TestMethod]
     public async Task Zp_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Memory[0x12] = 0x20;
@@ -356,7 +356,7 @@ public class CMP
     [TestMethod]
     public async Task Zp_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Memory[0x12] = 0x05;
@@ -376,7 +376,7 @@ public class CMP
     [TestMethod]
     public async Task ZpX_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Memory[0x12] = 0x10;
@@ -401,7 +401,7 @@ public class CMP
     [TestMethod]
     public async Task ZpX_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Memory[0x12] = 0x20;
@@ -422,7 +422,7 @@ public class CMP
     [TestMethod]
     public async Task ZpX_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.X = 0x02;
@@ -443,7 +443,7 @@ public class CMP
     [TestMethod]
     public async Task Ind_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Memory[0x1234] = 0x10;
@@ -469,7 +469,7 @@ public class CMP
     [TestMethod]
     public async Task Ind_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Memory[0x1234] = 0x20;
@@ -491,7 +491,7 @@ public class CMP
     [TestMethod]
     public async Task Ind_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Memory[0x1234] = 0x05;
@@ -513,7 +513,7 @@ public class CMP
     [TestMethod]
     public async Task IndX_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.X = 0x02;
@@ -540,7 +540,7 @@ public class CMP
     [TestMethod]
     public async Task IndX_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.X = 0x02;
@@ -563,7 +563,7 @@ public class CMP
     [TestMethod]
     public async Task IndX_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.X = 0x02;
@@ -586,7 +586,7 @@ public class CMP
     [TestMethod]
     public async Task IndY_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Y = 0x04;
@@ -613,7 +613,7 @@ public class CMP
     [TestMethod]
     public async Task IndY_EqualPagePentalty()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Y = 0x44;
@@ -640,7 +640,7 @@ public class CMP
     [TestMethod]
     public async Task IndY_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Y = 0x04;
@@ -663,7 +663,7 @@ public class CMP
     [TestMethod]
     public async Task IndY_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Y = 0x04;

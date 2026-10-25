@@ -8,7 +8,7 @@ public class DC_Scale
     [TestMethod]
     public async Task DC_HScale()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b01000000;
 
@@ -26,7 +26,7 @@ public class DC_Scale
     [TestMethod]
     public async Task DC_VScale()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b01000000;
 

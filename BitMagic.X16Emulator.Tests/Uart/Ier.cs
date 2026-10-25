@@ -8,7 +8,7 @@ public class Ier
     [TestMethod]
     public async Task Ier_RdaOnly()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -26,7 +26,7 @@ public class Ier
     [TestMethod]
     public async Task Ier_ThreOnly()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         // SEI first -- the outbound FIFO starts genuinely idle (uart_init seeds
         // IIR_THRE), so enabling THRE here correctly asserts the interrupt for real
@@ -51,7 +51,7 @@ public class Ier
     [TestMethod]
     public async Task Ier_Both()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         // SEI first -- same reasoning as Ier_ThreOnly: enabling THRE while the outbound
         // FIFO is idle now correctly asserts the interrupt for real, and this test only
@@ -73,7 +73,7 @@ public class Ier
     [TestMethod]
     public async Task Ier_Neither()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -98,7 +98,7 @@ public class Ier
         // But real IER only implements the low 4 bits (RDA/THRE enables here, plus two
         // more not modelled); the top 4 bits are unused and must read back as 0
         // regardless of what the CPU wrote into them.
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         // SEI first -- the low nibble here also enables THRE, and the outbound FIFO
         // starts genuinely idle, so this would otherwise fire a real interrupt (see

@@ -175,12 +175,16 @@ public class Emulator : IDisposable
         public ushort Beam_X { get => (ushort)(_emulator._state.Beam_Position % 800); }
         public ushort Beam_Y { get => (ushort)Math.Floor(_emulator._state.Beam_Position / 800.0); }
         public UInt32 Beam_Position { get => _emulator._state.Beam_Position; set => _emulator._state.Beam_Position = value; }
+        public ulong Cpu_YPos { get => _emulator._state.Cpu_YPos; } // line according to the cpu loop, drives line irq and vsync
+        public ulong Cpu_LineClock { get => _emulator._state.Last_CpuLineClock; } // cpu clock at the start of Cpu_YPos
 
         public bool Interrupt_Line_Hit { get => (_emulator._state.Interrupt_Hit & (uint)InterruptSource.Line) != 0; set => SetBit(ref _emulator._state.Interrupt_Hit, (uint)InterruptSource.Line, value); }
         public bool Interrupt_Vsync_Hit { get => (_emulator._state.Interrupt_Hit & (uint)InterruptSource.Vsync) != 0; set => SetBit(ref _emulator._state.Interrupt_Hit, (uint)InterruptSource.Vsync, value); }
         public bool Interrupt_SpCol_Hit { get => (_emulator._state.Interrupt_Hit & (uint)InterruptSource.Spcol) != 0; set => SetBit(ref _emulator._state.Interrupt_Hit, (uint)InterruptSource.Spcol, value); }
         public UInt32 Frame_Count { get => _emulator._state.Frame_Count; }
         public UInt32 Frame_Count_Breakpoint { get => _emulator._state.Frame_Count_Breakpoint; set => _emulator._state.Frame_Count_Breakpoint = value; }
+        public UInt32 Beam_Breakpoint_Index { get => _emulator._state.Beam_Breakpoint_Index; set => _emulator._state.Beam_Breakpoint_Index = value; }
+        public ulong Beam_Breakpoint_Next { get => _emulator._state.Beam_Breakpoint_Next; set => _emulator._state.Beam_Breakpoint_Next = value; } // cpu clock of the next beam breakpoint
 
         //public ushort Layer0_Config { get => _emulator._state.Layer0_Config; }
         public ushort Layer0_Tile_HShift { get => _emulator._state.Layer0_Tile_HShift; }
@@ -630,9 +634,10 @@ public class Emulator : IDisposable
         public ulong BaseTicks = 0;
         public ulong SpiNextCpuRead = 0; // cpu tick when the next read can occur
 
+        public ulong Beam_Breakpoint_Next = 0xffff_ffff_ffff_ffff;
+
         public uint IgnoreBreakpoint = 0;
         public uint Beam_Breakpoint_Index = 0;
-        public uint Beam_Breakpoint_Next = 0xffff_ffff;
 
         public uint ExitCode = 0;
 
@@ -968,7 +973,8 @@ public class Emulator : IDisposable
         Breakpoint = 0x01,
         Vram = 0x02,
         Stack = 0x04,
-        Vsync = 0x08
+        Vsync = 0x08,
+        Beam = 0x10
     }
 
     // Pinned rather than a plain field: native code (ym_wrapper) caches a raw state*
@@ -1131,6 +1137,13 @@ public class Emulator : IDisposable
     public const int DebugSpriteColoursSize = 4 * DebugSpriteColourCount;
     public const int BeamBreakpointCount = 32;
     public const int BeamBreakpointSize = 4 * BeamBreakpointCount;
+    public const uint BeamBreakpointEnd = 0xffff_ffff; // sentinel for unused beam breakpoint slots
+    public const ulong BeamBreakpointNone = 0xffff_ffff_ffff_ffff; // Beam_Breakpoint_Next when there is nothing left this frame
+    public const int BeamWidth = 800;
+    public const int BeamHeight = 525;
+    public const int BeamCyclesPerLine = 256; // 256 cpu cycles * 3.125 = 800 dots
+    public const int BeamVsyncLine = 480;
+    public const uint BeamCyclesPerFrame = BeamCyclesPerLine * BeamHeight;
     public const int RtcNvramSize = 64;
     private const int PcmSize = 1024 * 4;
     public const int AudioOutputSize = 1024 * 1024 * 2; // 2meg for both Left and Right
@@ -1310,7 +1323,7 @@ public class Emulator : IDisposable
 
         var beamBreakpoint_span = new Span<uint>((void*)_beam_breakpoint_ptr, BeamBreakpointCount);
         for (var i = 0; i < BeamBreakpointCount; i++)
-            beamBreakpoint_span[i] = 0;
+            beamBreakpoint_span[i] = BeamBreakpointEnd;
 
         // set defaults
         var sprite_act_span = new Span<Sprite>((void*)_sprite_ptr, 128);
@@ -1480,6 +1493,72 @@ public class Emulator : IDisposable
     public unsafe Span<short> AudioOutputBuffer => new Span<short>((void*)_audioOutput_ptr, AudioOutputSize / 2);
     public unsafe Span<uint> DebugSpriteColours => new Span<uint>((void*)_debug_sprite_colours_ptr, DebugSpriteColourCount);
     public unsafe Span<uint> BeamBreakpoints => new Span<uint>((void*)_beam_breakpoint_ptr, BeamBreakpointCount);
+
+    /// <summary>
+    /// Cpu cycles from the start of the vsync line (480) to the first cycle the beam is at or past (x, y).
+    /// Dots 797-799 fall between cycles, so they clamp to the last cycle of the line rather than spilling onto the next.
+    /// </summary>
+    public static uint BeamOffset(int x, int y)
+    {
+        if (x < 0 || x >= BeamWidth || y < 0 || y >= BeamHeight)
+            throw new ArgumentOutOfRangeException(nameof(x), $"Beam position must be within {BeamWidth}x{BeamHeight}.");
+
+        var line = (y - BeamVsyncLine + BeamHeight) % BeamHeight;
+        var cycle = Math.Min((x * 8 + 24) / 25, BeamCyclesPerLine - 1); // ceil(x / 3.125)
+
+        return (uint)(line * BeamCyclesPerLine + cycle);
+    }
+
+    /// <summary>
+    /// Where the beam is now, as cpu cycles since the start of the vsync line. Worked out from the cpu clock, as the
+    /// rendered Beam_Position is only brought up to date when the display is rendered.
+    /// </summary>
+    public uint CurrentBeamOffset => (uint)((Clock / BeamCyclesPerLine + BeamHeight - BeamVsyncLine) % BeamHeight * BeamCyclesPerLine + Clock % BeamCyclesPerLine);
+
+    /// <summary>
+    /// Loads the beam breakpoint table from cpu cycle offsets from the start of the vsync line (see BeamOffset).
+    /// The table holds deltas: the first entry is from the vsync line, each after that is from the previous entry,
+    /// so the asm only adds as it steps through. Unused slots are BeamBreakpointEnd. The index and next clock are set
+    /// from the current clock, so an offset the beam has already reached this frame won't fire until the next frame.
+    /// </summary>
+    public void SetBeamBreakpoints(IEnumerable<uint> offsets)
+    {
+        var sorted = offsets.Distinct().Order().ToArray();
+
+        if (sorted.Length > BeamBreakpointCount)
+            throw new ArgumentException($"Maximum of {BeamBreakpointCount} beam breakpoint positions, {sorted.Length} requested.", nameof(offsets));
+
+        if (sorted.Any(i => i >= BeamCyclesPerFrame))
+            throw new ArgumentOutOfRangeException(nameof(offsets), $"Beam offsets must be less than {BeamCyclesPerFrame}.");
+
+        var table = BeamBreakpoints;
+        for (var i = 0; i < BeamBreakpointCount; i++)
+            table[i] = i < sorted.Length ? sorted[i] - (i == 0 ? 0 : sorted[i - 1]) : BeamBreakpointEnd;
+
+        var current = CurrentBeamOffset;
+
+        var index = 0;
+        while (index < sorted.Length && sorted[index] <= current)
+            index++;
+
+        // relative to the clock rather than the vsync clock, as that could be before zero at the start
+        _state.Beam_Breakpoint_Index = (uint)index;
+        _state.Beam_Breakpoint_Next = index < sorted.Length ? Clock + (sorted[index] - current) : BeamBreakpointNone;
+    }
+
+    /// <summary>
+    /// The offset from the vsync line of a beam breakpoint table entry, by summing the deltas up to it.
+    /// </summary>
+    public uint GetBeamBreakpointOffset(int index)
+    {
+        var table = BeamBreakpoints;
+        uint offset = 0;
+
+        for (var i = 0; i <= index; i++)
+            offset += table[i];
+
+        return offset;
+    }
     public ulong AudioOutputPtr => _audioOutput_ptr;
     public SmcBuffer SmcBuffer { get; }
     public EmulatorResult Result { get; internal set; }

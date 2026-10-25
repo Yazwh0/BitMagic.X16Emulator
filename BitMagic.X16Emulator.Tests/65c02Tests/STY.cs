@@ -13,7 +13,7 @@ public class STY
     [TestMethod]
     public async Task ZeroPage()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x44;
 
@@ -37,7 +37,7 @@ public class STY
     [TestMethod]
     public async Task ZeroPageX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x10;
         emulator.Y = 0x44;
@@ -62,7 +62,7 @@ public class STY
     [TestMethod]
     public async Task ZeroPageX_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x70;
         emulator.Y = 0x44;
@@ -87,7 +87,7 @@ public class STY
     [TestMethod]
     public async Task Absolute()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x44;
 
@@ -112,7 +112,7 @@ public class STY
     [TestMethod]
     public async Task Absolute_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x44;
         emulator.Overflow = true;
@@ -136,7 +136,7 @@ public class STY
     [TestMethod]
     public async Task Absolute_RomToRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x44;
 
@@ -159,7 +159,7 @@ public class STY
     [TestMethod]
     public async Task Absolute_BRamToRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x44;
 
@@ -182,7 +182,7 @@ public class STY
     [TestMethod]
     public async Task Absolute_RomToBRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x44;
 
@@ -205,7 +205,7 @@ public class STY
     [TestMethod]
     public async Task ReadOnly_Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0x10;
 

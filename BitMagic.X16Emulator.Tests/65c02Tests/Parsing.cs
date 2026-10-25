@@ -9,7 +9,7 @@ public class Parsing
     [TestMethod]
     public async Task Stz_AbsInd_Error()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         var exception = false;
         try
@@ -32,7 +32,7 @@ public class Parsing
     [TestMethod]
     public async Task Stz_AbsZpInd_Error()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         var exception = false;
         try
@@ -55,7 +55,7 @@ public class Parsing
     [TestMethod]
     public async Task Stz_Ind_Error()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         var exception = false;
         try

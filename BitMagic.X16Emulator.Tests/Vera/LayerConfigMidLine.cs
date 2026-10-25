@@ -14,7 +14,7 @@ public class LayerConfigMidLine
     [TestMethod]
     public async Task OneBpp16Wide_To_FourBpp_MidLine()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R42

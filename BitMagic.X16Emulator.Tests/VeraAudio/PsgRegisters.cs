@@ -15,7 +15,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task FrequencyL_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + FREQ_L;
         emulator.A = 0xff;
@@ -33,7 +33,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task FrequencyH_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + FREQ_H;
         emulator.A = 0xff;
@@ -51,7 +51,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task Volume1_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + LR_VOLUME;
         emulator.A = 0x01;
@@ -69,7 +69,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task Volume16_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + LR_VOLUME;
         emulator.A = 0x10;
@@ -87,7 +87,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task VolumeMax_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + LR_VOLUME;
         emulator.A = 0x3f;
@@ -105,7 +105,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task SideLeft_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + LR_VOLUME;
         emulator.A = 0x40;
@@ -123,7 +123,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task SideRight_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + LR_VOLUME;
         emulator.A = 0x80;
@@ -141,7 +141,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task SideBoth_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + LR_VOLUME;
         emulator.A = 0xc0;
@@ -159,7 +159,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task SideVolume_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + LR_VOLUME;
         emulator.A = 0xff;
@@ -178,7 +178,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task Width_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
         emulator.A = 0x3f;
@@ -196,7 +196,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task WaveformPulse_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PsgVoices[0].Waveform = 0x01;
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
@@ -216,7 +216,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task WaveformNoise_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PsgVoices[0].Waveform = 0x01;
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
@@ -236,7 +236,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task FrequencyL_Voice1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 1 + FREQ_L;
         emulator.A = 0xff;
@@ -254,7 +254,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task FrequencyH_Voice1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 1 + FREQ_H;
         emulator.A = 0xff;
@@ -272,7 +272,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task Volume1_Voice1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 1 + LR_VOLUME;
         emulator.A = 0x01;
@@ -290,7 +290,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task Volume16_Voice1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 1 + LR_VOLUME;
         emulator.A = 0x10;
@@ -308,7 +308,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task VolumeMax_Voice1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 1 + LR_VOLUME;
         emulator.A = 0x3f;
@@ -326,7 +326,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task SideLeft_Voice1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 1 + LR_VOLUME;
         emulator.A = 0x40;
@@ -344,7 +344,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task SideRight_Voice1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 1 + LR_VOLUME;
         emulator.A = 0x80;
@@ -362,7 +362,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task SideBoth_Voice1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 1 + LR_VOLUME;
         emulator.A = 0xc0;
@@ -380,7 +380,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task Width_Voice1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 1 + WAVE_WIDTH;
         emulator.A = 0x3f;
@@ -398,7 +398,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task WaveformPulse_Voice1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PsgVoices[1].Waveform = 0x01;
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 1 + WAVE_WIDTH;
@@ -418,7 +418,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task WaveformNoise_Voice1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PsgVoices[1].Waveform = 0x01;
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 1 + WAVE_WIDTH;
@@ -438,7 +438,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task FrequencyL_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + FREQ_L;
         emulator.A = 0xff;
@@ -456,7 +456,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task FrequencyH_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + FREQ_H;
         emulator.A = 0xff;
@@ -474,7 +474,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task Volume1_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + LR_VOLUME;
         emulator.A = 0x01;
@@ -492,7 +492,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task Volume16_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + LR_VOLUME;
         emulator.A = 0x10;
@@ -510,7 +510,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task VolumeMax_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + LR_VOLUME;
         emulator.A = 0x3f;
@@ -528,7 +528,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task SideLeft_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + LR_VOLUME;
         emulator.A = 0x40;
@@ -546,7 +546,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task SideRight_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + LR_VOLUME;
         emulator.A = 0x80;
@@ -564,7 +564,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task SideBoth_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + LR_VOLUME;
         emulator.A = 0xc0;
@@ -582,7 +582,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task Width_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + WAVE_WIDTH;
         emulator.A = 0x3f;
@@ -600,7 +600,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task WaveformPulse_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PsgVoices[15].Waveform = 0x01;
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + WAVE_WIDTH;
@@ -620,7 +620,7 @@ public class PsgRegisters
     [TestMethod]
     public async Task WaveformNoise_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PsgVoices[0].Waveform = 0x01;
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + WAVE_WIDTH;

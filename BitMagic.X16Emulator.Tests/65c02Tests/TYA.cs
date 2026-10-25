@@ -8,7 +8,7 @@ public class TYA
     [TestMethod]
     public async Task Tya()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 2;
 
@@ -30,7 +30,7 @@ public class TYA
     [TestMethod]
     public async Task Tya_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 2;
         emulator.InterruptDisable = true;
@@ -51,7 +51,7 @@ public class TYA
     [TestMethod]
     public async Task Tya_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 1;
         emulator.Y = 0;
@@ -74,7 +74,7 @@ public class TYA
     [TestMethod]
     public async Task Tya_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xa0;
 

@@ -9,7 +9,7 @@ public class LineDrawHelper
     [TestMethod]
     public async Task SetXIncr_Bottom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0x03;
         emulator.A = 0xff;
@@ -23,7 +23,7 @@ public class LineDrawHelper
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .IgnoreVera()
@@ -35,7 +35,7 @@ public class LineDrawHelper
     [TestMethod]
     public async Task SetXIncr_Top()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0x03;
         emulator.VeraFx.AddrMode = 2; // line draw
@@ -50,7 +50,7 @@ public class LineDrawHelper
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .IgnoreVera()
@@ -64,7 +64,7 @@ public class LineDrawHelper
     [TestMethod]
     public async Task SetXIncr_Top_Set23x()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0x03;
         emulator.VeraFx.AddrMode = 2; // line draw
@@ -79,7 +79,7 @@ public class LineDrawHelper
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .IgnoreVera()
@@ -93,7 +93,7 @@ public class LineDrawHelper
     [TestMethod]
     public async Task SetXIncr_Top_NotLineDraw()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0x03;
         emulator.VeraFx.AddrMode = 0; // Not line draw
@@ -108,7 +108,7 @@ public class LineDrawHelper
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .IgnoreVera()

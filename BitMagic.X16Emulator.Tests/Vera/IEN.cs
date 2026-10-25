@@ -8,7 +8,7 @@ public class Ien
     [TestMethod]
     public async Task Set_Vsync()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x01;
 
@@ -31,7 +31,7 @@ public class Ien
     [TestMethod]
     public async Task Set_Line()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
 
@@ -54,7 +54,7 @@ public class Ien
     [TestMethod]
     public async Task Set_SpCol()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x04;
 
@@ -77,7 +77,7 @@ public class Ien
     [TestMethod]
     public async Task Set_AFlow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x08;
         emulator.InterruptDisable = true;
@@ -101,7 +101,7 @@ public class Ien
     [TestMethod]
     public async Task Set_HighLineBit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x80;
 
@@ -124,7 +124,7 @@ public class Ien
     [TestMethod]
     public async Task Set_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
         emulator.InterruptDisable = true;
@@ -148,7 +148,7 @@ public class Ien
     [TestMethod]
     public async Task Set_IrqLine()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
 
@@ -167,7 +167,7 @@ public class Ien
     [TestMethod]
     public async Task Set_IrqLineFull()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
         emulator.X = 0x80;

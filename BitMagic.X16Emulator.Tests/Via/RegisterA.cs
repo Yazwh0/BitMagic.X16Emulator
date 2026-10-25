@@ -8,7 +8,7 @@ public class Register_A
     [TestMethod]
     public async Task RegisterA_Defaults()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -24,7 +24,7 @@ public class Register_A
     [TestMethod]
     public async Task RegisterA()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Register_A_OutValue = 0xab;
         emulator.Via.Register_A_InValue = 0x89;
 
@@ -43,7 +43,7 @@ public class Register_A
     [TestMethod]
     public async Task DataDirectionRegister_Set_NothingOut()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Register_A_OutValue = 0x00;
         emulator.Via.Register_A_InValue = 0xff;
         emulator.Memory[0x9f03] = 0x00;
@@ -64,7 +64,7 @@ public class Register_A
     [TestMethod]
     public async Task DataDirectionRegister_Set_DataOut()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Register_A_OutValue = 0xaa;
         emulator.Via.Register_A_InValue = 0xff;
         emulator.Memory[0x9f03] = 0x00;
@@ -86,7 +86,7 @@ public class Register_A
     [TestMethod]
     public async Task DataDirectionRegister_SetPartial_DataOut_InNonFF()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Register_A_OutValue = 0xaa;
         emulator.Via.Register_A_InValue = 0x55;
         emulator.Memory[0x9f03] = 0x00;
@@ -107,7 +107,7 @@ public class Register_A
     [TestMethod]
     public async Task DataDirectionRegister_Set_DataOut_Partial()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Register_A_OutValue = 0xaa;
         emulator.Via.Register_A_InValue = 0xff;
         emulator.Memory[0x9f03] = 0x00;
@@ -149,7 +149,7 @@ public class Register_A
     [TestMethod]
     public async Task RegisterA_Set()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Register_A_OutValue = 0x00;
         emulator.Via.Register_A_InValue = 0xff;
         emulator.Memory[0x9f03] = 0xff; // all output
@@ -170,7 +170,7 @@ public class Register_A
     [TestMethod]
     public async Task RegisterA_Clear()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Register_A_OutValue = 0xff;
         emulator.Via.Register_A_InValue = 0xff;
         emulator.Memory[0x9f03] = 0xff; // all output
@@ -212,7 +212,7 @@ public class Register_A
     [TestMethod]
     public async Task RegisterA_Clear_PartialOutput_NothingIn()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Register_A_OutValue = 0xff;
         emulator.Via.Register_A_InValue = 0x00;
         emulator.Memory[0x9f03] = 0x0f; 
@@ -277,7 +277,7 @@ public class Register_A
     [TestMethod]
     public async Task RegisterA_Clear_PartialOutput_DataIn()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Register_A_OutValue = 0xff;
         emulator.Via.Register_A_InValue = 0xaa;
         emulator.Memory[0x9f03] = 0x0f;
@@ -298,7 +298,7 @@ public class Register_A
     [TestMethod]
     public async Task RegisterA_RW_Set()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Register_A_OutValue = 0xff;
         emulator.Via.Register_A_InValue = 0x00;
         emulator.Memory[0x9f03] = 0xff; // all output

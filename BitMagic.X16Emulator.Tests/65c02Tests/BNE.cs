@@ -9,7 +9,7 @@ public class BNE
     [TestMethod]
     public async Task Bne_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -32,7 +32,7 @@ public class BNE
     [TestMethod]
     public async Task Bne_Jump_Forward_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -58,7 +58,7 @@ public class BNE
     [TestMethod]
     public async Task Bne_NoJump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Zero = true;
 
@@ -83,7 +83,7 @@ public class BNE
     [TestMethod]
     public async Task Bne_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

@@ -8,7 +8,7 @@ public class PHP
     [TestMethod]
     public async Task Php_NoFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"                
                 .machine CommanderX16R40
@@ -29,7 +29,7 @@ public class PHP
     [TestMethod]
     public async Task Php_Full()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"                
                 .machine CommanderX16R40
@@ -61,7 +61,7 @@ public class PHP
     [TestMethod]
     public async Task Php_Carry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = true;
 
@@ -81,7 +81,7 @@ public class PHP
     [TestMethod]
     public async Task Php_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Negative = true;
 
@@ -101,7 +101,7 @@ public class PHP
     [TestMethod]
     public async Task Php_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Zero = true;
 
@@ -121,7 +121,7 @@ public class PHP
     [TestMethod]
     public async Task Php_InterruptDisable()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptDisable = true;
 
@@ -141,7 +141,7 @@ public class PHP
     [TestMethod]
     public async Task Php_Decimal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Decimal = true;
 
@@ -161,7 +161,7 @@ public class PHP
     [TestMethod]
     public async Task Php_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Overflow = true;
 
@@ -181,7 +181,7 @@ public class PHP
     [TestMethod]
     public async Task Php_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Zero = true;
         emulator.Negative = true;

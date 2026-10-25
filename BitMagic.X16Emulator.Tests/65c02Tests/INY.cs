@@ -8,7 +8,7 @@ public class INY
     [TestMethod]
     public async Task Iny()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 2;
 
@@ -30,7 +30,7 @@ public class INY
     [TestMethod]
     public async Task Iny_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 2;
         emulator.InterruptDisable = true;
@@ -51,7 +51,7 @@ public class INY
     [TestMethod]
     public async Task Iny_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
 
@@ -73,7 +73,7 @@ public class INY
     [TestMethod]
     public async Task Iny_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xa0;
 
@@ -95,7 +95,7 @@ public class INY
     [TestMethod]
     public async Task Iny_ToNegative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x7f;
 

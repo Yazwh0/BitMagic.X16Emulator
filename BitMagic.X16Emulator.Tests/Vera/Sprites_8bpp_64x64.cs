@@ -8,7 +8,7 @@ public class Sprites_8bpp_64x64
     [TestMethod]
     public async Task Normal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 
@@ -85,7 +85,7 @@ public class Sprites_8bpp_64x64
     [TestMethod]
     public async Task Normal_Hflip()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 
@@ -162,7 +162,7 @@ public class Sprites_8bpp_64x64
     [TestMethod]
     public async Task Normal_Vflip()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 
@@ -239,7 +239,7 @@ public class Sprites_8bpp_64x64
     [TestMethod]
     public async Task Normal_HVflip()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 
@@ -316,7 +316,7 @@ public class Sprites_8bpp_64x64
     [TestMethod]
     public async Task Disabeled()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 
@@ -393,7 +393,7 @@ public class Sprites_8bpp_64x64
     [TestMethod]
     public async Task DisabeledMidway()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 
@@ -481,7 +481,7 @@ public class Sprites_8bpp_64x64
     [TestMethod]
     public async Task EnabledMidway()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 
@@ -569,7 +569,7 @@ public class Sprites_8bpp_64x64
     [TestMethod]
     public async Task Vstart()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 

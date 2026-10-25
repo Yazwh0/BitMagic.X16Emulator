@@ -8,7 +8,7 @@ public class Ifr
     [TestMethod]
     public async Task Ifr_Clear()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Memory[0x9f0d] = 0x01;
         emulator.A = 0x01;
 
@@ -25,7 +25,7 @@ public class Ifr
     [TestMethod]
     public async Task Ifr_ClearAll()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Memory[0x9f0d] = 0x7f;
         emulator.A = 0x7f;
 
@@ -42,7 +42,7 @@ public class Ifr
     [TestMethod]
     public async Task Ifr_ClearOne()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Memory[0x9f0d] = 0x7f;
         emulator.A = 0x01;
 
@@ -59,7 +59,7 @@ public class Ifr
     [TestMethod]
     public async Task Ifr_HighBitIgnored()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Memory[0x9f0d] = 0x7f;
         emulator.A = 0x80;
 
@@ -76,7 +76,7 @@ public class Ifr
     [TestMethod]
     public async Task Ifr_HighBitNotClearable()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Memory[0x9f0d] = 0xff;
         emulator.A = 0x80;
 

@@ -8,7 +8,7 @@ public class PcmVolume
     [TestMethod]
     public async Task Set0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
         emulator.VeraAudio.PcmVolume = 1;
@@ -26,7 +26,7 @@ public class PcmVolume
     [TestMethod]
     public async Task Set1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x01;
 
@@ -43,7 +43,7 @@ public class PcmVolume
     [TestMethod]
     public async Task Set15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x0f;
 
@@ -60,7 +60,7 @@ public class PcmVolume
     [TestMethod]
     public async Task SetSideeffects()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xf1;
 

@@ -30,7 +30,7 @@ public class KeyRepeat
     private void RunFrames(uint frames)
     {
         _emulator.Vera.Frame_Count_Breakpoint = _emulator.Vera.Frame_Count + frames;
-        _emulator.Emulate();
+        _emulator.EmulateWithTimeout();
     }
 
     private byte[] Keys()
@@ -116,7 +116,7 @@ public class KeyRepeat
 
         _emulator.FrameControl = FrameControl.Synced;
         _emulator.Vera.Frame_Count_Breakpoint = 0; // never
-        var running = new Thread(() => _emulator.Emulate());
+        var running = new Thread(() => _emulator.EmulateWithTimeout());
         running.Start();
 
         Thread.Sleep(1000);

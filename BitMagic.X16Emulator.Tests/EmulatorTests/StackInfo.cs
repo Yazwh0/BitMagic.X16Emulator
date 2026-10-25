@@ -8,7 +8,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHA_Normal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
 
@@ -25,7 +25,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHA_RamBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
         emulator.Memory[0x00] = 0x0a; // ram bank
@@ -43,7 +43,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHA_RomBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
         emulator.Memory[0x01] = 0x0f; // rom bank
@@ -61,7 +61,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHA_BothBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
         emulator.Memory[0x00] = 0x7f; // ram bank
@@ -80,7 +80,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHX_Normal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0xff;
 
@@ -97,7 +97,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHX_RamBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
         emulator.Memory[0x00] = 0x0a; // ram bank
@@ -115,7 +115,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHX_RomBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0xff;
         emulator.Memory[0x01] = 0x0f; // rom bank
@@ -133,7 +133,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHX_BothBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0xff;
         emulator.Memory[0x00] = 0x7f; // ram bank
@@ -152,7 +152,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHY_Normal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
 
@@ -169,7 +169,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHY_RamBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
         emulator.Memory[0x00] = 0x0a; // ram bank
@@ -187,7 +187,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHY_RomBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
         emulator.Memory[0x01] = 0x0f; // rom bank
@@ -205,7 +205,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHY_BothBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
         emulator.Memory[0x00] = 0x7f; // ram bank
@@ -224,7 +224,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHP_Normal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
 
@@ -241,7 +241,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHP_RamBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
         emulator.Memory[0x00] = 0x0a; // ram bank
@@ -259,7 +259,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHP_RomBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
         emulator.Memory[0x01] = 0x0f; // rom bank
@@ -277,7 +277,7 @@ public class StackInfo
     [TestMethod]
     public async Task PHP_BothBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
         emulator.Memory[0x00] = 0x7f; // ram bank
@@ -296,7 +296,7 @@ public class StackInfo
     [TestMethod]
     public async Task JSR_Normal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
 
@@ -317,7 +317,7 @@ public class StackInfo
     [TestMethod]
     public async Task JSR_RamBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
         emulator.Memory[0x00] = 0x0a; // ram bank
@@ -339,7 +339,7 @@ public class StackInfo
     [TestMethod]
     public async Task JSR_RomBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
         emulator.Memory[0x01] = 0x0f; // rom bank
@@ -361,7 +361,7 @@ public class StackInfo
     [TestMethod]
     public async Task JSR_BothBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
         emulator.Memory[0x00] = 0x7f; // ram bank
@@ -384,12 +384,12 @@ public class StackInfo
     [TestMethod]
     public async Task BRK_Normal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Nmi = false;
 
-        emulator.RomBank[0x3ffa] = 0x00;
-        emulator.RomBank[0x3ffb] = 0x09;
+        emulator.RomBank[0x3ffe] = 0x00;
+        emulator.RomBank[0x3fff] = 0x09;
 
         emulator.Brk_Causes_Stop = false;
 
@@ -412,13 +412,13 @@ public class StackInfo
     [TestMethod]
     public async Task BRK_RamBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x00] = 0x0a; // ram bank
         emulator.Nmi = false;
 
-        emulator.RomBank[0x3ffa] = 0x00;
-        emulator.RomBank[0x3ffb] = 0x09;
+        emulator.RomBank[0x3ffe] = 0x00;
+        emulator.RomBank[0x3fff] = 0x09;
 
         emulator.Brk_Causes_Stop = false;
 
@@ -440,16 +440,16 @@ public class StackInfo
     [TestMethod]
     public async Task BRK_RomBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x01] = 0x0f; // rom bank
 
         emulator.Nmi = false;
 
-        emulator.RomBank[0x3ffa + 0x4000 * 0x0f] = 0x00;
-        emulator.RomBank[0x3ffb + 0x4000 * 0x0f] = 0x09;
-        emulator.RomBank[0x3ffa] = 0x00;
-        emulator.RomBank[0x3ffb] = 0x0a;
+        emulator.RomBank[0x3ffe + 0x4000 * 0x0f] = 0x00;
+        emulator.RomBank[0x3fff + 0x4000 * 0x0f] = 0x09;
+        emulator.RomBank[0x3ffe] = 0x00;
+        emulator.RomBank[0x3fff] = 0x0a;
 
         emulator.Brk_Causes_Stop = false;
 
@@ -473,17 +473,17 @@ public class StackInfo
     [TestMethod]
     public async Task BRK_BothBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x00] = 0x7f; // ram bank
         emulator.Memory[0x01] = 0x19; // rom bank
 
         emulator.Nmi = false;
 
-        emulator.RomBank[0x3ffa + 0x4000 * 0x19] = 0x00;
-        emulator.RomBank[0x3ffb + 0x4000 * 0x19] = 0x09;
-        emulator.RomBank[0x3ffa] = 0x00;
-        emulator.RomBank[0x3ffb] = 0x0a;
+        emulator.RomBank[0x3ffe + 0x4000 * 0x19] = 0x00;
+        emulator.RomBank[0x3fff + 0x4000 * 0x19] = 0x09;
+        emulator.RomBank[0x3ffe] = 0x00;
+        emulator.RomBank[0x3fff] = 0x0a;
 
         emulator.Brk_Causes_Stop = false;
 

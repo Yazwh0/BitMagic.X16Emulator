@@ -8,7 +8,7 @@ public class JSR
     [TestMethod]
     public async Task Jsr()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.StackPointer = 0x1ff;
 
@@ -38,7 +38,7 @@ public class JSR
     [TestMethod]
     public async Task Jsr_RomBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.StackPointer = 0x1ff;
         emulator.RomBank[0x00] = 0xdb;
@@ -59,7 +59,7 @@ public class JSR
     [TestMethod]
     public async Task Jsr_RomBank_Change()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.StackPointer = 0x1ff;
         emulator.RomBank[0x4000] = 0xdb;
@@ -82,7 +82,7 @@ public class JSR
     [TestMethod]
     public async Task Jsr_RamBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.StackPointer = 0x1ff;
         emulator.RamBank[0x00] = 0xdb;
@@ -103,7 +103,7 @@ public class JSR
     [TestMethod]
     public async Task Jsr_RamBank_Change()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.StackPointer = 0x1ff;
         emulator.RamBank[0x2000] = 0xdb;

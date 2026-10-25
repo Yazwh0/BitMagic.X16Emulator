@@ -9,7 +9,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task Test()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 8;
         emulator.Vera.Data0_Address = 0x1fc00 + 7;
@@ -45,7 +45,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task PaletteOffset_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc00 + 7;
@@ -64,7 +64,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task PaletteOffset_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc08 + 7;
@@ -83,7 +83,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task PaletteOffset_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff8 + 7;
@@ -102,7 +102,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task HeightWidth_Mode_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc00 + 7;
@@ -121,7 +121,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task HeightWidth_Mode_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc08 + 7;
@@ -140,7 +140,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task HeightWidth_Mode_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff8 + 7;
@@ -159,7 +159,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task HeightWidth_ExistingMode_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc00 + 7;
@@ -179,7 +179,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task HeightWidth_ExistingMode_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc08 + 7;
@@ -199,7 +199,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task HeightWidth_ExistingMode_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff8 + 7;
@@ -219,7 +219,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task Mixed_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc00 + 7;
@@ -238,7 +238,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task Mixed_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 8;
         emulator.Vera.Data0_Address = 0x1fc08 + 7;
@@ -260,7 +260,7 @@ public class Sprites_Bit7
     [TestMethod]
     public async Task Mixed_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff8 + 7;

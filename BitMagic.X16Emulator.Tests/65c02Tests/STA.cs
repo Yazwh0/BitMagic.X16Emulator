@@ -13,7 +13,7 @@ public class STA
     [TestMethod]
     public async Task ZeroPage()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
 
@@ -37,7 +37,7 @@ public class STA
     [TestMethod]
     public async Task ZeroPage_RomToZp()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
 
@@ -60,7 +60,7 @@ public class STA
     [TestMethod]
     public async Task ZeroPage_RomToZp_RomBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
 
@@ -83,7 +83,7 @@ public class STA
     [TestMethod]
     public async Task ZeroPage_RomToZp_RamBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
 
@@ -106,7 +106,7 @@ public class STA
     [TestMethod]
     public async Task ZeroPage_BRamToZp()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
 
@@ -129,7 +129,7 @@ public class STA
     [TestMethod]
     public async Task ZeroPageX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
         emulator.X = 0x10;
@@ -154,7 +154,7 @@ public class STA
     [TestMethod]
     public async Task ZeroPageX_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
         emulator.X = 0x70;
@@ -179,7 +179,7 @@ public class STA
     [TestMethod]
     public async Task Absolute()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
 
@@ -204,7 +204,7 @@ public class STA
     [TestMethod]
     public async Task Absolute_PreserveFlags ()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
         emulator.Carry = true;
@@ -228,7 +228,7 @@ public class STA
     [TestMethod]
     public async Task Absolute_RomToRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
 
@@ -251,7 +251,7 @@ public class STA
     [TestMethod]
     public async Task Absolute_BRamToRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
 
@@ -274,7 +274,7 @@ public class STA
     [TestMethod]
     public async Task Absolute_RomToBRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
 
@@ -297,7 +297,7 @@ public class STA
     [TestMethod]
     public async Task AbsoluteX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
         emulator.X = 0x05;
@@ -323,7 +323,7 @@ public class STA
     [TestMethod]
     public async Task AbsoluteX_FromRom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
         emulator.X = 0x05;
@@ -348,7 +348,7 @@ public class STA
     [TestMethod]
     public async Task AbsoluteY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
         emulator.Y = 0x05;
@@ -374,7 +374,7 @@ public class STA
     [TestMethod]
     public async Task IndirectX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
         emulator.X = 0x10;
@@ -402,7 +402,7 @@ public class STA
     [TestMethod]
     public async Task IndirectX_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
         emulator.X = 0x70;
@@ -430,7 +430,7 @@ public class STA
     [TestMethod]
     public async Task IndirectY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
         emulator.Y = 0x10;
@@ -458,7 +458,7 @@ public class STA
     [TestMethod]
     public async Task IndirectY_Load()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
 
@@ -527,7 +527,7 @@ public class STA
     [TestMethod]
     public async Task IndirectY_FromRom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
         emulator.Y = 0x10;
@@ -554,7 +554,7 @@ public class STA
     [TestMethod]
     public async Task IndirectZP()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x44;
 
@@ -581,7 +581,7 @@ public class STA
     [TestMethod]
     public async Task ReadOnly_Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0x10;
 
@@ -599,7 +599,7 @@ public class STA
     [TestMethod]
     public async Task ReadOnly_AbsX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0001] = 0x10;
         emulator.X = 0x01;
@@ -618,7 +618,7 @@ public class STA
     [TestMethod]
     public async Task ReadOnly_AbsY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0001] = 0x10;
         emulator.Y = 0x01;
@@ -637,7 +637,7 @@ public class STA
     [TestMethod]
     public async Task ReadOnly_Ind()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0x10;
         emulator.Memory[0x20] = 0x00;
@@ -657,7 +657,7 @@ public class STA
     [TestMethod]
     public async Task ReadOnly_IndX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0x10;
         emulator.Memory[0x20] = 0x00;
@@ -678,7 +678,7 @@ public class STA
     [TestMethod]
     public async Task ReadOnly_IndY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0002] = 0x10;
         emulator.Memory[0x20] = 0x00;

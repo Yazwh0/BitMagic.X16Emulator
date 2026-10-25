@@ -17,6 +17,10 @@ BREAKPOINT			equ 000001b
 BREAKPOINT_VRAM		equ 000010b
 BREAKPOINT_STACK    equ 000100b
 BREAKPOINT_VSYNC    equ 001000b
+BREAKPOINT_BEAM     equ 010000b
+
+BEAM_BREAKPOINT_COUNT   equ 32
+BEAM_BREAKPOINT_END     equ 0ffffffffh  ; unused table entry
 
 state struct 
 
@@ -121,9 +125,12 @@ state struct
 	base_ticks				qword ?
 	spi_nextcpuread			qword ?
 
+	beam_breakpoint_next    qword ?
+
+	; ---------- dword start
+
 	ignore_breakpoint		dword ?
 	beam_breakpoint_index	dword ?
-	beam_breakpoint_next    dword ?
 
 	exit_code				dword ?
 

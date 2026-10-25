@@ -13,7 +13,7 @@ public class PHY
     [TestMethod]
     public async Task Phx()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
 
@@ -36,7 +36,7 @@ public class PHY
     [TestMethod]
     public async Task Phy_Full()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0xff;
 

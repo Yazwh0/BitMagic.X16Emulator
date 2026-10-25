@@ -8,7 +8,7 @@ public class WAI
     [TestMethod]
     public async Task Interrupts_Enabled()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptDisable = false;
         emulator.InterruptHit = InterruptSource.None;
@@ -38,7 +38,7 @@ public class WAI
     [TestMethod]
     public async Task Interrupts_Disabled()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptDisable = true;
         emulator.InterruptHit = InterruptSource.None;

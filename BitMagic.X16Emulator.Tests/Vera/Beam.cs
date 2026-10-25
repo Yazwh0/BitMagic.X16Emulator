@@ -8,7 +8,7 @@ public class Beam
     [TestMethod]
     public async Task Movement_Nop()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -25,7 +25,7 @@ public class Beam
     [TestMethod]
     public async Task Movement_3Nops()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -44,7 +44,7 @@ public class Beam
     [TestMethod]
     public async Task Movement_4Nops()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -64,7 +64,7 @@ public class Beam
     [TestMethod]
     public async Task Movement_5Nops()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -85,7 +85,7 @@ public class Beam
     [TestMethod]
     public async Task Movement_10Nops()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -111,7 +111,7 @@ public class Beam
     [TestMethod]
     public async Task Movement_20Nops()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

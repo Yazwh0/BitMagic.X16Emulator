@@ -11,7 +11,7 @@ public class SpeedTest
 
     public async Task ZeroPage()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Headless = true;
 
         await X16TestHelper.Emulate(@"
@@ -51,7 +51,7 @@ public class SpeedTest
 
     public async Task BankedRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Headless = true;
 
         await X16TestHelper.Emulate(@"
@@ -90,7 +90,7 @@ public class SpeedTest
     [TestMethod]
     public async Task VeraDataPort()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Headless = true;
         // need this until register writes are added.
         emulator.Vera.Data0_Address = 0x00001;

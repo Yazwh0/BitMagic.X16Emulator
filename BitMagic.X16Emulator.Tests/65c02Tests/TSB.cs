@@ -8,7 +8,7 @@ public class TSB
     [TestMethod]
     public async Task Zp()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x10] = 0x01;
@@ -33,7 +33,7 @@ public class TSB
     [TestMethod]
     public async Task Zp_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x10] = 0x01;
@@ -57,7 +57,7 @@ public class TSB
     [TestMethod]
     public async Task Zp_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
         emulator.Memory[0x10] = 0x00;
@@ -77,7 +77,7 @@ public class TSB
     [TestMethod]
     public async Task Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x01;
@@ -103,7 +103,7 @@ public class TSB
     [TestMethod]
     public async Task Abs_Readonly()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.RomBank[0x0000] = 0x01;
@@ -124,7 +124,7 @@ public class TSB
     [TestMethod]
     public async Task Abs_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x03;
@@ -148,7 +148,7 @@ public class TSB
     [TestMethod]
     public async Task Abs_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
         emulator.Memory[0x1234] = 0x00;

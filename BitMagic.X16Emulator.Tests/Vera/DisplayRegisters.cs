@@ -8,7 +8,7 @@ public class DisplayRegisters
     [TestMethod]
     public async Task DC_HStart()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 1;
         emulator.A = 0xff;
@@ -31,7 +31,7 @@ public class DisplayRegisters
     [TestMethod]
     public async Task DC_HStop()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 1;
         emulator.A = 0xff;
@@ -51,7 +51,7 @@ public class DisplayRegisters
     [TestMethod]
     public async Task DC_VStart()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 1;
         emulator.A = 0xff;
@@ -71,7 +71,7 @@ public class DisplayRegisters
     [TestMethod]
     public async Task DC_VStop()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 1;
         emulator.A = 0xff;
@@ -92,7 +92,7 @@ public class DisplayRegisters
     [TestMethod]
     public async Task DC_Border()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0;
         emulator.A = 0xff;

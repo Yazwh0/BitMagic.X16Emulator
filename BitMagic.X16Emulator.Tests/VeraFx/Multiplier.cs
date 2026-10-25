@@ -9,7 +9,7 @@ public class Multiplier
     [TestMethod]
     public async Task SetMultiplierFlag()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
         emulator.Vera.DcSel = 2;
@@ -23,7 +23,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().AssertNoOtherChanges();
 
@@ -33,7 +33,7 @@ public class Multiplier
     [TestMethod]
     public async Task ClearMultiplierFlag()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 2;
         emulator.VeraFx.MultiplierEnable = true;
@@ -47,7 +47,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().AssertNoOtherChanges();
 
@@ -57,7 +57,7 @@ public class Multiplier
     [TestMethod]
     public async Task ClearAccumulator_FxMult()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 2;
         emulator.VeraFx.Accumulator = 1;
@@ -72,7 +72,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().AssertNoOtherChanges();
 
@@ -82,7 +82,7 @@ public class Multiplier
     [TestMethod]
     public async Task ClearAccumulator_FxAccumReset()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 6;
         emulator.VeraFx.Accumulator = 1;
@@ -96,7 +96,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         // A contains the 'V' from the Vera version
         snapshot.Compare().IgnoreVia().Is(Registers.A, 0x56).AssertNoOtherChanges();
@@ -107,7 +107,7 @@ public class Multiplier
     [TestMethod]
     public async Task SetAccumulation_Accumulate()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 2;
         emulator.VeraFx.Accumulator = 0;
@@ -123,7 +123,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().CanChange(Registers.A).CanChange(CpuFlags.Negative).AssertNoOtherChanges();
 
@@ -133,7 +133,7 @@ public class Multiplier
     [TestMethod]
     public async Task SetAccumulation_AccumulateAdd()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 2;
         emulator.VeraFx.Accumulator = 0x123;
@@ -149,7 +149,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().CanChange(Registers.A).CanChange(CpuFlags.Negative).AssertNoOtherChanges();
 
@@ -160,7 +160,7 @@ public class Multiplier
     [TestMethod]
     public async Task SetAccumulation_AccumulateSub()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 2;
         emulator.VeraFx.Accumulator = 0x123;
@@ -177,7 +177,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().CanChange(Registers.A).CanChange(CpuFlags.Negative).AssertNoOtherChanges();
 
@@ -187,7 +187,7 @@ public class Multiplier
     [TestMethod]
     public async Task ClearAccumulation_Accumulate()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 6;
         emulator.VeraFx.Accumulator = 0x123;
@@ -201,7 +201,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().CanChange(Registers.A).AssertNoOtherChanges();
 
@@ -211,7 +211,7 @@ public class Multiplier
     [TestMethod]
     public async Task SetAccumulation_FxAccum()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 6;
         emulator.VeraFx.Accumulator = 0;
@@ -226,7 +226,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().CanChange(Registers.A).CanChange(CpuFlags.Negative).AssertNoOtherChanges();
 
@@ -236,7 +236,7 @@ public class Multiplier
     [TestMethod]
     public async Task SetAccumulation_FxAccum_Add()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 6;
         emulator.VeraFx.Accumulator = 0x123;
@@ -251,7 +251,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().CanChange(Registers.A).CanChange(CpuFlags.Negative).AssertNoOtherChanges();
 
@@ -261,7 +261,7 @@ public class Multiplier
     [TestMethod]
     public async Task SetAccumulation_FxAccum_Neg_Add()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 6;
         emulator.VeraFx.Accumulator = 0xfffffffe;
@@ -276,7 +276,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().CanChange(Registers.A).CanChange(CpuFlags.Negative).AssertNoOtherChanges();
 
@@ -286,7 +286,7 @@ public class Multiplier
     [TestMethod]
     public async Task SetAccumulation_FxAccum_Sub()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 6;
         emulator.VeraFx.Accumulator = 0x40000;
@@ -302,7 +302,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().CanChange(Registers.A).CanChange(CpuFlags.Negative).AssertNoOtherChanges();
 
@@ -312,7 +312,7 @@ public class Multiplier
     [TestMethod]
     public async Task SetAccumulatDirection()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 2;
         emulator.VeraFx.AccumulateDirection = 0;
@@ -327,7 +327,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().AssertNoOtherChanges();
 
@@ -337,7 +337,7 @@ public class Multiplier
     [TestMethod]
     public async Task ClearAccumulatDirection()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 2;
         emulator.VeraFx.AccumulateDirection = 1;
@@ -351,7 +351,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia().AssertNoOtherChanges();
 
@@ -361,7 +361,7 @@ public class Multiplier
     [TestMethod]
     public async Task MultiplyWithAccumulatorAdd()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraFx.AccumulateDirection = 0;
         emulator.VeraFx.Accumulator = 0x123;
@@ -380,7 +380,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare()
                 .IgnoreVia()
@@ -393,7 +393,7 @@ public class Multiplier
     [TestMethod]
     public async Task MultiplyWithAccumulatorSub()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraFx.AccumulateDirection = 1;
         emulator.VeraFx.Accumulator = 0x40000;
@@ -412,7 +412,7 @@ public class Multiplier
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare()
                 .IgnoreVia()

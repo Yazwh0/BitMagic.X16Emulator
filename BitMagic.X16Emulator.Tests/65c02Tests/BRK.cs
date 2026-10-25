@@ -60,7 +60,7 @@ public class Brk
     [TestMethod]
     public async Task Brk_Causes_Stop()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Nmi = false;
 

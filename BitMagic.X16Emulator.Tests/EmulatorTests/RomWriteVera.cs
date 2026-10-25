@@ -8,7 +8,7 @@ public class RomWriteVera
     [TestMethod]
     public async Task Write_L0BaseAddress()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0x8d;
         emulator.RomBank[0x0001] = 0x2e;
@@ -30,7 +30,7 @@ public class RomWriteVera
     [TestMethod]
     public async Task Write_L1BaseAddress()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0x8d;
         emulator.RomBank[0x0001] = 0x35;
@@ -52,7 +52,7 @@ public class RomWriteVera
     [TestMethod]
     public async Task ReadWrite_AddrL()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0x8d; // sta
         emulator.RomBank[0x0001] = 0x20;

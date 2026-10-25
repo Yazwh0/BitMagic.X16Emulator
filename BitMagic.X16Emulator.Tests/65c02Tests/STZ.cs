@@ -13,7 +13,7 @@ public class STZ
     [TestMethod]
     public async Task ZeroPage()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0xff;
 
@@ -37,7 +37,7 @@ public class STZ
     [TestMethod]
     public async Task ZeroPageX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x10;
         emulator.Memory[0x20] = 0xff;
@@ -62,7 +62,7 @@ public class STZ
     [TestMethod]
     public async Task ZeroPageX_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x70;
         emulator.Memory[0x10] = 0xff;
@@ -87,7 +87,7 @@ public class STZ
     [TestMethod]
     public async Task Absolute()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x100] = 0xff;
 
@@ -112,7 +112,7 @@ public class STZ
     [TestMethod]
     public async Task AbsoluteX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x05;
         emulator.Memory[0x105] = 0xff;
@@ -138,7 +138,7 @@ public class STZ
     [TestMethod]
     public async Task ReadOnly_Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0x10;
 
@@ -155,7 +155,7 @@ public class STZ
     [TestMethod]
     public async Task ReadOnly_AbsX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0002] = 0x10;
         emulator.X = 0x02;

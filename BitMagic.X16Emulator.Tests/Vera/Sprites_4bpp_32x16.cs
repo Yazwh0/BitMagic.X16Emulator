@@ -8,7 +8,7 @@ public class Sprites_4bpp_32x16
     [TestMethod]
     public async Task Render_Depth1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.SpriteEnable = true;
         emulator.Sprites[0].Depth = 1;

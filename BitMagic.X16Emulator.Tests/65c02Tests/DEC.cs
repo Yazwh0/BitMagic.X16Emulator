@@ -8,7 +8,7 @@ public class DEC
     [TestMethod]
     public async Task A()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 2;
 
@@ -30,7 +30,7 @@ public class DEC
     [TestMethod]
     public async Task A_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 2;
         emulator.InterruptDisable = true;
@@ -51,7 +51,7 @@ public class DEC
     [TestMethod]
     public async Task A_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 1;
 
@@ -73,7 +73,7 @@ public class DEC
     [TestMethod]
     public async Task A_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
 
@@ -95,7 +95,7 @@ public class DEC
     [TestMethod]
     public async Task A_ToNegative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0;
 
@@ -118,7 +118,7 @@ public class DEC
     [TestMethod]
     public async Task Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0x02;
 
@@ -143,7 +143,7 @@ public class DEC
     [TestMethod]
     public async Task Abs_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0x02;
         emulator.InterruptDisable = true;
@@ -164,7 +164,7 @@ public class DEC
     [TestMethod]
     public async Task Abs_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0x01;
 
@@ -184,7 +184,7 @@ public class DEC
     [TestMethod]
     public async Task Abs_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0x00;
 
@@ -204,7 +204,7 @@ public class DEC
     [TestMethod]
     public async Task AbsX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0x02;
         emulator.X = 4;
@@ -230,7 +230,7 @@ public class DEC
     [TestMethod]
     public async Task AbsX_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0x02;
         emulator.X = 4;
@@ -252,7 +252,7 @@ public class DEC
     [TestMethod]
     public async Task AbsX_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0x01;
         emulator.X = 4;
@@ -273,7 +273,7 @@ public class DEC
     [TestMethod]
     public async Task AbsX_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1234] = 0x00;
         emulator.X = 4;
@@ -294,7 +294,7 @@ public class DEC
     [TestMethod]
     public async Task Zp()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x02;
 
@@ -318,7 +318,7 @@ public class DEC
     [TestMethod]
     public async Task Zp_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x02;
         emulator.InterruptDisable = true;
@@ -339,7 +339,7 @@ public class DEC
     [TestMethod]
     public async Task Zp_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x01;
 
@@ -359,7 +359,7 @@ public class DEC
     [TestMethod]
     public async Task Zp_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x00;
 
@@ -379,7 +379,7 @@ public class DEC
     [TestMethod]
     public async Task ZpX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x02;
         emulator.X = 0x02;
@@ -404,7 +404,7 @@ public class DEC
     [TestMethod]
     public async Task ZpX_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x02;
         emulator.X = 0x02;
@@ -426,7 +426,7 @@ public class DEC
     [TestMethod]
     public async Task ZpX_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x01;
         emulator.X = 0x02;
@@ -447,7 +447,7 @@ public class DEC
     [TestMethod]
     public async Task ZpX_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x00;
         emulator.X = 0x02;
@@ -468,7 +468,7 @@ public class DEC
     [TestMethod]
     public async Task ReadOnly_Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0x10;
 
@@ -485,7 +485,7 @@ public class DEC
     [TestMethod]
     public async Task ReadOnly_AbsX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0002] = 0x10;
         emulator.X = 0x02;

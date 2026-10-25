@@ -11,7 +11,7 @@ public class Interrupt_Vsync
     [TestMethod]
     public async Task Hit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -51,7 +51,7 @@ public class Interrupt_Vsync
     [TestMethod]
     public async Task Hit_Disabled()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -90,7 +90,7 @@ public class Interrupt_Vsync
     [TestMethod]
     public async Task Hit_Reset()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -131,7 +131,7 @@ public class Interrupt_Vsync
     [TestMethod]
     public async Task Hit_SetIen()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -170,7 +170,7 @@ public class Interrupt_Vsync
     [TestMethod]
     public async Task Hit_SetIen_Return()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -210,7 +210,7 @@ public class Interrupt_Vsync
     [TestMethod]
     public async Task Hit_SetIen_Return_ReEnable()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -253,7 +253,7 @@ public class Interrupt_Vsync
     [TestMethod]
     public async Task Hit_OnlyOnce_Clear()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;
@@ -295,7 +295,7 @@ public class Interrupt_Vsync
     [TestMethod]
     public async Task Hit_Many()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.None;

@@ -8,7 +8,7 @@ public class AND
     [TestMethod]
     public async Task Imm()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
 
@@ -31,7 +31,7 @@ public class AND
     [TestMethod]
     public async Task Imm_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
 
@@ -50,7 +50,7 @@ public class AND
     [TestMethod]
     public async Task Imm_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
 
@@ -70,7 +70,7 @@ public class AND
     [TestMethod]
     public async Task Imm_CarryPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Carry = true;
@@ -90,7 +90,7 @@ public class AND
     [TestMethod]
     public async Task Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
         emulator.Memory[0x1234] = 0x03;
@@ -115,7 +115,7 @@ public class AND
     [TestMethod]
     public async Task Abs_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x01;
@@ -135,7 +135,7 @@ public class AND
     [TestMethod]
     public async Task Abs_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Memory[0x1234] = 0b10000001;
@@ -156,7 +156,7 @@ public class AND
     [TestMethod]
     public async Task Abs_CarryPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Carry = true;
@@ -177,7 +177,7 @@ public class AND
     [TestMethod]
     public async Task AbsX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
         emulator.Memory[0x1234] = 0x03;
@@ -203,7 +203,7 @@ public class AND
     [TestMethod]
     public async Task AbsX_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x01;
@@ -224,7 +224,7 @@ public class AND
     [TestMethod]
     public async Task AbsX_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Memory[0x1234] = 0b10000001;
@@ -246,7 +246,7 @@ public class AND
     [TestMethod]
     public async Task AbsX_CarryPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Carry = true;
@@ -268,7 +268,7 @@ public class AND
     [TestMethod]
     public async Task AbsX_PagePenatly()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
         emulator.Memory[0x1310] = 0x03;
@@ -289,7 +289,7 @@ public class AND
     [TestMethod]
     public async Task AbsY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
         emulator.Memory[0x1234] = 0x03;
@@ -315,7 +315,7 @@ public class AND
     [TestMethod]
     public async Task AbsY_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x01;
@@ -336,7 +336,7 @@ public class AND
     [TestMethod]
     public async Task AbsY_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Memory[0x1234] = 0b10000001;
@@ -358,7 +358,7 @@ public class AND
     [TestMethod]
     public async Task AbsY_CarryPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Carry = true;
@@ -380,7 +380,7 @@ public class AND
     [TestMethod]
     public async Task AbsY_PagePenatly()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
         emulator.Memory[0x1310] = 0x03;
@@ -401,7 +401,7 @@ public class AND
     [TestMethod]
     public async Task Zp()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
         emulator.Memory[0x12] = 0x03;
@@ -425,7 +425,7 @@ public class AND
     [TestMethod]
     public async Task Zp_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x12] = 0x01;
@@ -445,7 +445,7 @@ public class AND
     [TestMethod]
     public async Task Zp_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Memory[0x12] = 0b10000001;
@@ -465,7 +465,7 @@ public class AND
     [TestMethod]
     public async Task Zp_CarryPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Carry = true;
@@ -486,7 +486,7 @@ public class AND
     [TestMethod]
     public async Task ZpX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
         emulator.Memory[0x12] = 0x03;
@@ -511,7 +511,7 @@ public class AND
     [TestMethod]
     public async Task ZpX_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x12] = 0x01;
@@ -532,7 +532,7 @@ public class AND
     [TestMethod]
     public async Task ZpX_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Memory[0x12] = 0b10000001;
@@ -553,7 +553,7 @@ public class AND
     [TestMethod]
     public async Task ZpX_CarryPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Carry = true;
@@ -575,7 +575,7 @@ public class AND
     [TestMethod]
     public async Task IndZp()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
         emulator.Memory[0x1234] = 0x03;
@@ -601,7 +601,7 @@ public class AND
     [TestMethod]
     public async Task IndZp_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x01;
@@ -623,7 +623,7 @@ public class AND
     [TestMethod]
     public async Task IndZp_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Memory[0x1234] = 0b10000001;
@@ -645,7 +645,7 @@ public class AND
     [TestMethod]
     public async Task IndZp_CarryPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Carry = true;
@@ -668,7 +668,7 @@ public class AND
     [TestMethod]
     public async Task IndX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
         emulator.Memory[0x1234] = 0x03;
@@ -695,7 +695,7 @@ public class AND
     [TestMethod]
     public async Task IndX_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x01;
@@ -718,7 +718,7 @@ public class AND
     [TestMethod]
     public async Task IndX_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Memory[0x1234] = 0b10000001;
@@ -741,7 +741,7 @@ public class AND
     [TestMethod]
     public async Task IndX_CarryPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Carry = true;
@@ -765,7 +765,7 @@ public class AND
     [TestMethod]
     public async Task IndY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
         emulator.Memory[0x1234] = 0x03;
@@ -792,7 +792,7 @@ public class AND
     [TestMethod]
     public async Task IndY_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x01;
@@ -815,7 +815,7 @@ public class AND
     [TestMethod]
     public async Task IndY_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Memory[0x1234] = 0b10000001;
@@ -838,7 +838,7 @@ public class AND
     [TestMethod]
     public async Task IndY_CarryPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b10000000;
         emulator.Carry = true;
@@ -862,7 +862,7 @@ public class AND
     [TestMethod]
     public async Task IndY_PagePenatly()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x2;
         emulator.Memory[0x1310] = 0x03;

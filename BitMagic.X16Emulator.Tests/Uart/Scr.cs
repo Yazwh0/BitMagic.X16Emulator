@@ -14,7 +14,7 @@ public class Scr
     [TestMethod]
     public async Task Scr_HoldsWrittenValue()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -33,7 +33,7 @@ public class Scr
     [TestMethod]
     public async Task Scr_HoldsFullByte()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -51,7 +51,7 @@ public class Scr
     [TestMethod]
     public async Task Scr_SecondWriteReplacesTheFirst()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

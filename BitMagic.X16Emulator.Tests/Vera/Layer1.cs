@@ -8,7 +8,7 @@ public class Layer1
     [TestMethod]
     public async Task Config_ColourDepth()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
 
@@ -34,7 +34,7 @@ public class Layer1
     [TestMethod]
     public async Task Config_BitmapMode()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x04;
 
@@ -60,7 +60,7 @@ public class Layer1
     [TestMethod]
     public async Task Config_MapWidth()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x30;
 
@@ -86,7 +86,7 @@ public class Layer1
     [TestMethod]
     public async Task Config_MapHeight()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xc0;
 
@@ -112,7 +112,7 @@ public class Layer1
     [TestMethod]
     public async Task Config_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
 
@@ -138,7 +138,7 @@ public class Layer1
     [TestMethod]
     public async Task MapBase()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
 
@@ -157,7 +157,7 @@ public class Layer1
     [TestMethod]
     public async Task TileWidth()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x01;
 
@@ -182,7 +182,7 @@ public class Layer1
     [TestMethod]
     public async Task TileHeight()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
 
@@ -208,7 +208,7 @@ public class Layer1
     [TestMethod]
     public async Task TileAddress()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xfc;
 
@@ -230,7 +230,7 @@ public class Layer1
     [TestMethod]
     public async Task TileAll()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
 
@@ -251,7 +251,7 @@ public class Layer1
     [TestMethod]
     public async Task HScroll_L()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_HScroll = 0xf00;
         emulator.A = 0xff;
@@ -271,7 +271,7 @@ public class Layer1
     [TestMethod]
     public async Task HScroll_H()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_HScroll = 0x0ff;
         emulator.A = 0xff;
@@ -291,7 +291,7 @@ public class Layer1
     [TestMethod]
     public async Task VScroll_L()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_VScroll = 0xf00;
         emulator.A = 0xff;
@@ -311,7 +311,7 @@ public class Layer1
     [TestMethod]
     public async Task VScroll_H()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_VScroll = 0x0ff;
         emulator.A = 0xff;

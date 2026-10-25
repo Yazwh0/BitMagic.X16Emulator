@@ -8,7 +8,7 @@ public class Sprites_Depth
     [TestMethod]
     public async Task Render_Depth1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.SpriteEnable = true;
         emulator.Sprites[0].Depth = 1;
@@ -52,7 +52,7 @@ public class Sprites_Depth
     [TestMethod]
     public async Task Render_Depth2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.SpriteEnable = true;
         emulator.Sprites[0].Depth = 2;
@@ -96,7 +96,7 @@ public class Sprites_Depth
     [TestMethod]
     public async Task Render_Depth3()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.SpriteEnable = true;
         emulator.Sprites[0].Depth = 3;
@@ -140,7 +140,7 @@ public class Sprites_Depth
     [TestMethod]
     public async Task Render_MultiDepth()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.SpriteEnable = true;
         emulator.Sprites[0].Depth = 3;

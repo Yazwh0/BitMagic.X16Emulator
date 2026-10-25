@@ -8,7 +8,7 @@ public class BIT
     [TestMethod]
     public async Task Imm_NoFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
 
@@ -31,7 +31,7 @@ public class BIT
     [TestMethod]
     public async Task Imm_Ignore_Accumulator()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
 
@@ -51,7 +51,7 @@ public class BIT
     [TestMethod]
     public async Task Imm_Ignore_Accumulator_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
 
@@ -71,7 +71,7 @@ public class BIT
     [TestMethod]
     public async Task Imm_Ignore_Accumulator_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
 
@@ -91,7 +91,7 @@ public class BIT
     [TestMethod]
     public async Task Imm_Ignore_Accumulator_OverflowNegative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
 
@@ -111,7 +111,7 @@ public class BIT
     [TestMethod]
     public async Task Imm_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
 
@@ -129,7 +129,7 @@ public class BIT
     [TestMethod]
     public async Task Imm_Zero_PreserveCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -148,7 +148,7 @@ public class BIT
     [TestMethod]
     public async Task Imm_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x82;
 
@@ -166,7 +166,7 @@ public class BIT
     [TestMethod]
     public async Task Imm_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x42;
 
@@ -184,7 +184,7 @@ public class BIT
     [TestMethod]
     public async Task Imm_FlagPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Decimal = true;
@@ -205,7 +205,7 @@ public class BIT
     [TestMethod]
     public async Task Abs_NoFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Memory[0x1234] = 0x01;
@@ -230,7 +230,7 @@ public class BIT
     [TestMethod]
     public async Task Abs_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x01;
@@ -249,7 +249,7 @@ public class BIT
     [TestMethod]
     public async Task Abs_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x82;
         emulator.Memory[0x1234] = 0x81;
@@ -268,7 +268,7 @@ public class BIT
     [TestMethod]
     public async Task Abs_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x42;
         emulator.Memory[0x1234] = 0x41;
@@ -287,7 +287,7 @@ public class BIT
     [TestMethod]
     public async Task Abs_OverflowAndZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x20;
         emulator.Memory[0x1234] = 0x40;
@@ -306,7 +306,7 @@ public class BIT
     [TestMethod]
     public async Task Abs_FlagPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Decimal = true;
@@ -329,7 +329,7 @@ public class BIT
     [TestMethod]
     public async Task Abs_FromRom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x01;
@@ -353,7 +353,7 @@ public class BIT
     [TestMethod]
     public async Task AbsX_NoFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Memory[0x1234] = 0x01;
@@ -379,7 +379,7 @@ public class BIT
     [TestMethod]
     public async Task AbsX_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x01;
@@ -399,7 +399,7 @@ public class BIT
     [TestMethod]
     public async Task AbsX_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x82;
         emulator.Memory[0x1234] = 0x81;
@@ -419,7 +419,7 @@ public class BIT
     [TestMethod]
     public async Task AbsX_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x42;
         emulator.Memory[0x1234] = 0x41;
@@ -439,7 +439,7 @@ public class BIT
     [TestMethod]
     public async Task AbsX_FlagPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Decimal = true;
@@ -462,7 +462,7 @@ public class BIT
     [TestMethod]
     public async Task Zp_NoFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Memory[0x12] = 0x01;
@@ -486,7 +486,7 @@ public class BIT
     [TestMethod]
     public async Task Zp_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x12] = 0x01;
@@ -505,7 +505,7 @@ public class BIT
     [TestMethod]
     public async Task Zp_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x82;
         emulator.Memory[0x12] = 0x81;
@@ -524,7 +524,7 @@ public class BIT
     [TestMethod]
     public async Task Zp_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x42;
         emulator.Memory[0x12] = 0x41;
@@ -543,7 +543,7 @@ public class BIT
     [TestMethod]
     public async Task Zp_FlagPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Decimal = true;
@@ -565,7 +565,7 @@ public class BIT
     [TestMethod]
     public async Task ZpX_NoFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Memory[0x12] = 0x01;
@@ -590,7 +590,7 @@ public class BIT
     [TestMethod]
     public async Task ZpX_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x12] = 0x01;
@@ -610,7 +610,7 @@ public class BIT
     [TestMethod]
     public async Task ZpX_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x82;
         emulator.Memory[0x12] = 0x81;
@@ -630,7 +630,7 @@ public class BIT
     [TestMethod]
     public async Task ZpX_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x42;
         emulator.Memory[0x12] = 0x41;
@@ -650,7 +650,7 @@ public class BIT
     [TestMethod]
     public async Task ZpX_FlagPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Decimal = true;

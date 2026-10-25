@@ -8,7 +8,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete0_R()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fa01;
@@ -27,7 +27,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete0_G()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fa00;
@@ -46,7 +46,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete0_B()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fa00;
@@ -65,7 +65,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete1_R()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fa03;
@@ -85,7 +85,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete1_G()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fa02;
@@ -104,7 +104,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete1_B()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fa02;
@@ -123,7 +123,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete255_R()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fbff;
@@ -143,7 +143,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete255_G()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fbfe;
@@ -162,7 +162,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete255_B()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fbfe;
@@ -181,7 +181,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete0_R_Data1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x1fa01;
@@ -200,7 +200,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete0_G_Data1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x1fa00;
@@ -219,7 +219,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete0_B_Data1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x1fa00;
@@ -238,7 +238,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete1_R_Data1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x1fa03;
@@ -258,7 +258,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete1_G_Data1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x1fa02;
@@ -277,7 +277,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete1_B_Data1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x1fa02;
@@ -296,7 +296,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete255_R_Data1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x1fbff;
@@ -316,7 +316,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete255_G_Data1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x1fbfe;
@@ -335,7 +335,7 @@ public class Palette
     [TestMethod]
     public async Task SetPallete255_B_Data1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x1fbfe;

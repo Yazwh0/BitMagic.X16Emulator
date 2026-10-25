@@ -9,7 +9,7 @@ public class BRA
     [TestMethod]
     public async Task Bra_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -32,7 +32,7 @@ public class BRA
     [TestMethod]
     public async Task Bra_Jump_Forward_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -58,7 +58,7 @@ public class BRA
     [TestMethod]
     public async Task Bra_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

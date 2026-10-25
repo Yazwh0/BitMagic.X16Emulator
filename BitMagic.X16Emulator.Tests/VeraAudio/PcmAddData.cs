@@ -10,7 +10,7 @@ public class PcmData
     [TestMethod]
     public async Task Add()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xab;
         emulator.Clock_AudioNext = 10000;
@@ -32,7 +32,7 @@ public class PcmData
     [TestMethod]
     public async Task Add2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Clock_AudioNext = 10000;
         emulator.A = 0xab;
@@ -57,7 +57,7 @@ public class PcmData
     [TestMethod]
     public async Task AddWrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PcmBufferWrite = 4096 - 2;
         emulator.VeraAudio.PcmBufferRead = 4090;
@@ -87,7 +87,7 @@ public class PcmData
     [TestMethod]
     public async Task AddWhenFull()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xab;
         emulator.VeraAudio.PcmBufferRead = 1;
@@ -113,7 +113,7 @@ public class PcmData
     [TestMethod]
     public async Task AddThenFull()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xab;
         emulator.VeraAudio.PcmBufferRead = 2;
@@ -139,7 +139,7 @@ public class PcmData
     [TestMethod]
     public async Task EmptyOnstartup()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Clock_AudioNext = 10000;
 
         await X16TestHelper.Emulate(@"
@@ -154,7 +154,7 @@ public class PcmData
     [TestMethod]
     public async Task FullOnstartup()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PcmBufferRead = 1;
         emulator.Clock_AudioNext = 10000;
@@ -171,7 +171,7 @@ public class PcmData
     [TestMethod]
     public async Task FullOnstartupWrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PcmBufferRead = 0;
         emulator.VeraAudio.PcmBufferWrite = 0xfff;

@@ -11,7 +11,7 @@ public class Isr
     [TestMethod]
     public async Task Clear_Vsync()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_Vsync_Hit = true;
         emulator.Memory[0x9F27] = 0x01;     // hit not yet set in init.
@@ -34,7 +34,7 @@ public class Isr
     [TestMethod]
     public async Task Clear_Vsync_Preserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_Vsync_Hit = true;
         emulator.Vera.Interrupt_Line_Hit = true;
@@ -59,7 +59,7 @@ public class Isr
     [TestMethod]
     public async Task Clear_Line()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_Line_Hit = true;
         emulator.Memory[0x9F27] = 0x02;     // hit not yet set in init.
@@ -82,7 +82,7 @@ public class Isr
     [TestMethod]
     public async Task Clear_Line_Preserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_Vsync_Hit = true;
         emulator.Vera.Interrupt_Line_Hit = true;
@@ -108,7 +108,7 @@ public class Isr
     [TestMethod]
     public async Task Clear_Spcol()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_SpCol_Hit = true;
         emulator.Memory[0x9F27] = 0x04;     // hit not yet set in init.
@@ -131,7 +131,7 @@ public class Isr
     [TestMethod]
     public async Task Clear_Spcol_Preserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_Vsync_Hit = true;
         emulator.Vera.Interrupt_Line_Hit = true;
@@ -156,7 +156,7 @@ public class Isr
     [TestMethod]
     public async Task Clear_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_Vsync_Hit = true;
         emulator.Vera.Interrupt_Line_Hit = true;
@@ -182,7 +182,7 @@ public class Isr
     [TestMethod]
     public async Task Clear_All_NothingSet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_Vsync_Hit = false;
         emulator.Vera.Interrupt_Line_Hit = false;

@@ -10,7 +10,7 @@ public class LDD
     [TestMethod]
     public async Task Read_Data0_Ldd()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -31,7 +31,7 @@ public class LDD
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -44,7 +44,7 @@ public class LDD
     [TestMethod]
     public async Task Read_Data1_Ldd()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -66,7 +66,7 @@ public class LDD
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)

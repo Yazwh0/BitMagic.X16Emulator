@@ -69,6 +69,7 @@ section code
         var (emulator, _, result) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", "import Lib=\"lib.bmasm\";\n" + Header + "    jsr lib:get\n    stp\n"),
             ("lib.bmasm", Lib)));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x42, emulator.A);
 
@@ -86,6 +87,7 @@ section code
         var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", import + "\n" + Header + "    jsr lib:get\n    stp\n"),
             ("lib.bmasm", Lib)));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x42, emulator.A);
     }
@@ -99,6 +101,7 @@ section code
         var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", include + "\n" + Header + "    lda #@(Helper.Value)\n    stp\n"),
             ("helper.cs", "public static class Helper { public static int Value => 0x5a; }")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x5a, emulator.A);
     }
@@ -147,6 +150,7 @@ section code
         var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", "import Lib=\"lib.bmasm\";\n" + Header + "    jsr lib:get\n    stp\nLib.Value = 0x42;\n"),
             ("lib.bmasm", "file library code\n.scope lib\n    .proc get\n        lda #@(Value)\n        rts\n    .endproc\n.endscope\n\nmembers\npublic static int Value = 1;\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x42, emulator.A);
     }
@@ -195,6 +199,7 @@ section code
         var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", "import Lib=\"lib.bmasm\";\nLib.Create().WithValue(0x21).Doubled().Build();\n" + Header + "    Lib.LoadValue();\n    stp\n"),
             ("lib.bmasm", library)));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x42, emulator.A);
     }
@@ -205,6 +210,7 @@ section code
         var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", "import Lib=\"lib.bmasm\";\n" + Header + "    jsr lib:get\n    stp\n"),
             ("lib.bmasm", "file library code\n.scope lib\n    .proc get\n        lda #LIB_VALUE + @(Offset)\n        rts\n    .endproc\n.endscope\n\nmembers\npublic static int Offset = 0;\n\nsection setup\n.scope lib\n    .const LIB_VALUE $33\n.endscope\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x33, emulator.A);
     }
@@ -215,6 +221,7 @@ section code
         var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", "import Lib=\"lib.bmasm\";\n" + Header + "    lda #@(Test.Named.Value)\n    stp\n"),
             ("lib.bmasm", "file library code\nlibrary Test.Named;\n    rts\n\nmembers\npublic static int Value = 0x55;\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x55, emulator.A);
     }
@@ -228,6 +235,7 @@ section code
         var (emulator, _, _) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", "import Lib=\"lib.bmasm\";\n" + Header + "    lda #@(Test.NoSemi.Value)\n    stp\n"),
             ("lib.bmasm", "file library code\n" + libraryLine + "\n    rts\n\nmembers\npublic static int Value = 0x56;\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x56, emulator.A);
     }
@@ -255,6 +263,7 @@ section code
         var (emulator, _, result) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", "import Lib=\"lib.bmasm\";\n" + Header + "    place setup\n    jsr lib:get\n    stp\n    place code\n.after_code:\n"),
             ("lib.bmasm", Lib)));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x42, emulator.A);
 
@@ -270,6 +279,7 @@ section code
             ("main.bmasm", "import Handler=\"handler.bmasm\";\nimport Music=\"music.bmasm\";\n" + Header + "    jsr handler:run\n    stp\n"),
             ("music.bmasm", "file library irq\n    lda #$11\n"),
             ("handler.bmasm", "file library code\n.scope handler\n    .proc run\n        place irq\n        rts\n    .endproc\n.endscope\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x11, emulator.A);
     }
@@ -290,6 +300,7 @@ section code
         var (emulator, _, result) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", "import Lib=\"lib.bmasm\";\n" + Header + "    jsr lib:get\n    stp\n"),
             ("lib.bmasm", "file library code\n.scope lib\n    .proc get\n        lda #LIB_VALUE\n        rts\n    .endproc\n.endscope\nsection setup\n.scope lib\n    .const LIB_VALUE $24\n.endscope\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x24, emulator.A);
         Assert.IsTrue(At(result, "LIB_VALUE $24") < At(result, ".org $810"));
@@ -343,6 +354,7 @@ public static void Process(ViewFile file)
             ("main.bmasm", "import Data=\"data.bmasm\";\n" + Header + "    jsr data_proc\n    stp\n    place data\n"),
             ("dataview.bmasm", DataView),
             ("data.bmasm", "file dataview $21\n.data_label:\n")));
+        using var disposeEmulator = emulator;
 
         // the argument reaches the view
         Assert.AreEqual(0x21, emulator.A);
@@ -356,6 +368,7 @@ public static void Process(ViewFile file)
             ("main.bmasm", "import Data=\"data.bmasm\";\n" + Header + "    jsr data_proc\n    stp\n    place data\n"),
             ("dataview.bmasm", DataView),
             ("data.bmasm", "file dataview $21\nvalue $33\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x33, emulator.A);
     }
@@ -430,6 +443,7 @@ public static void Process(ViewFile file)
         var rest = ".rest_start:\n    place code\n.rest_end:\n";
 
         var (emulator, _, result) = await X16TestHelper.EmulateTemplateFiles(DosAndLz(restFirst ? rest + dos : dos + rest));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0xd0, emulator.Memory[0x02]);
         Assert.AreEqual(0x1a, emulator.A);
@@ -446,6 +460,7 @@ public static void Process(ViewFile file)
     public async Task PlaceOneLibraryRestByDefault()
     {
         var (emulator, _, result) = await X16TestHelper.EmulateTemplateFiles(DosAndLz(".dos_start:\n    place Dos.code\n.dos_end:\n"));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x1a, emulator.A);
 
@@ -486,6 +501,7 @@ public static void Process(ViewFile file)
             ("main.bmasm", "import Lz=\"lz.bmasm\";\nimport Dos=\"dos.bmasm\";\n" + Header + "    jsr lz:get\n    stp\n.dos_start:\n    place Dos.code\n"),
             ("dos.bmasm", "file library code\n.scope dos\n    .proc get\n        lda #$d0\n        rts\n    .endproc\n.endscope\n"),
             ("lz.bmasm", "file library code\nimport Dos=\"dos.bmasm\";\n.scope lz\n    .proc get\n        jmp dos:get\n    .endproc\n.endscope\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0xd0, emulator.A);
         Assert.IsTrue(At(result, ".dos_start:") < At(result, "lda #$d0"));
@@ -500,6 +516,7 @@ public static void Process(ViewFile file)
             ("main.bmasm", "import Lz=\"lz.bmasm\";\n" + Header + "    jsr lz:get\n    stp\n"),
             ("dos.bmasm", "file library code\n.scope dos\n    .proc get\n        lda #$d0\n        rts\n    .endproc\n.endscope\n"),
             ("lz.bmasm", "file library code\nimport Dos=\"dos.bmasm\";\n.scope lz\n    .proc get\n        jmp dos:get\n    .endproc\n.endscope\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0xd0, emulator.A);
         Assert.AreEqual(1, Count(result, "lda #$d0"));
@@ -513,6 +530,7 @@ public static void Process(ViewFile file)
             ("a.bmasm", "file library code\nimport C=\"c.bmasm\";\n    nop\n"),
             ("b.bmasm", "file library code\nimport C=\"c.bmasm\";\n    nop\n"),
             ("c.bmasm", "file library code\n.scope c\n    .proc get\n        lda #$cc\n        rts\n    .endproc\n.endscope\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0xcc, emulator.A);
         Assert.AreEqual(1, Count(result, "lda #$cc"));
@@ -522,12 +540,13 @@ public static void Process(ViewFile file)
     public async Task CustomWriter()
     {
         // the writer is called once per placement, with the parts placed there
-        var (_, _, result) = await X16TestHelper.EmulateTemplateFiles(Files(
+        var (emulator, _, result) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", "import W=\"writer.bmasm\";\nimport A=\"a.bmasm\";\nimport B=\"b.bmasm\";\nimport C=\"c.bmasm\";\n" + Header + "    stp\n.one:\n    place A.irq\n.rest:\n    place irq\n"),
             ("writer.bmasm", "library Test.Writer;\n\npublic override void Initialise()\n{\n    Section.Get(\"irq\").Writer = parts =>\n    {\n        .byte @(parts.Count)\n        foreach (var part in parts)\n            part.Write();\n    };\n}\n"),
             ("a.bmasm", "file library irq\n    .byte $aa\n"),
             ("b.bmasm", "file library irq\n    .byte $bb\n"),
             ("c.bmasm", "file library irq\n    .byte $cc\n")));
+        using var disposeEmulator = emulator;
 
         var code = result.Source.Code;
         var one = code[At(result, ".one:")..At(result, ".rest:")];
@@ -547,6 +566,7 @@ public static void Process(ViewFile file)
         var (emulator, _, result) = await X16TestHelper.EmulateTemplateFiles(Files(
             ("main.bmasm", "import Late=\"late.bmasm\";\n" + Header + "    jsr late_proc\n    stp\n.code_here:\n    place code\n.code_end:\nLate.AddLater();\n"),
             ("late.bmasm", "library Test.Late;\n\npublic static void AddLater()\n{\n    Section.Get(\"code\").Add(\"late\", () =>\n    {\n        .proc late_proc\n            lda #$66\n            rts\n        .endproc\n    });\n}\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x66, emulator.A);
 
@@ -629,6 +649,7 @@ public static void Process(ViewFile file)
             ("main.bmasm", "import A=\"a.bmasm\";\nimport B=\"b.bmasm\";\n" + Header + "    lda #@(Test.A.Value + Test.B.Value)\n    stp\n"),
             ("a.bmasm", "library Test.A;\npublic static int Value = 0x10;\n"),
             ("b.bmasm", "library Test.B;\npublic static int Value = 0x20;\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x30, emulator.A);
     }
@@ -643,6 +664,7 @@ public static void Process(ViewFile file)
             ("a/globals.bmasm", "library FolderA.Globals;\npublic static int Value = 0x10;\n"),
             ("b/y.bmasm", "library FolderB.Y;\nimport G=\"globals.bmasm\";\npublic static int Value => G.Value;\n"),
             ("b/globals.bmasm", "library FolderB.Globals;\npublic static int Value = 0x20;\n")));
+        using var disposeEmulator = emulator;
 
         Assert.AreEqual(0x10, emulator.A);
         Assert.AreEqual(0x20, emulator.X);

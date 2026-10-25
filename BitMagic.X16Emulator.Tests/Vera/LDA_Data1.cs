@@ -9,7 +9,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x0000;
@@ -37,7 +37,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 1;
         emulator.Vera.Data1_Address = 0x0000;
@@ -65,7 +65,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 2;
         emulator.Vera.Data1_Address = 0x0000;
@@ -93,7 +93,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step3()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 4;
         emulator.Vera.Data1_Address = 0x0000;
@@ -121,7 +121,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step4()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 8;
         emulator.Vera.Data1_Address = 0x0000;
@@ -149,7 +149,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step5()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 16;
         emulator.Vera.Data1_Address = 0x0000;
@@ -177,7 +177,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step6()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 32;
         emulator.Vera.Data1_Address = 0x0000;
@@ -205,7 +205,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step7()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 64;
         emulator.Vera.Data1_Address = 0x0000;
@@ -233,7 +233,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step8()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 128;
         emulator.Vera.Data1_Address = 0x0000;
@@ -261,7 +261,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step9()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 256;
         emulator.Vera.Data1_Address = 0x0000;
@@ -289,7 +289,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_StepA()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 512;
         emulator.Vera.Data1_Address = 0x0000;
@@ -317,7 +317,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_StepB()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 40;
         emulator.Vera.Data1_Address = 0x0000;
@@ -345,7 +345,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_StepC()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 80;
         emulator.Vera.Data1_Address = 0x0000;
@@ -373,7 +373,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_StepD()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 160;
         emulator.Vera.Data1_Address = 0x0000;
@@ -401,7 +401,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_StepE()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 320;
         emulator.Vera.Data1_Address = 0x0000;
@@ -429,7 +429,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_StepF()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 640;
         emulator.Vera.Data1_Address = 0x0000;
@@ -458,7 +458,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_Minus1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -1;
         emulator.Vera.Data1_Address = 0x1000;
@@ -486,7 +486,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_Minus2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -2;
         emulator.Vera.Data1_Address = 0x1000;
@@ -514,7 +514,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_Minus3()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -4;
         emulator.Vera.Data1_Address = 0x1000;
@@ -542,7 +542,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_Minus4()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -8;
         emulator.Vera.Data1_Address = 0x1000;
@@ -570,7 +570,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_Minus5()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -16;
         emulator.Vera.Data1_Address = 0x1000;
@@ -598,7 +598,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_Minus6()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -32;
         emulator.Vera.Data1_Address = 0x1000;
@@ -626,7 +626,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_Minus7()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -64;
         emulator.Vera.Data1_Address = 0x1000;
@@ -654,7 +654,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_Minus8()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -128;
         emulator.Vera.Data1_Address = 0x1000;
@@ -682,7 +682,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_Minus9()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -256;
         emulator.Vera.Data1_Address = 0x1000;
@@ -710,7 +710,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_MinusA()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -512;
         emulator.Vera.Data1_Address = 0x1000;
@@ -738,7 +738,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_MinusB()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -40;
         emulator.Vera.Data1_Address = 0x1000;
@@ -766,7 +766,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_MinusC()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -80;
         emulator.Vera.Data1_Address = 0x1000;
@@ -794,7 +794,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_MinusD()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -160;
         emulator.Vera.Data1_Address = 0x1000;
@@ -822,7 +822,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_MinusE()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -320;
         emulator.Vera.Data1_Address = 0x1000;
@@ -850,7 +850,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_MinusF()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -640;
         emulator.Vera.Data1_Address = 0x1000;
@@ -878,7 +878,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 1;
         emulator.Vera.Data1_Address = 0x1ffff;
@@ -906,7 +906,7 @@ public class LDA_Data1
     [TestMethod]
     public async Task Abs_Data1_Step_Minus_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = -1;
         emulator.Vera.Data1_Address = 0x00000;

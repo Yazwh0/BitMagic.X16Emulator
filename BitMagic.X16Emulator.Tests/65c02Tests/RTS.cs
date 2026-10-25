@@ -8,7 +8,7 @@ public class RTS
     [TestMethod]
     public async Task Rts()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.StackPointer = 0x1ff;
 

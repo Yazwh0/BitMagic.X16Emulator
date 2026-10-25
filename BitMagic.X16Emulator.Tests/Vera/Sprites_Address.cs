@@ -8,7 +8,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc00;
@@ -27,7 +27,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc08;
@@ -46,7 +46,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff8;
@@ -65,7 +65,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc01;
@@ -84,7 +84,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc09;
@@ -103,7 +103,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff9;
@@ -122,7 +122,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_Clip_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc01;
@@ -141,7 +141,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_Clip_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc09;
@@ -160,7 +160,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_Clip_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff9;
@@ -179,7 +179,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_LowSet_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc01;
@@ -199,7 +199,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_LowSet_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc09;
@@ -219,7 +219,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_LowSet_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff9;
@@ -239,7 +239,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_Low_HighSet_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc00;
@@ -259,7 +259,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_Low_HighSet_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc08;
@@ -279,7 +279,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_Low_HighSet_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff8;
@@ -300,7 +300,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_Mode_0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc01;
@@ -319,7 +319,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_Mode_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fc09;
@@ -338,7 +338,7 @@ public class Sprites
     [TestMethod]
     public async Task SetAddress_High_Mode_127()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x1fff9;

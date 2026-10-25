@@ -8,7 +8,7 @@ public class Ctrl
     [TestMethod]
     public async Task Set_Addr()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x11111;
@@ -33,7 +33,7 @@ public class Ctrl
     [TestMethod]
     public async Task UnSet_Addr()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x11111;
@@ -59,7 +59,7 @@ public class Ctrl
     [TestMethod]
     public async Task Set_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x11111;

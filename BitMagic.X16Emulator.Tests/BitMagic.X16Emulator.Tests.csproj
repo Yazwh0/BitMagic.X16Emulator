@@ -10,6 +10,8 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 
     <PlatformTarget>x64</PlatformTarget>
+
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\BitMagic.X16Emulator.Tests.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <ItemGroup>

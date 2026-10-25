@@ -8,7 +8,7 @@ public class TXS
     [TestMethod]
     public async Task Txs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 2;
 
@@ -30,7 +30,7 @@ public class TXS
     [TestMethod]
     public async Task Txs_NoFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 2;
         emulator.Zero = true;

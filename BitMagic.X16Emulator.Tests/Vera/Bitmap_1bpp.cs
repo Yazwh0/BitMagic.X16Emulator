@@ -8,7 +8,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Box_Normal_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@$"
                     .machine CommanderX16R40
@@ -137,7 +137,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Box_Normal_PaletteOffset_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@$"
                     .machine CommanderX16R40
@@ -269,7 +269,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Box_Normal_AddressChange_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@$"
                     .machine CommanderX16R40
@@ -398,7 +398,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Box_ScaledDown_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@$"
                     .machine CommanderX16R40
@@ -527,7 +527,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Box_ScaledUp_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@$"
                     .machine CommanderX16R40
@@ -656,7 +656,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Image_Normal_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_1bpp.png", ImageHelper.ColourDepthImage.Depth_1bpp, 0);
 
@@ -761,7 +761,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Image_ScaledUp_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_1bpp.png", ImageHelper.ColourDepthImage.Depth_1bpp, 0);
 
@@ -867,7 +867,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Image_ScaledDown_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_1bpp.png", ImageHelper.ColourDepthImage.Depth_1bpp, 0);
 
@@ -919,7 +919,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Box_Normal_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@$"
                     .machine CommanderX16R40
@@ -1048,7 +1048,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Box_Normal_PaletteOffset_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@$"
                     .machine CommanderX16R40
@@ -1180,7 +1180,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Box_Normal_AddressChange_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@$"
                     .machine CommanderX16R40
@@ -1309,7 +1309,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Box_ScaledDown_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@$"
                     .machine CommanderX16R40
@@ -1438,7 +1438,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Box_ScaledUp_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@$"
                     .machine CommanderX16R40
@@ -1567,7 +1567,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Image_Normal_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_1bpp.png", ImageHelper.ColourDepthImage.Depth_1bpp, 0);
 
@@ -1619,7 +1619,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Image_ScaledUp_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_1bpp.png", ImageHelper.ColourDepthImage.Depth_1bpp, 0);
 
@@ -1672,7 +1672,7 @@ public class Bitmap_1Bpp
     [TestMethod]
     public async Task Image_ScaledDown_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_1bpp.png", ImageHelper.ColourDepthImage.Depth_1bpp, 0);
 

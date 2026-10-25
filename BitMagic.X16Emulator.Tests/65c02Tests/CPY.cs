@@ -8,7 +8,7 @@ public class CPY
     [TestMethod]
     public async Task Imm_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x10;
 
@@ -31,7 +31,7 @@ public class CPY
     [TestMethod]
     public async Task Imm_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x10;
 
@@ -50,7 +50,7 @@ public class CPY
     [TestMethod]
     public async Task Imm_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x10;
 
@@ -69,7 +69,7 @@ public class CPY
     [TestMethod]
     public async Task Abs_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x10;
         emulator.Memory[0x1234] = 0x10;
@@ -94,7 +94,7 @@ public class CPY
     [TestMethod]
     public async Task Abs_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x10;
         emulator.Memory[0x1234] = 0x20;
@@ -114,7 +114,7 @@ public class CPY
     [TestMethod]
     public async Task Abs_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x10;
         emulator.Memory[0x1234] = 0x05;
@@ -134,7 +134,7 @@ public class CPY
     [TestMethod]
     public async Task Zp_Equal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x10;
         emulator.Memory[0x12] = 0x10;
@@ -158,7 +158,7 @@ public class CPY
     [TestMethod]
     public async Task Zp_LessThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x10;
         emulator.Memory[0x12] = 0x20;
@@ -178,7 +178,7 @@ public class CPY
     [TestMethod]
     public async Task Zp_GreaterThan()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 0x10;
         emulator.Memory[0x12] = 0x05;

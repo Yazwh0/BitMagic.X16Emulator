@@ -405,7 +405,7 @@ next_opcode::
     ; check for any other breakpoint source
     mov ebx, dword ptr [rdx].state.breakpoint_source
     test ebx, ebx
-    jnz breakpoint_exit_stepback
+    jnz breakpoint_exit_source
 
     ; check for breakpoint
     mov rbx, qword ptr [rdx].state.breakpoint_ptr
@@ -626,6 +626,10 @@ no_uart:
     ;popf
     ; ----------------------- AUDIO DONE
 
+    ; beam breakpoints, before the line check so an entry passed by the instruction that reaches vsync isn't lost
+    cmp r14, [rdx].state.beam_breakpoint_next
+    jae beam_breakpoint_hit
+beam_breakpoint_done:
 
     ; check for line irq (requires rbx to be the last cpu clock)
     mov rax, r14
@@ -692,6 +696,23 @@ vsync_check:
     ;je vsync
 
 vsync:
+    ; beam breakpoints, back to the first entry which is relative to the start of this line
+    mov rcx, [rdx].state.beam_breakpoint_ptr
+    mov dword ptr [rdx].state.beam_breakpoint_index, 0
+    mov eax, dword ptr [rcx]
+    cmp eax, BEAM_BREAKPOINT_END
+    je beam_vsync_none
+
+    mov rbx, r14
+    and rbx, 0ffffffffffffff00h
+    add rax, rbx
+    mov [rdx].state.beam_breakpoint_next, rax
+    jmp beam_vsync_done
+
+beam_vsync_none:
+    mov qword ptr [rdx].state.beam_breakpoint_next, -1
+
+beam_vsync_done:
     ; only draw the screen if there is an update!
     movzx rax, byte ptr [rdx].state.display_dirty
     sub rax, 1
@@ -880,6 +901,38 @@ breakpoint_exit_normal:
 breakpoint_exit_vsync:
     or [rdx].state.breakpoint_source, BREAKPOINT_VSYNC
     jmp breakpoint_exit
+
+    ; move past every entry the beam has reached, the table is deltas from the previous entry.
+    ; doesn't exit, so the rest of the instruction is processed, next_opcode exits on the breakpoint_source.
+beam_breakpoint_hit:
+    mov rcx, [rdx].state.beam_breakpoint_ptr
+    mov eax, dword ptr [rdx].state.beam_breakpoint_index
+
+beam_breakpoint_loop:
+    inc eax
+    cmp eax, BEAM_BREAKPOINT_COUNT
+    jae beam_breakpoint_none
+
+    mov ebx, dword ptr [rcx + rax * 4]
+    cmp ebx, BEAM_BREAKPOINT_END
+    je beam_breakpoint_none
+
+    add [rdx].state.beam_breakpoint_next, rbx
+    cmp r14, [rdx].state.beam_breakpoint_next
+    jae beam_breakpoint_loop
+    jmp beam_breakpoint_set
+
+beam_breakpoint_none:
+    mov qword ptr [rdx].state.beam_breakpoint_next, -1
+
+beam_breakpoint_set:
+    mov dword ptr [rdx].state.beam_breakpoint_index, eax
+    or [rdx].state.breakpoint_source, BREAKPOINT_BEAM
+    jmp beam_breakpoint_done
+
+breakpoint_exit_source:
+    test ebx, BREAKPOINT_BEAM       ; beam is flagged once the instruction has completed, so the pc is already right
+    jnz breakpoint_exit
 
 breakpoint_exit_stepback:
     dec r11w
@@ -4128,7 +4181,7 @@ x00_brk proc
 
     mov eax, dword ptr [rdx].state.brk_causes_stop
     test eax, eax
-    jz next_opcode
+    jz opcode_done                      ; an instruction, so needs the same post processing as the others
 
 stop_emulation:
     write_state_obj

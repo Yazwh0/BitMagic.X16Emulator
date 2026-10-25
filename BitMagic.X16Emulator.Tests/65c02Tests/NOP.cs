@@ -13,7 +13,7 @@ public class NOP
     [TestMethod]
     public async Task Nop()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"                
                 .machine CommanderX16R40

@@ -8,7 +8,7 @@ public class DEX
     [TestMethod]
     public async Task Dex()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 2;
 
@@ -30,7 +30,7 @@ public class DEX
     [TestMethod]
     public async Task Dex_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 1;
 
@@ -52,7 +52,7 @@ public class DEX
     [TestMethod]
     public async Task Dex_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0xa0;
 
@@ -74,7 +74,7 @@ public class DEX
     [TestMethod]
     public async Task Dex_ToNegative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0;
 

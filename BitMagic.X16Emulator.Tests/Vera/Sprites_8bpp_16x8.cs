@@ -8,7 +8,7 @@ public class Sprites_8bpp_16x8
     [TestMethod]
     public async Task Normal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R41
@@ -336,7 +336,7 @@ public class Sprites_8bpp_16x8
     [TestMethod]
     public async Task Normal_HFlip()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R41
@@ -664,7 +664,7 @@ public class Sprites_8bpp_16x8
     [TestMethod]
     public async Task Normal_VFlip()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R41
@@ -992,7 +992,7 @@ public class Sprites_8bpp_16x8
     [TestMethod]
     public async Task Normal_HVFLip()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R41

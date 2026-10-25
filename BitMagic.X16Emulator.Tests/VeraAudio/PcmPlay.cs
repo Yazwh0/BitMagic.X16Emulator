@@ -8,7 +8,7 @@ public class PcmPlay
     [TestMethod]
     public async Task DoNothing()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PcmBufferWrite = 1;
         emulator.VeraAudio.PcmSampleRate = 0x0; // do nothing
@@ -29,7 +29,7 @@ public class PcmPlay
     [TestMethod]
     public async Task Play_8bitMono()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PcmBufferWrite = 1;
         emulator.VeraAudio.PcmSampleRate = 0x80; // max
@@ -52,7 +52,7 @@ public class PcmPlay
     [TestMethod]
     public async Task Play_8bitMono_16Volume()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PcmBufferWrite = 1;
         emulator.VeraAudio.PcmSampleRate = 0x80; // max
@@ -76,7 +76,7 @@ public class PcmPlay
     [TestMethod]
     public async Task AddThenPlay()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VeraAudio.PcmBufferWrite = 0;
         emulator.VeraAudio.PcmSampleRate = 0x80; // max

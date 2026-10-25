@@ -8,7 +8,7 @@ public class RMB
     [TestMethod]
     public async Task RMB0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0xff;
 
@@ -31,7 +31,7 @@ public class RMB
     [TestMethod]
     public async Task RMB1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0xff;
 
@@ -54,7 +54,7 @@ public class RMB
     [TestMethod]
     public async Task RMB2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0xff;
 
@@ -77,7 +77,7 @@ public class RMB
     [TestMethod]
     public async Task RMB3()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0xff;
 
@@ -100,7 +100,7 @@ public class RMB
     [TestMethod]
     public async Task RMB4()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0xff;
 
@@ -123,7 +123,7 @@ public class RMB
     [TestMethod]
     public async Task RMB5()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0xff;
 
@@ -146,7 +146,7 @@ public class RMB
     [TestMethod]
     public async Task RMB6()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0xff;
 
@@ -169,7 +169,7 @@ public class RMB
     [TestMethod]
     public async Task RMB7()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0xff;
 

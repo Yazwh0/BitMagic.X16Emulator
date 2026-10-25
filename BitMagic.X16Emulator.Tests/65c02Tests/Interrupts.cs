@@ -8,7 +8,7 @@ public class Interrupts
     [TestMethod]
     public async Task Interrupt_Hit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.Vsync;
         emulator.InterruptMask = InterruptSource.Vsync;
@@ -33,7 +33,7 @@ public class Interrupts
     [TestMethod]
     public async Task Interrupt_Stack()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.Vsync;
         emulator.InterruptMask = InterruptSource.Vsync;
@@ -59,7 +59,7 @@ public class Interrupts
     [TestMethod]
     public async Task Interrupt_Stack_FlagsSet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.Vsync;
         emulator.InterruptMask = InterruptSource.Vsync;
@@ -91,7 +91,7 @@ public class Interrupts
     [TestMethod]
     public async Task Nmi_Hit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Nmi = true;
 

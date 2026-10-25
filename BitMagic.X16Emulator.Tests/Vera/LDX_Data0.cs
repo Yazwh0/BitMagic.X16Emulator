@@ -8,7 +8,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_Step1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 1;
         emulator.Vera.Data0_Address = 0x0000;
@@ -35,7 +35,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_Step2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 2;
         emulator.Vera.Data0_Address = 0x0000;
@@ -62,7 +62,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_Step3()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 4;
         emulator.Vera.Data0_Address = 0x0000;
@@ -89,7 +89,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_Step4()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 8;
         emulator.Vera.Data0_Address = 0x0000;
@@ -116,7 +116,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_Step5()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 16;
         emulator.Vera.Data0_Address = 0x0000;
@@ -143,7 +143,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_Step6()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 32;
         emulator.Vera.Data0_Address = 0x0000;
@@ -170,7 +170,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_Step7()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 64;
         emulator.Vera.Data0_Address = 0x0000;
@@ -197,7 +197,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_Step8()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 128;
         emulator.Vera.Data0_Address = 0x0000;
@@ -224,7 +224,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_Step9()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 256;
         emulator.Vera.Data0_Address = 0x0000;
@@ -251,7 +251,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_StepA()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 512;
         emulator.Vera.Data0_Address = 0x0000;
@@ -278,7 +278,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_StepB()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 40;
         emulator.Vera.Data0_Address = 0x0000;
@@ -305,7 +305,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_StepC()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 80;
         emulator.Vera.Data0_Address = 0x0000;
@@ -332,7 +332,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_StepD()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 160;
         emulator.Vera.Data0_Address = 0x0000;
@@ -359,7 +359,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_StepE()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 320;
         emulator.Vera.Data0_Address = 0x0000;
@@ -386,7 +386,7 @@ public class LDX_Data0
     [TestMethod]
     public async Task Read_Data0_StepF()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 640;
         emulator.Vera.Data0_Address = 0x0000;

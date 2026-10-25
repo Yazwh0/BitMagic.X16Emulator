@@ -8,7 +8,7 @@ public class TAY
     [TestMethod]
     public async Task Tay()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 2;
 
@@ -30,7 +30,7 @@ public class TAY
     [TestMethod]
     public async Task Tya_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 2;
         emulator.InterruptDisable = true;
@@ -51,7 +51,7 @@ public class TAY
     [TestMethod]
     public async Task Tay_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Y = 1;
         emulator.A = 0;
@@ -74,7 +74,7 @@ public class TAY
     [TestMethod]
     public async Task Tay_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
 

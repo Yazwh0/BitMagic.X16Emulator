@@ -8,7 +8,7 @@ public class TXA
     [TestMethod]
     public async Task Txa()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 2;
 
@@ -30,7 +30,7 @@ public class TXA
     [TestMethod]
     public async Task Txa_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 2;
         emulator.InterruptDisable = true;
@@ -51,7 +51,7 @@ public class TXA
     [TestMethod]
     public async Task Txa_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 1;
         emulator.X = 0;
@@ -74,7 +74,7 @@ public class TXA
     [TestMethod]
     public async Task Txa_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0xa0;
 

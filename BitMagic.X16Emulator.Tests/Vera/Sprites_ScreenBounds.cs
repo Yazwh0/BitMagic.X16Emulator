@@ -8,7 +8,7 @@ public class Sprites_ScreenBounds
     [TestMethod]
     public async Task AboveScreen()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 
@@ -86,7 +86,7 @@ public class Sprites_ScreenBounds
     [TestMethod]
     public async Task LeftScreen()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 
@@ -164,7 +164,7 @@ public class Sprites_ScreenBounds
     [TestMethod]
     public async Task AllOffLeftScreen()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 
@@ -242,7 +242,7 @@ public class Sprites_ScreenBounds
     [TestMethod]
     public async Task RightScreen()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 
@@ -322,7 +322,7 @@ public class Sprites_ScreenBounds
     [TestMethod]
     public async Task AllOffRightScreen()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadSprite(@"Vera\Images\testsprite_8bpp_64x64.png", ImageHelper.ColourDepthSprite.Depth_8bpp, 64, 64, 0);
 

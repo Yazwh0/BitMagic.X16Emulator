@@ -8,7 +8,7 @@ public class JMP
     [TestMethod]
     public async Task Absolute ()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -34,7 +34,7 @@ public class JMP
     [TestMethod]
     public async Task Absolute_RomBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x00] = 0xdb;
 
@@ -53,7 +53,7 @@ public class JMP
     [TestMethod]
     public async Task Absolute_RomBank_Change()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x4000] = 0xdb;
 
@@ -74,7 +74,7 @@ public class JMP
     [TestMethod]
     public async Task Indirect()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0xa00] = 0x00;
         emulator.Memory[0xa01] = 0x09;
@@ -103,7 +103,7 @@ public class JMP
     [TestMethod]
     public async Task Indirect_RomBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x00] = 0x00;
         emulator.RomBank[0x01] = 0x09;
@@ -128,7 +128,7 @@ public class JMP
     [TestMethod]
     public async Task Indirect_RomBank_Change()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x4000] = 0x00;
         emulator.RomBank[0x4001] = 0x09;
@@ -154,7 +154,7 @@ public class JMP
     [TestMethod]
     public async Task IndX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.X = 0x10;
         emulator.Memory[0xa10] = 0x00;
         emulator.Memory[0xa11] = 0x09;
@@ -183,7 +183,7 @@ public class JMP
     [TestMethod]
     public async Task IndX_RomBank()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.X = 0x10;
         emulator.RomBank[0x10] = 0x00;
         emulator.RomBank[0x11] = 0x09;
@@ -207,7 +207,7 @@ public class JMP
     [TestMethod]
     public async Task IndX_RomBank_Change()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.X = 0x10;
         emulator.RomBank[0x4010] = 0x00;
         emulator.RomBank[0x4011] = 0x09;

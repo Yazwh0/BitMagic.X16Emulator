@@ -13,7 +13,7 @@ public class PHA
     [TestMethod]
     public async Task Pha()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
 
@@ -36,7 +36,7 @@ public class PHA
     [TestMethod]
     public async Task Pha_FromRom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
 
@@ -59,7 +59,7 @@ public class PHA
     [TestMethod]
     public async Task Pha_Full()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
 

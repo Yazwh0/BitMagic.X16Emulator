@@ -8,7 +8,7 @@ public class DC_Video
     [TestMethod]
     public async Task Layer0_Enable()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b00010000;
 
@@ -29,7 +29,7 @@ public class DC_Video
     [TestMethod]
     public async Task Layer1_Enable()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b00100000;
 
@@ -50,7 +50,7 @@ public class DC_Video
     [TestMethod]
     public async Task Sprites_Enable()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0b01000000;
 
@@ -71,7 +71,7 @@ public class DC_Video
     [TestMethod]
     public async Task AllSet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xff;
 
@@ -92,7 +92,7 @@ public class DC_Video
     [TestMethod]
     public async Task CurrentField_Odd()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -116,7 +116,7 @@ public class DC_Video
     [TestMethod]
     public async Task CurrentField_Odd_2Frames()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -142,7 +142,7 @@ public class DC_Video
     [TestMethod]
     public async Task CurrentField_Even()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -166,7 +166,7 @@ public class DC_Video
     [TestMethod]
     public async Task CurrentField_Even_2Frames()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

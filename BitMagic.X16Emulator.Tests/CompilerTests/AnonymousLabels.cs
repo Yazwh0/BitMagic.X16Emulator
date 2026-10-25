@@ -11,7 +11,7 @@ public class AnonymousLabels
     [TestMethod]
     public async Task SharedOpcode_Backward_ReferencesSelf()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Zero = true; // the branch isn't taken, otherwise it would loop forever
 
         await X16TestHelper.Emulate(@"
@@ -34,7 +34,7 @@ public class AnonymousLabels
     [TestMethod]
     public async Task SharedOpcode_Forward_DoesNotReferenceSelf()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Zero = false; // ensure the branch is taken
 
         await X16TestHelper.Emulate(@"
@@ -60,7 +60,7 @@ public class AnonymousLabels
     [TestMethod]
     public async Task SharedOpcode_Backward_NoOtherLabel_ReferencesSelf()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         // the stp stops the emulation before the jmp, which would otherwise loop forever
         await X16TestHelper.Emulate(@"

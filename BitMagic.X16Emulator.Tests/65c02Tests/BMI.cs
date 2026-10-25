@@ -9,7 +9,7 @@ public class BMI
     [TestMethod]
     public async Task Bmi_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Negative = true;
 
         await X16TestHelper.Emulate(@"
@@ -33,7 +33,7 @@ public class BMI
     [TestMethod]
     public async Task Bmi_FromBit_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Negative = false;
 
         await X16TestHelper.Emulate(@"
@@ -58,7 +58,7 @@ public class BMI
     [TestMethod]
     public async Task Bmi_Jump_Forward_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Negative = true;
 
         await X16TestHelper.Emulate(@"
@@ -85,7 +85,7 @@ public class BMI
     [TestMethod]
     public async Task Bmi_NoJump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Negative = false;
 
@@ -110,7 +110,7 @@ public class BMI
     [TestMethod]
     public async Task Bmi_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Negative = true;
 
         await X16TestHelper.Emulate(@"

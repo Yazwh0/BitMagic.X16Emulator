@@ -8,7 +8,7 @@ public class ADC_Decimal
     [TestMethod]
     public async Task Imm()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Decimal = true;
@@ -32,7 +32,7 @@ public class ADC_Decimal
     [TestMethod]
     public async Task Imm_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x97;
         emulator.Decimal = true;
@@ -56,7 +56,7 @@ public class ADC_Decimal
     [TestMethod]
     public async Task To_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x98;
         emulator.Decimal = true;

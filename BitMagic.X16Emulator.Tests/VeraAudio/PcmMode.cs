@@ -8,7 +8,7 @@ public class PcmMode
     [TestMethod]
     public async Task Set1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x10;
 
@@ -25,7 +25,7 @@ public class PcmMode
     [TestMethod]
     public async Task Set2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x20;
 
@@ -42,7 +42,7 @@ public class PcmMode
     [TestMethod]
     public async Task Set3()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x30;
 
@@ -59,7 +59,7 @@ public class PcmMode
     [TestMethod]
     public async Task SetSideEffects()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xcf;
         emulator.VeraAudio.PcmMode = 1;

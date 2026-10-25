@@ -8,7 +8,7 @@ public class EmulatorTests
     [TestMethod]
     public void SetMemory()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x810] = 0xdb;
 
@@ -18,7 +18,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task CarryFlag()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = true;
 
@@ -39,7 +39,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task ZeroFlag()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Zero = true;
 
@@ -60,7 +60,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task NegativeFlag()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Negative = true;
 
@@ -81,7 +81,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task OverflowFlag()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Overflow = true;
 
@@ -102,7 +102,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task Interrupt_Set()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.Vsync;
         emulator.InterruptMask = InterruptSource.Vsync;
@@ -127,7 +127,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task Interrupt_ClearDecimal()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.Vsync;
         emulator.InterruptMask = InterruptSource.Vsync;
@@ -203,7 +203,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task Interrupt_Notset()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.Vsync;
         emulator.InterruptMask = InterruptSource.Vsync;
@@ -225,7 +225,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task Interrupt_Set_RomChange()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.InterruptHit = InterruptSource.Vsync;
         emulator.InterruptMask = InterruptSource.Vsync;
@@ -281,7 +281,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task Nmi_Precidence()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Nmi = true;
         emulator.InterruptHit = InterruptSource.Vsync;
@@ -312,7 +312,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task Nmi_Set()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Nmi = true;
 
@@ -336,7 +336,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task Nmi_Set_IgnoreInterruptDisable()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Nmi = true;
         emulator.InterruptDisable = true;
@@ -386,7 +386,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task Nmi_Notset()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Nmi = false;
 
@@ -407,7 +407,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task Nmi_Set_RomChange()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Nmi = true;
 
@@ -461,7 +461,7 @@ public class EmulatorTests
     [TestMethod]
     public async Task Memory_Bank_Init()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RamBank[0x2000] = 0x02;
         emulator.RamBank[0x2000 + 0x1fff] = 0x04;

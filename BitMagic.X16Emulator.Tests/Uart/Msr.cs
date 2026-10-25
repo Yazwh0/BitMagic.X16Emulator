@@ -15,7 +15,7 @@ public class Msr
     [TestMethod]
     public async Task Msr_InitialState_CtsAndDsrAsserted()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -31,7 +31,7 @@ public class Msr
     [TestMethod]
     public async Task Msr_ReadByCpu_ReturnsCtsAndDsr()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -48,7 +48,7 @@ public class Msr
     {
         // Reading MSR clears the delta bits (0-3). CTS/DSR are in the top nibble, so the
         // delta-clear must leave them untouched -- a second read still sees the same value.
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -67,7 +67,7 @@ public class Msr
     public async Task Msr_WriteWithAllBitsSet_IsIgnored()
     {
         // MSR is read-only on a real 16550 -- uart_msr_write restores the pre-write byte.
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -86,7 +86,7 @@ public class Msr
     [TestMethod]
     public async Task Msr_WriteWithAllBitsClear_IsIgnored()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

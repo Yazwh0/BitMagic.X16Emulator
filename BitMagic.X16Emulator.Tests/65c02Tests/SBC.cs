@@ -8,7 +8,7 @@ public class SBC
     [TestMethod]
     public async Task Imm()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -32,7 +32,7 @@ public class SBC
     [TestMethod]
     public async Task Imm_NoCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x04;
         emulator.Carry = false;
@@ -52,7 +52,7 @@ public class SBC
     [TestMethod]
     public async Task Imm_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -72,7 +72,7 @@ public class SBC
     [TestMethod]
     public async Task Imm_NoCarry_FromZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
         emulator.Carry = false;
@@ -92,7 +92,7 @@ public class SBC
     [TestMethod]
     public async Task Imm_Carry_FromZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
         emulator.Carry = true;
@@ -112,7 +112,7 @@ public class SBC
     [TestMethod]
     public async Task Imm_NegativeCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -132,7 +132,7 @@ public class SBC
     [TestMethod]
     public async Task Imm_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
         emulator.Carry = false;
@@ -152,7 +152,7 @@ public class SBC
     [TestMethod]
     public async Task Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -178,7 +178,7 @@ public class SBC
     [TestMethod]
     public async Task Abs_NoCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x04;
         emulator.Carry = false;
@@ -199,7 +199,7 @@ public class SBC
     [TestMethod]
     public async Task Abs_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -220,7 +220,7 @@ public class SBC
     [TestMethod]
     public async Task Abs_NegativeCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -241,7 +241,7 @@ public class SBC
     [TestMethod]
     public async Task Abs_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
         emulator.Carry = false;
@@ -262,7 +262,7 @@ public class SBC
     [TestMethod]
     public async Task AbsX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.X = 0x04;
@@ -289,7 +289,7 @@ public class SBC
     [TestMethod]
     public async Task AbsX_PagePenatly()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.X = 0x44;
@@ -311,7 +311,7 @@ public class SBC
     [TestMethod]
     public async Task AbsX_NoCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x04;
         emulator.X = 0x04;
@@ -333,7 +333,7 @@ public class SBC
     [TestMethod]
     public async Task AbsX_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.X = 0x04;
@@ -355,7 +355,7 @@ public class SBC
     [TestMethod]
     public async Task AbsX_NegativeCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.X = 0x04;
@@ -377,7 +377,7 @@ public class SBC
     [TestMethod]
     public async Task AbsX_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
         emulator.X = 0x04;
@@ -399,7 +399,7 @@ public class SBC
     [TestMethod]
     public async Task Absy()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Y = 0x04;
@@ -426,7 +426,7 @@ public class SBC
     [TestMethod]
     public async Task AbsY_PagePenatly()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Y = 0x44;
@@ -448,7 +448,7 @@ public class SBC
     [TestMethod]
     public async Task AbsY_NoCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x04;
         emulator.Y = 0x04;
@@ -470,7 +470,7 @@ public class SBC
     [TestMethod]
     public async Task AbsY_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Y = 0x04;
@@ -492,7 +492,7 @@ public class SBC
     [TestMethod]
     public async Task AbsY_NegativeCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Y = 0x04;
@@ -514,7 +514,7 @@ public class SBC
     [TestMethod]
     public async Task AbsY_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
         emulator.Y = 0x04;
@@ -536,7 +536,7 @@ public class SBC
     [TestMethod]
     public async Task Zp()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -561,7 +561,7 @@ public class SBC
     [TestMethod]
     public async Task Zp_NoCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x04;
         emulator.Carry = false;
@@ -582,7 +582,7 @@ public class SBC
     [TestMethod]
     public async Task Zp_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -603,7 +603,7 @@ public class SBC
     [TestMethod]
     public async Task Zp_NegativeCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -624,7 +624,7 @@ public class SBC
     [TestMethod]
     public async Task Zp_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
         emulator.Carry = false;
@@ -645,7 +645,7 @@ public class SBC
     [TestMethod]
     public async Task ZpX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -671,7 +671,7 @@ public class SBC
     [TestMethod]
     public async Task ZpX_NoCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x04;
         emulator.Carry = false;
@@ -693,7 +693,7 @@ public class SBC
     [TestMethod]
     public async Task ZpX_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -715,7 +715,7 @@ public class SBC
     [TestMethod]
     public async Task ZpX_NegativeCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -737,7 +737,7 @@ public class SBC
     [TestMethod]
     public async Task ZpX_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
         emulator.Carry = false;
@@ -759,7 +759,7 @@ public class SBC
     [TestMethod]
     public async Task IndZp()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -786,7 +786,7 @@ public class SBC
     [TestMethod]
     public async Task IndZp_NoCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x04;
         emulator.Carry = false;
@@ -809,7 +809,7 @@ public class SBC
     [TestMethod]
     public async Task IndZp_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -832,7 +832,7 @@ public class SBC
     [TestMethod]
     public async Task IndZp_NegativeCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -855,7 +855,7 @@ public class SBC
     [TestMethod]
     public async Task IndZp_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
         emulator.Carry = false;
@@ -878,7 +878,7 @@ public class SBC
     [TestMethod]
     public async Task IndZpx()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -906,7 +906,7 @@ public class SBC
     [TestMethod]
     public async Task IndZpX_NoCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x04;
         emulator.Carry = false;
@@ -930,7 +930,7 @@ public class SBC
     [TestMethod]
     public async Task IndZpX_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -954,7 +954,7 @@ public class SBC
     [TestMethod]
     public async Task IndZpX_NegativeCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -978,7 +978,7 @@ public class SBC
     [TestMethod]
     public async Task IndZpX_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
         emulator.Carry = false;
@@ -1002,7 +1002,7 @@ public class SBC
     [TestMethod]
     public async Task IndZpY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -1030,7 +1030,7 @@ public class SBC
     [TestMethod]
     public async Task IndZpY_PagePenatly()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -1058,7 +1058,7 @@ public class SBC
     [TestMethod]
     public async Task IndZpY_NoCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x04;
         emulator.Carry = false;
@@ -1082,7 +1082,7 @@ public class SBC
     [TestMethod]
     public async Task IndZpY_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x03;
         emulator.Carry = true;
@@ -1106,7 +1106,7 @@ public class SBC
     [TestMethod]
     public async Task IndZpY_NegativeCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -1130,7 +1130,7 @@ public class SBC
     [TestMethod]
     public async Task IndZpY_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xa0;
         emulator.Carry = false;

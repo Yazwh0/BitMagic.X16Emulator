@@ -9,7 +9,7 @@ public class Timer2
     [TestMethod]
     public async Task Timer2_Count()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer2_Counter = 0x1234;
         emulator.Via.Timer2_Latch = 0x1234;
 
@@ -27,7 +27,7 @@ public class Timer2
     [TestMethod]
     public async Task Timer2_Count_Change()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer2_Counter = 0x1234;
         emulator.Via.Timer2_Latch = 0x1234;
 
@@ -46,7 +46,7 @@ public class Timer2
     [TestMethod]
     public async Task Timer2_Count_Check()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer2_Counter = 0x1000;
         emulator.Via.Timer2_Latch = 0x1000;
 
@@ -65,7 +65,7 @@ public class Timer2
     [TestMethod]
     public async Task Timer2_Pulse()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer2_Counter = 0x1234;
         emulator.Via.Timer2_Latch = 0x1234;
         emulator.Via.Timer2_PulseCount = true;
@@ -85,7 +85,7 @@ public class Timer2
     [TestMethod]
     public async Task Timer2_LatchSet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer2_Counter = 0xeeee;
         emulator.Via.Timer2_Latch = 0xeeee;
         emulator.A = 0x34;
@@ -107,7 +107,7 @@ public class Timer2
     [TestMethod]
     public async Task Timer2_Interrupt_OneShot()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer2_Counter = 0x1000;
         emulator.Via.Timer2_Latch = 0x1000;
         emulator.Via.Interrupt_Timer2 = true;

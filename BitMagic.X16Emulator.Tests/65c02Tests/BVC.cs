@@ -9,7 +9,7 @@ public class BVC
     [TestMethod]
     public async Task Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Overflow = false;
 
@@ -34,7 +34,7 @@ public class BVC
     [TestMethod]
     public async Task Jump_Forward_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Overflow = false;
 
@@ -59,7 +59,7 @@ public class BVC
     [TestMethod]
     public async Task NoJump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Overflow = true;
 
@@ -81,7 +81,7 @@ public class BVC
     [TestMethod]
     public async Task Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Overflow = false;
 
         await X16TestHelper.Emulate(@"

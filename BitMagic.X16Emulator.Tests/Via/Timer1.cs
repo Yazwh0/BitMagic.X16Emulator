@@ -8,7 +8,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Count()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Counter = 0x1234;
 
         await X16TestHelper.Emulate(@"
@@ -24,7 +24,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Latch()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Latch = 0x1234;
 
         await X16TestHelper.Emulate(@"
@@ -40,7 +40,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Latch_Read()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Latch = 0x1234;
 
         await X16TestHelper.Emulate(@"
@@ -57,7 +57,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Count_Change()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Counter = 0x1234;
 
         await X16TestHelper.Emulate(@"
@@ -74,7 +74,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Count_Check()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Counter = 0x1000;
 
         await X16TestHelper.Emulate(@"
@@ -92,7 +92,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Count_Write_L()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Counter = 0x1234;
         emulator.A = 0x10;
 
@@ -112,7 +112,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Count_Write_H()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Counter = 0x1234;
         emulator.A = 0xa0;
         emulator.Memory[0x9f0d] = 0x40;                 // set LFR high
@@ -137,7 +137,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Latch_Write_H()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Counter = 0x1234;
         emulator.A = 0xa0;
         emulator.Memory[0x9f0d] = 0x40;                 // set LFR high
@@ -162,7 +162,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Interrupt_OneShot()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Counter = 0x1000;
         emulator.Via.Timer1_Latch = 0x1000;
         emulator.Via.Interrupt_Timer1 = true;
@@ -192,7 +192,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Interrupt_OneShot_ClearIen()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Counter = 0x1000;
         emulator.Via.Timer1_Latch = 0x1000;
         emulator.Via.Interrupt_Timer1 = true;
@@ -226,7 +226,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Interrupt_OneShot_ClearT1Lh()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Counter = 0x1000;
         emulator.Via.Timer1_Latch = 0x1000;
         emulator.Via.Interrupt_Timer1 = true;
@@ -260,7 +260,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Interrupt_OneShot_ClearT1Cl()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Counter = 0x1000;
         emulator.Via.Timer1_Latch = 0x1000;
         emulator.Via.Interrupt_Timer1 = true;
@@ -292,7 +292,7 @@ public class Timer1
     [TestMethod]
     public async Task Timer1_Interrupt_Continuous()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Timer1_Counter = 0x1000;
         emulator.Via.Timer1_Latch = 0x1000;
         emulator.Via.Interrupt_Timer1 = true;

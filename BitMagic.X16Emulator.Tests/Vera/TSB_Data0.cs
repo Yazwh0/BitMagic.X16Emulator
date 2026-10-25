@@ -8,7 +8,7 @@ public class TSB_Data0
     [TestMethod]
     public async Task Abs_Step0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Vera.Vram[0x0000] = 0x03;
@@ -34,7 +34,7 @@ public class TSB_Data0
     [TestMethod]
     public async Task Abs_Step0_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
         emulator.Vera.Vram[0x0000] = 0x00;
@@ -61,7 +61,7 @@ public class TSB_Data0
     [TestMethod]
     public async Task Abs_Step1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Vera.Vram[0x0000] = 0x01;
@@ -92,7 +92,7 @@ public class TSB_Data0
     [TestMethod]
     public async Task Abs_Step1_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
         emulator.Vera.Vram[0x0000] = 0x00;

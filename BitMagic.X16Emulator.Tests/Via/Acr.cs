@@ -8,7 +8,7 @@ public class Acr
     [TestMethod]
     public async Task Acr_Timer1Continous()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0x40;
 
         await X16TestHelper.Emulate(@"
@@ -25,7 +25,7 @@ public class Acr
     [TestMethod]
     public async Task Acr_Timer1Pb7()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0x80;
 
         await X16TestHelper.Emulate(@"
@@ -42,7 +42,7 @@ public class Acr
     [TestMethod]
     public async Task Acr_Timer2Pulse()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0x20;
 
         await X16TestHelper.Emulate(@"

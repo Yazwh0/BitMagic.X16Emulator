@@ -13,7 +13,7 @@ public class AudioRecording
     [TestMethod]
     public async Task Records_Emulated_Output_To_Wav()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[0].Frequency = 0x4000;

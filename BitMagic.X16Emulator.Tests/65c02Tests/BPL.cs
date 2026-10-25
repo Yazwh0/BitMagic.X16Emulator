@@ -9,7 +9,7 @@ public class BPL
     [TestMethod]
     public async Task Bpl_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Negative = false;
 
         await X16TestHelper.Emulate(@"
@@ -33,7 +33,7 @@ public class BPL
     [TestMethod]
     public async Task Bpl_Jump_Forward_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Negative = false;
 
         await X16TestHelper.Emulate(@"
@@ -60,7 +60,7 @@ public class BPL
     [TestMethod]
     public async Task Bpl_NoJump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Negative = true;
 
@@ -85,7 +85,7 @@ public class BPL
     [TestMethod]
     public async Task Bpl_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Negative = false;
 
         await X16TestHelper.Emulate(@"

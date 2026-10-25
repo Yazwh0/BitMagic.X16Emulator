@@ -9,7 +9,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Data()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 1;
         emulator.Vera.Data0_Address = 0x0000;
@@ -43,7 +43,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Data_HighAddress()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 1;
         emulator.Vera.Data0_Address = 0x12345;
@@ -78,7 +78,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task CtrlSet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.AddrSel = true;
 
@@ -94,7 +94,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task CtrlNotSet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.AddrSel = false;
 
@@ -110,7 +110,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task DcSelSet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 1;
 
@@ -126,7 +126,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task DcSelNotSet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0;
 
@@ -142,7 +142,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task CrtlDcSelSet()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 1;
         emulator.Vera.AddrSel = true;
@@ -159,7 +159,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task DcSel0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0;
         emulator.Vera.Dc_HScale = 0x010000; // 1:1
@@ -186,7 +186,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task DcSel1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 1;
         emulator.Vera.Dc_HScale = 0x010000; // not real values
@@ -213,7 +213,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task DCVideo_SpriteEnable()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0;
         emulator.Vera.SpriteEnable = true;
@@ -230,7 +230,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task DCVideo_Layer1Enable()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0;
         emulator.Vera.Layer1Enable = true;
@@ -248,7 +248,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task DCVideo_Layer0Enable()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0;
         emulator.Vera.Layer0Enable = true;
@@ -266,7 +266,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task DCVideo_AllEnable()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0;
         emulator.Vera.Layer0Enable = true;
@@ -286,7 +286,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_Height()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_MapHeight = 0x3;
 
@@ -302,7 +302,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_Width()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_MapWidth = 0x3;
 
@@ -318,7 +318,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_YShift_W0_H0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_MapWidth = 0x0;
         emulator.Vera.Layer0_TileHeight = 0x0;
@@ -338,7 +338,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_YShift_W1_H0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_MapWidth = 0x1;
         emulator.Vera.Layer0_TileHeight = 0x0;
@@ -358,7 +358,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_YShift_W2_H0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_MapWidth = 0x2;
         emulator.Vera.Layer0_TileHeight = 0x0;
@@ -378,7 +378,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_YShift_W3_H0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_MapWidth = 0x3;
         emulator.Vera.Layer0_TileHeight = 0x0;
@@ -398,7 +398,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_YShift_W0_H1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_MapWidth = 0x0;
         emulator.Vera.Layer0_TileHeight = 0x1;
@@ -418,7 +418,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_YShift_W1_H1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_MapWidth = 0x1;
         emulator.Vera.Layer0_TileHeight = 0x1;
@@ -438,7 +438,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_YShift_W2_H1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_MapWidth = 0x2;
         emulator.Vera.Layer0_TileHeight = 0x1;
@@ -458,7 +458,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_YShift_W3_H1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_MapWidth = 0x3;
         emulator.Vera.Layer0_TileHeight = 0x1;
@@ -478,7 +478,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_Bitmap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_BitMapMode = true;
 
@@ -494,7 +494,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_ColourDepth()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_ColourDepth = 0x3;
 
@@ -510,7 +510,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_Config_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_ColourDepth = 0x3;
         emulator.Vera.Layer0_BitMapMode = true;
@@ -529,7 +529,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_MapAddress()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_MapAddress = 0x10000;
 
@@ -545,7 +545,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_TileAddress()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_TileAddress = 0x10000;
 
@@ -561,7 +561,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_TileAddress_Full()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_TileAddress = 0x1ffff;
 
@@ -577,7 +577,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_TileAddress_TileHeight()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_TileHeight = 1;
 
@@ -593,7 +593,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_TileAddress_TileWidth()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_TileWidth = 1;
 
@@ -609,7 +609,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_TileAddress_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_TileWidth = 1;
         emulator.Vera.Layer0_TileHeight = 1;
@@ -627,7 +627,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_HScroll()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_HScroll = 0xffed;
 
@@ -644,7 +644,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer0_VScroll()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer0_VScroll = 0xffed;
 
@@ -661,7 +661,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_Height()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_MapHeight = 0x3;
 
@@ -677,7 +677,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_Width()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_MapWidth = 0x3;
 
@@ -693,7 +693,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_YShift_W0_H0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_MapWidth = 0x0;
         emulator.Vera.Layer1_TileHeight = 0x0;
@@ -713,7 +713,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_YShift_W1_H0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_MapWidth = 0x1;
         emulator.Vera.Layer1_TileHeight = 0x0;
@@ -733,7 +733,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_YShift_W2_H0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_MapWidth = 0x2;
         emulator.Vera.Layer1_TileHeight = 0x0;
@@ -753,7 +753,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_YShift_W3_H0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_MapWidth = 0x3;
         emulator.Vera.Layer1_TileHeight = 0x0;
@@ -773,7 +773,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_YShift_W0_H1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_MapWidth = 0x0;
         emulator.Vera.Layer1_TileHeight = 0x1;
@@ -793,7 +793,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_YShift_W1_H1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_MapWidth = 0x1;
         emulator.Vera.Layer1_TileHeight = 0x1;
@@ -813,7 +813,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_YShift_W2_H1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_MapWidth = 0x2;
         emulator.Vera.Layer1_TileHeight = 0x1;
@@ -833,7 +833,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_YShift_W3_H1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_MapWidth = 0x3;
         emulator.Vera.Layer1_TileHeight = 0x1;
@@ -853,7 +853,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_Bitmap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_BitMapMode = true;
 
@@ -869,7 +869,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_ColourDepth()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_ColourDepth = 0x3;
 
@@ -885,7 +885,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_Config_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_ColourDepth = 0x3;
         emulator.Vera.Layer1_BitMapMode = true;
@@ -904,7 +904,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_MapAddress()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_MapAddress = 0x10000;
 
@@ -920,7 +920,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_TileAddress()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_TileAddress = 0x10000;
 
@@ -936,7 +936,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_TileAddress_Full()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_TileAddress = 0x1ffff;
 
@@ -952,7 +952,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_TileAddress_TileHeight()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_TileHeight = 1;
 
@@ -968,7 +968,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_TileAddress_TileWidth()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_TileWidth = 1;
 
@@ -984,7 +984,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_TileAddress_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_TileWidth = 1;
         emulator.Vera.Layer1_TileHeight = 1;
@@ -1002,7 +1002,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_HScroll()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_HScroll = 0xffed;
 
@@ -1019,7 +1019,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Layer1_VScroll()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Layer1_VScroll = 0xffed;
 
@@ -1036,7 +1036,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Interrupt_Vsync()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_VSync = true;
         emulator.InterruptDisable = true; // prevent actual interrupt handling
@@ -1054,7 +1054,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Interrupt_Line()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_Line = true;
         emulator.InterruptDisable = true; // prevent actual interrupt handling
@@ -1072,7 +1072,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Interrupt_SpCol()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_SpCol = true;
         emulator.InterruptDisable = true; // prevent actual interrupt handling
@@ -1090,7 +1090,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Interrupt_Aflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_AFlow = true;
         emulator.InterruptDisable = true; // prevent actual interrupt handling
@@ -1108,7 +1108,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Interrupt_LineNum()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Interrupt_LineNum = 0x1ff;
         emulator.InterruptDisable = true; // prevent actual interrupt handling
@@ -1126,7 +1126,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Palette_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1141,7 +1141,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Palette_2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1156,7 +1156,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Palette_3()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -1170,7 +1170,7 @@ public class Vera_Initialise
     [TestMethod]
     public async Task Palette_255()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

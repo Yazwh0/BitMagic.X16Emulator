@@ -8,7 +8,7 @@ public class RomBreakpoints
     [TestMethod]
     public async Task CurrentRom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0xc001] = 1;
         emulator.Breakpoints[0x210000 + (0x4000 * 0) + 0x0001] = 1;
@@ -30,7 +30,7 @@ public class RomBreakpoints
     [TestMethod]
     public async Task CurrentRomHigh()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0xfff1] = 1;
         emulator.Breakpoints[0x210000 + (0x4000 * 0) + 0x3ff1] = 1;
@@ -52,7 +52,7 @@ public class RomBreakpoints
     [TestMethod]
     public async Task SwitchRom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0x210000 + (0x4000 * 1) + 0x0001] = 1;
 
@@ -75,7 +75,7 @@ public class RomBreakpoints
     [TestMethod]
     public async Task SwitchRomHigh()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0x210000 + (0x4000 * 1) + 0x3ff1] = 1;
 
@@ -98,7 +98,7 @@ public class RomBreakpoints
     [TestMethod]
     public async Task SwitchRomBackNotFire()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0x210000 + (0x4000 * 1) + 0x0001] = 1;
 
@@ -122,7 +122,7 @@ public class RomBreakpoints
     [TestMethod]
     public async Task SwitchRomBackNotFireHigh()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0x210000 + (0x4000 * 1) + 0xfff1] = 1;
 
@@ -146,7 +146,7 @@ public class RomBreakpoints
     [TestMethod]
     public async Task SwitchRomNotFire()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0xc001] = 1;
         emulator.Breakpoints[0x210000 + (0x0000 * 0) + 0x0001] = 1;
@@ -176,7 +176,7 @@ public class RomBreakpoints
     [TestMethod]
     public async Task SwitchRomNotFireHigh()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0xc001] = 1;
         emulator.Breakpoints[0x210000 + (0x0000 * 0) + 0x3ff1] = 1;
@@ -206,7 +206,7 @@ public class RomBreakpoints
     [TestMethod]
     public async Task SwitchRomTwiceNotFire()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0x210000 + (0x0000 * 1) + 0x0001] = 1;
 
@@ -243,7 +243,7 @@ public class RomBreakpoints
     [TestMethod]
     public async Task SwitchRomTwiceNotFireHigh()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0x210000 + (0x0000 * 1) + 0x3ff1] = 1;
 

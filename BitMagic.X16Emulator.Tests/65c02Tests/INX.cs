@@ -8,7 +8,7 @@ public class INX
     [TestMethod]
     public async Task Inx()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 2;
         
@@ -30,7 +30,7 @@ public class INX
     [TestMethod]
     public async Task Inx_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 2;
         emulator.InterruptDisable = true;
@@ -51,7 +51,7 @@ public class INX
     [TestMethod]
     public async Task Inx_ToZero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0xff;
 
@@ -73,7 +73,7 @@ public class INX
     [TestMethod]
     public async Task Inx_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0xa0;
 
@@ -95,7 +95,7 @@ public class INX
     [TestMethod]
     public async Task Inx_ToNegative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x7f;
 

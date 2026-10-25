@@ -10,7 +10,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data0_Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -31,7 +31,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -45,7 +45,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data0_NoBreak()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Write;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -66,7 +66,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x821)
@@ -80,7 +80,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data0_Continue()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -102,11 +102,11 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x81b)    // PC is next instruction
@@ -119,7 +119,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data0_X()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -141,7 +141,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -155,7 +155,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data0_Y()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -177,7 +177,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -191,7 +191,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data0_Ind()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -213,7 +213,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x815)
@@ -227,7 +227,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data0_XInd()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -250,7 +250,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x815)
@@ -264,7 +264,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data0_YInd()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -287,7 +287,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x815)
@@ -301,7 +301,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data1_Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -323,7 +323,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -337,7 +337,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data1_NoBreak()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Write;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -359,7 +359,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x821)
@@ -373,7 +373,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data1_Continue()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -396,11 +396,11 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x81b)    // PC is next instruction
@@ -413,7 +413,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data1_Lda_X()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -436,7 +436,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -450,7 +450,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data1_Lda_Y()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -473,7 +473,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -487,7 +487,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data1_Ind()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -510,7 +510,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x815)
@@ -524,7 +524,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data1_XInd()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -548,7 +548,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x815)
@@ -562,7 +562,7 @@ public class LDA
     [TestMethod]
     public async Task Read_Data1_YInd()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -586,7 +586,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x815)

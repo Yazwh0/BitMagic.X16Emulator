@@ -8,7 +8,7 @@ public class RamBreakpoints
     [TestMethod]
     public async Task NormalRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0x811] = 1;
 
@@ -27,7 +27,7 @@ public class RamBreakpoints
     [TestMethod]
     public async Task BankedRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0x10000 + 0x2000 + 0x811] = 1; // 0x811 in ram bank 1
 
@@ -54,7 +54,7 @@ public class RamBreakpoints
     [TestMethod]
     public async Task BankedRam2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0x10000 + (0x2000 * 2) + 0x811] = 1; // 0x811 in ram bank 2
 
@@ -81,7 +81,7 @@ public class RamBreakpoints
     [TestMethod]
     public async Task BankedRom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Breakpoints[0x210000 + 0x4000 + 0x811] = 1; // 0x811 in rom bank 1
         emulator.RomBank[0x4000 + 0x810] = 0xea; // nops

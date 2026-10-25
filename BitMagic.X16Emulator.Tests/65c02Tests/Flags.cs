@@ -8,7 +8,7 @@ public class Flags
     [TestMethod]
     public async Task Sec()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -28,7 +28,7 @@ public class Flags
     [TestMethod]
     public async Task Clc()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Carry = true;
 
         await X16TestHelper.Emulate(@"
@@ -49,7 +49,7 @@ public class Flags
     [TestMethod]
     public async Task Sed()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -69,7 +69,7 @@ public class Flags
     [TestMethod]
     public async Task Cld()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Decimal = true;
 
         await X16TestHelper.Emulate(@"
@@ -90,7 +90,7 @@ public class Flags
     [TestMethod]
     public async Task Sei()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -110,7 +110,7 @@ public class Flags
     [TestMethod]
     public async Task Cli()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.InterruptDisable = true;
 
         await X16TestHelper.Emulate(@"
@@ -131,7 +131,7 @@ public class Flags
     [TestMethod]
     public async Task Clv()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Overflow = true;
 
         await X16TestHelper.Emulate(@"

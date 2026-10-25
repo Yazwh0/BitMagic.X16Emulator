@@ -13,7 +13,7 @@ public class STX
     [TestMethod]
     public async Task ZeroPage()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x44;
 
@@ -37,7 +37,7 @@ public class STX
     [TestMethod]
     public async Task ZeroPageY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x44;
         emulator.Y = 0x10;
@@ -63,7 +63,7 @@ public class STX
     [TestMethod]
     public async Task ZeroPageY_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x44;
         emulator.Y = 0x70;
@@ -88,7 +88,7 @@ public class STX
     [TestMethod]
     public async Task Absolute()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x44;
 
@@ -114,7 +114,7 @@ public class STX
     [TestMethod]
     public async Task Absolute_RomToRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x44;
 
@@ -137,7 +137,7 @@ public class STX
     [TestMethod]
     public async Task Absolute_BRamToRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x44;
 
@@ -160,7 +160,7 @@ public class STX
     [TestMethod]
     public async Task Absolute_RomToBRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.X = 0x44;
 
@@ -183,7 +183,7 @@ public class STX
     [TestMethod]
     public async Task ReadOnly_Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0000] = 0x10;
 

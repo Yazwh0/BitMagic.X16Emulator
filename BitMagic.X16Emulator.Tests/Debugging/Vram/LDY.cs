@@ -10,7 +10,7 @@ public class LDY
     [TestMethod]
     public async Task Read_Data0_Ldy()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -31,7 +31,7 @@ public class LDY
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -45,7 +45,7 @@ public class LDY
     [TestMethod]
     public async Task Read_Data0_Ldy_X()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -67,7 +67,7 @@ public class LDY
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -81,7 +81,7 @@ public class LDY
     [TestMethod]
     public async Task Read_Data1_Ldy()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -103,7 +103,7 @@ public class LDY
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -117,7 +117,7 @@ public class LDY
     [TestMethod]
     public async Task Read_Data1_Ldy_X()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -140,7 +140,7 @@ public class LDY
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)

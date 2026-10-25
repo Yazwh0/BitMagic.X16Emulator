@@ -8,7 +8,7 @@ public class ADC
     [TestMethod]
     public async Task Imm()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
 
@@ -31,7 +31,7 @@ public class ADC
     [TestMethod]
     public async Task Imm_WithCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -51,7 +51,7 @@ public class ADC
     [TestMethod]
     public async Task Imm_DoNothing()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x0;
         emulator.Carry = false;
@@ -71,7 +71,7 @@ public class ADC
     [TestMethod]
     public async Task Imm_ZeroCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
 
@@ -90,7 +90,7 @@ public class ADC
     [TestMethod]
     public async Task Imm_NegativeOverflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x12;
 
@@ -109,7 +109,7 @@ public class ADC
     [TestMethod]
     public async Task Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x03;
@@ -134,7 +134,7 @@ public class ADC
     [TestMethod]
     public async Task Abs_DoNothing()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
         emulator.Memory[0x1234] = 0x00;
@@ -155,7 +155,7 @@ public class ADC
     [TestMethod]
     public async Task Abs_FromRom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x03;
@@ -179,7 +179,7 @@ public class ADC
     [TestMethod]
     public async Task Abs_WithCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -200,7 +200,7 @@ public class ADC
     [TestMethod]
     public async Task Abs_ZeroCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0xfe;
@@ -220,7 +220,7 @@ public class ADC
     [TestMethod]
     public async Task Abs_NegativeOverflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x12;
         emulator.Memory[0x1234] = 0x70;
@@ -240,7 +240,7 @@ public class ADC
     [TestMethod]
     public async Task AbsX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.X = 0x04;
@@ -266,7 +266,7 @@ public class ADC
     [TestMethod]
     public async Task AbsX_PageChange()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.X = 0x44;
@@ -287,7 +287,7 @@ public class ADC
     [TestMethod]
     public async Task AbsX_WithCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.X = 0x04;
@@ -309,7 +309,7 @@ public class ADC
     [TestMethod]
     public async Task AbsX_ZeroCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.X = 0x04;
@@ -330,7 +330,7 @@ public class ADC
     [TestMethod]
     public async Task AbsX_NegativeOverflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x12;
         emulator.X = 0x04;
@@ -351,7 +351,7 @@ public class ADC
     [TestMethod]
     public async Task AbsY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Y = 0x04;
@@ -377,7 +377,7 @@ public class ADC
     [TestMethod]
     public async Task AbsY_PageChange()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Y = 0x44;
@@ -398,7 +398,7 @@ public class ADC
     [TestMethod]
     public async Task AbsY_WithCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Y = 0x04;
@@ -420,7 +420,7 @@ public class ADC
     [TestMethod]
     public async Task AbsY_ZeroCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Y = 0x04;
@@ -441,7 +441,7 @@ public class ADC
     [TestMethod]
     public async Task AbsY_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0xfe;
         emulator.Y = 0x04;
@@ -463,7 +463,7 @@ public class ADC
     [TestMethod]
     public async Task AbsY_NegativeOverflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x12;
         emulator.Y = 0x04;
@@ -484,7 +484,7 @@ public class ADC
     [TestMethod]
     public async Task Zp()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x12] = 0x03;
@@ -508,7 +508,7 @@ public class ADC
     [TestMethod]
     public async Task Zp_WithCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -529,7 +529,7 @@ public class ADC
     [TestMethod]
     public async Task Zp_ZeroCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x12] = 0xfe;
@@ -549,7 +549,7 @@ public class ADC
     [TestMethod]
     public async Task Zp_NegativeOverflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x12;
         emulator.Memory[0x12] = 0x70;
@@ -569,7 +569,7 @@ public class ADC
     [TestMethod]
     public async Task ZpX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x12] = 0x03;
@@ -594,7 +594,7 @@ public class ADC
     [TestMethod]
     public async Task ZpX_WithCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -616,7 +616,7 @@ public class ADC
     [TestMethod]
     public async Task ZpX_ZeroCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x12] = 0xfe;
@@ -637,7 +637,7 @@ public class ADC
     [TestMethod]
     public async Task ZpX_NegativeOverflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x12;
         emulator.Memory[0x12] = 0x70;
@@ -658,7 +658,7 @@ public class ADC
     [TestMethod]
     public async Task ZpX_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x12] = 0x03;
@@ -679,7 +679,7 @@ public class ADC
     [TestMethod]
     public async Task Ind()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x03;
@@ -705,7 +705,7 @@ public class ADC
     [TestMethod]
     public async Task Ind_WithCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Carry = true;
@@ -728,7 +728,7 @@ public class ADC
     [TestMethod]
     public async Task Ind_ZeroCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0xfe;
@@ -750,7 +750,7 @@ public class ADC
     [TestMethod]
     public async Task Ind_NegativeOverflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x12;
         emulator.Memory[0x1234] = 0x70;
@@ -772,7 +772,7 @@ public class ADC
     [TestMethod]
     public async Task IndX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.X = 0x01;
@@ -799,7 +799,7 @@ public class ADC
     [TestMethod]
     public async Task IndX_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x03;
@@ -822,7 +822,7 @@ public class ADC
     [TestMethod]
     public async Task IndX_WithCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.X = 0x01;
@@ -846,7 +846,7 @@ public class ADC
     [TestMethod]
     public async Task IndX_ZeroCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.X = 0x01;
@@ -869,7 +869,7 @@ public class ADC
     [TestMethod]
     public async Task IndX_NegativeOverflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x12;
         emulator.X = 0x01;
@@ -893,7 +893,7 @@ public class ADC
     [TestMethod]
     public async Task IndY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Y = 0x04;
@@ -920,7 +920,7 @@ public class ADC
     [TestMethod]
     public async Task IndY_Page()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Memory[0x1234] = 0x03;
@@ -943,7 +943,7 @@ public class ADC
     [TestMethod]
     public async Task IndY_WithCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Y = 0x04;
@@ -967,7 +967,7 @@ public class ADC
     [TestMethod]
     public async Task IndY_ZeroCarry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x02;
         emulator.Y = 0x04;
@@ -990,7 +990,7 @@ public class ADC
     [TestMethod]
     public async Task IndY_NegativeOverflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x12;
         emulator.Y = 0x04;

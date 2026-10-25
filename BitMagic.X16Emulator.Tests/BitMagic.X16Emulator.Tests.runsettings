@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <MSTest>
+    <!-- per test, in ms, override with [Timeout] on a test. a hung emulation is stopped by
+         X16TestHelper.EmulateWithTimeout, this is the backstop for anything else -->
+    <TestTimeout>15000</TestTimeout>
+  </MSTest>
+</RunSettings>

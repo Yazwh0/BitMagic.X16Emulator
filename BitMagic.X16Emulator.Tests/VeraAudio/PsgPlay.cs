@@ -21,7 +21,7 @@ public class PsgPlay
     [TestMethod]
     public async Task Pulse_Left_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff; // change every sample
@@ -54,7 +54,7 @@ public class PsgPlay
     [TestMethod]
     public async Task Pulse_Right_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff;
@@ -87,7 +87,7 @@ public class PsgPlay
     [TestMethod]
     public async Task Pulse_Both_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff;
@@ -120,7 +120,7 @@ public class PsgPlay
     [TestMethod]
     public async Task Pulse_Both_Volume2_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff;
@@ -153,7 +153,7 @@ public class PsgPlay
     [TestMethod]
     public async Task Pulse_Both_VolumeMax_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff;
@@ -186,7 +186,7 @@ public class PsgPlay
     [TestMethod]
     public async Task Saw_Left_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[0].Frequency = 0x4000; // takes 8 samples to complete a cycle
@@ -233,7 +233,7 @@ public class PsgPlay
     [TestMethod]
     public async Task Triangle_Left_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[0].Frequency = 0x4000; // takes 8 samples to complete a cycle
@@ -279,7 +279,7 @@ public class PsgPlay
     [TestMethod]
     public async Task Noise_High_Left_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff; // every sample changes
@@ -325,7 +325,7 @@ public class PsgPlay
     [TestMethod]
     public async Task Noise_Low_Left_Voice0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[0].Frequency = 0x8009; // every other sample changes
@@ -371,7 +371,7 @@ public class PsgPlay
     [TestMethod]
     public async Task Pulse_Left_Voice2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 2 + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[2].Frequency = 0xffff; // change every sample
@@ -404,7 +404,7 @@ public class PsgPlay
     [TestMethod]
     public async Task Pulse_Left_Voice15()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + WAVE_WIDTH;
         emulator.VeraAudio.PsgVoices[15].Frequency = 0xffff; // change every sample

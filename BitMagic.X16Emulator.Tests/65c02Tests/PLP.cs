@@ -13,7 +13,7 @@ public class PLP
     [TestMethod]
     public async Task Plp_Carry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1ff] = 0x01 + 0x30;
         emulator.StackPointer = 0x1fe; // one item on the stack
@@ -36,7 +36,7 @@ public class PLP
     [TestMethod]
     public async Task Plp_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1ff] = 0x02 + 0x30;
         emulator.StackPointer = 0x1fe; // one item on the stack
@@ -59,7 +59,7 @@ public class PLP
     [TestMethod]
     public async Task Plp_Interrupt()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1ff] = 0x04 + 0x30;
         emulator.StackPointer = 0x1fe; // one item on the stack
@@ -82,7 +82,7 @@ public class PLP
     [TestMethod]
     public async Task Plp_Decimal ()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1ff] = 0x08 + 0x30;
         emulator.StackPointer = 0x1fe; // one item on the stack
@@ -105,7 +105,7 @@ public class PLP
     [TestMethod]
     public async Task Plp_Overflow()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1ff] = 0x40 + 0x30;
         emulator.StackPointer = 0x1fe; // one item on the stack
@@ -128,7 +128,7 @@ public class PLP
     [TestMethod]
     public async Task Plp_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1ff] = 0x80 + 0x30;
         emulator.StackPointer = 0x1fe; // one item on the stack
@@ -151,7 +151,7 @@ public class PLP
     [TestMethod]
     public async Task Plp_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1ff] = 0xff;
         emulator.StackPointer = 0x1fe; // one item on the stack

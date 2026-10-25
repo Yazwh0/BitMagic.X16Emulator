@@ -8,7 +8,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Timer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Timer1 = true;
 
         await X16TestHelper.Emulate(@"
@@ -24,7 +24,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Timer2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Timer2 = true;
 
         await X16TestHelper.Emulate(@"
@@ -40,7 +40,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Cb1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Cb1 = true;
 
         await X16TestHelper.Emulate(@"
@@ -56,7 +56,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Cb2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Cb2 = true;
 
         await X16TestHelper.Emulate(@"
@@ -72,7 +72,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_ShiftRegister()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_ShiftRegister = true;
 
         await X16TestHelper.Emulate(@"
@@ -88,7 +88,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Ca1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Ca1= true;
 
         await X16TestHelper.Emulate(@"
@@ -104,7 +104,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Ca2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Ca2 = true;
 
         await X16TestHelper.Emulate(@"
@@ -120,7 +120,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Set_Ca2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b10000001;
 
         await X16TestHelper.Emulate(@"
@@ -137,7 +137,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Set_Ca1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b10000010;
 
         await X16TestHelper.Emulate(@"
@@ -154,7 +154,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Set_ShiftRegister()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b10000100;
 
         await X16TestHelper.Emulate(@"
@@ -171,7 +171,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Set_Cb2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b10001000;
 
         await X16TestHelper.Emulate(@"
@@ -188,7 +188,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Set_Cb1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b10010000;
 
         await X16TestHelper.Emulate(@"
@@ -205,7 +205,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Set_Timer2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b10100000;
 
         await X16TestHelper.Emulate(@"
@@ -223,7 +223,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_Set_Timer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b11000000;
 
         await X16TestHelper.Emulate(@"
@@ -241,7 +241,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_UnSet_Ca2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b00000001;
         emulator.Via.Interrupt_Ca2 = true;
 
@@ -259,7 +259,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_UnSet_Ca1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b00000010;
         emulator.Via.Interrupt_Ca1 = true;
 
@@ -277,7 +277,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_UnSet_ShiftRegister()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b00000100;
         emulator.Via.Interrupt_ShiftRegister = true;
 
@@ -295,7 +295,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_UnSet_Cb2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b00001000;
         emulator.Via.Interrupt_Cb2 = true;
 
@@ -313,7 +313,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_UnSet_Cb1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b00010000;
         emulator.Via.Interrupt_Cb1 = true;
 
@@ -331,7 +331,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_UnSet_Timer2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b00100000;
         emulator.Via.Interrupt_Timer2 = true;
 
@@ -349,7 +349,7 @@ public class InerruptFlags
     [TestMethod]
     public async Task Interrupt_UnSet_Timer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.A = 0b01000000;
         emulator.Via.Interrupt_Timer1 = true;
 
@@ -375,7 +375,7 @@ public class InerruptFlags
     [TestMethod]
     public void Interrupt_Timer1_SetterCanClearTheBit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Timer1 = true;
 
         emulator.Via.Interrupt_Timer1 = false;
@@ -386,7 +386,7 @@ public class InerruptFlags
     [TestMethod]
     public void Interrupt_Timer2_SetterCanClearTheBit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Timer2 = true;
 
         emulator.Via.Interrupt_Timer2 = false;
@@ -397,7 +397,7 @@ public class InerruptFlags
     [TestMethod]
     public void Interrupt_Cb1_SetterCanClearTheBit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Cb1 = true;
 
         emulator.Via.Interrupt_Cb1 = false;
@@ -408,7 +408,7 @@ public class InerruptFlags
     [TestMethod]
     public void Interrupt_Cb2_SetterCanClearTheBit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Cb2 = true;
 
         emulator.Via.Interrupt_Cb2 = false;
@@ -419,7 +419,7 @@ public class InerruptFlags
     [TestMethod]
     public void Interrupt_ShiftRegister_SetterCanClearTheBit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_ShiftRegister = true;
 
         emulator.Via.Interrupt_ShiftRegister = false;
@@ -430,7 +430,7 @@ public class InerruptFlags
     [TestMethod]
     public void Interrupt_Ca1_SetterCanClearTheBit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Ca1 = true;
 
         emulator.Via.Interrupt_Ca1 = false;
@@ -441,7 +441,7 @@ public class InerruptFlags
     [TestMethod]
     public void Interrupt_Ca2_SetterCanClearTheBit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Ca2 = true;
 
         emulator.Via.Interrupt_Ca2 = false;
@@ -452,7 +452,7 @@ public class InerruptFlags
     [TestMethod]
     public void Interrupt_Ca2_SetterClear_DoesNotDisturbOtherSetBits()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
         emulator.Via.Interrupt_Ca1 = true;
         emulator.Via.Interrupt_Timer1 = true;
         emulator.Via.Interrupt_Ca2 = true;

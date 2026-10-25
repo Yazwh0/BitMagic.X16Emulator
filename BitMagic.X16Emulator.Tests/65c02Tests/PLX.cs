@@ -13,7 +13,7 @@ public class PLX
     [TestMethod]
     public async Task Plx()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1ff] = 0x20;
         emulator.StackPointer = 0x1fe; // one item on the stack
@@ -37,7 +37,7 @@ public class PLX
     [TestMethod]
     public async Task Plx_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1ff] = 0x20;
         emulator.StackPointer = 0x1fe; // one item on the stack
@@ -60,7 +60,7 @@ public class PLX
     [TestMethod]
     public async Task Plx_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1ff] = 0x00;
         emulator.StackPointer = 0x1fe; // one item on the stack
@@ -84,7 +84,7 @@ public class PLX
     [TestMethod]
     public async Task Plx_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x1ff] = 0xff;
         emulator.StackPointer = 0x1fe; // one item on the stack

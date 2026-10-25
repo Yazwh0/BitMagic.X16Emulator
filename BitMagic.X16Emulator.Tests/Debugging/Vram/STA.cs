@@ -10,7 +10,7 @@ public class STA
     [TestMethod]
     public async Task Write_Data0_Abs()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Write;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -32,7 +32,7 @@ public class STA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -46,7 +46,7 @@ public class STA
     [TestMethod]
     public async Task Write_Data0_Abs_NoBreak()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Read;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -68,7 +68,7 @@ public class STA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x821)
@@ -81,7 +81,7 @@ public class STA
     [TestMethod]
     public async Task Write_Data0_Abs_Continue()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Write;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -103,11 +103,11 @@ public class STA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Snap();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x821)
@@ -120,7 +120,7 @@ public class STA
     [TestMethod]
     public async Task Write_Data0_X_NoCross()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0006] = (byte)VeraBreakpointType.Write;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 });
@@ -144,7 +144,7 @@ public class STA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -158,7 +158,7 @@ public class STA
     [TestMethod]
     public async Task Write_Data0_X_Cross()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Write;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 });
@@ -182,7 +182,7 @@ public class STA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -196,7 +196,7 @@ public class STA
     [TestMethod]
     public async Task Write_Data0_Y_NoCross()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0006] = (byte)VeraBreakpointType.Write;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 });
@@ -220,7 +220,7 @@ public class STA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -234,7 +234,7 @@ public class STA
     [TestMethod]
     public async Task Write_Data0_Y_Cross()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Write;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 });
@@ -258,7 +258,7 @@ public class STA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x817)
@@ -272,7 +272,7 @@ public class STA
     [TestMethod]
     public async Task Write_Data0_Ind()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Write;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -295,7 +295,7 @@ public class STA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x815)
@@ -309,7 +309,7 @@ public class STA
     [TestMethod]
     public async Task Write_Data0_IndX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Write;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -333,7 +333,7 @@ public class STA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x815)
@@ -347,7 +347,7 @@ public class STA
     [TestMethod]
     public async Task Write_Data0_IndY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.VramBreakpoints[0x0003] = (byte)VeraBreakpointType.Write;
         emulator.Vera.Vram.Set(new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 });
@@ -371,7 +371,7 @@ public class STA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.Pc, 0x815)

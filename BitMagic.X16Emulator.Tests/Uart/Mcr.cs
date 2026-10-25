@@ -16,7 +16,7 @@ public class Mcr
     public async Task Mcr_WriteStoresTheByte_Bit2Cleared()
     {
         // Write side only (uart_mcr_write): $ff in, bit 2 forced off, so $fb is stored.
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -35,7 +35,7 @@ public class Mcr
     {
         // A CPU read of $9fe4 must leave the stored value in place. The read's after-read
         // handler must not rewrite the byte.
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -57,7 +57,7 @@ public class Mcr
         // The first read latches A before any after-read handler runs, so a single read
         // can look fine even when the handler corrupts memory. Read twice: the second
         // read sees whatever the first one left behind.
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

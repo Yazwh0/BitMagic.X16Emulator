@@ -8,7 +8,7 @@ public class Fcr
     [TestMethod]
     public async Task Fcr_TriggerLevel_1()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -25,7 +25,7 @@ public class Fcr
     [TestMethod]
     public async Task Fcr_TriggerLevel_4()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -42,7 +42,7 @@ public class Fcr
     [TestMethod]
     public async Task Fcr_TriggerLevel_8()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -59,7 +59,7 @@ public class Fcr
     [TestMethod]
     public async Task Fcr_TriggerLevel_14()
     {
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -79,7 +79,7 @@ public class Fcr
         // $9fe2 is read as IIR, written as FCR -- writing FCR must restore whatever byte
         // was already there (uart_fcr_write's "preserve the current value" behaviour),
         // not leave the CPU's written value sitting in memory.
-        var emulator = X16TestHelper.NewEmulator();
+        using var emulator = X16TestHelper.NewEmulator();
 
         // Stage 1: spend the emulator's lazy first-run init (uart_init, called from
         // Core.asm's initial_startup check on the very first Emulate()) before poking

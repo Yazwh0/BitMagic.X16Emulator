@@ -9,7 +9,7 @@ public class Scanline
     [TestMethod]
     public async Task Read()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         var (_, snapshot) = await X16TestHelper.EmulateChanges(@"
                 .machine CommanderX16R40
@@ -35,7 +35,7 @@ public class Scanline
     [TestMethod]
     public async Task Read_SecondHalf()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         var (_, snapshot) = await X16TestHelper.EmulateChanges(@"
                 .machine CommanderX16R40

@@ -142,7 +142,7 @@ public static class X16TestHelper
 
         stopWatch.Start();
 
-        var emulateResult = emulator.Emulate();
+        var emulateResult = emulator.EmulateWithTimeout();
 
         stopWatch.Stop();
 
@@ -157,6 +157,31 @@ public static class X16TestHelper
             Assert.Fail($"Emulate Result is not from a {expectedResult}. Actual: {emulateResult}");
 
         return (emulator, snapshot);
+    }
+
+    /// <summary>
+    /// How long one Emulate() call can run in a test before it is stopped.
+    /// </summary>
+    public static TimeSpan EmulateTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// Emulate(), but stops the emulator and fails the test if it runs past the timeout. The MSTest timeout can't
+    /// stop the native loop, it just abandons the thread, which then carries on running alongside the other tests.
+    /// </summary>
+    public static Emulator.EmulatorResult EmulateWithTimeout(this Emulator emulator, TimeSpan? timeout = null)
+    {
+        timeout ??= EmulateTimeout;
+
+        using var cancellation = new CancellationTokenSource(timeout.Value);
+
+        Emulator.EmulatorResult result;
+        using (cancellation.Token.Register(() => emulator.Control = Control.Stop)) // dispose waits for the callback
+            result = emulator.Emulate();
+
+        if (cancellation.IsCancellationRequested)
+            Assert.Fail($"Emulation didn't finish within {timeout.Value.TotalSeconds}s. Stopped at PC ${emulator.Pc:X4}.");
+
+        return result;
     }
 
     public static void DisplayState(this Emulator emulator, TimeSpan? ts = null)

@@ -8,7 +8,7 @@ public class Bitmap_2Bpp
     [TestMethod]
     public async Task Image_Normal_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_2bpp.png", ImageHelper.ColourDepthImage.Depth_2bpp, 0);
 
@@ -60,7 +60,7 @@ public class Bitmap_2Bpp
     [TestMethod]
     public async Task Image_Normal_AddressChange_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_2bpp.png", ImageHelper.ColourDepthImage.Depth_2bpp, 0x1000);
 
@@ -112,7 +112,7 @@ public class Bitmap_2Bpp
     [TestMethod]
     public async Task Image_Normal_PaletteOffset_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_2bpp.png", ImageHelper.ColourDepthImage.Depth_2bpp, 0);
 
@@ -167,7 +167,7 @@ public class Bitmap_2Bpp
     [TestMethod]
     public async Task Image_Scaled_Layer0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_2bpp.png", ImageHelper.ColourDepthImage.Depth_2bpp, 0);
 
@@ -219,7 +219,7 @@ public class Bitmap_2Bpp
     [TestMethod]
     public async Task Image_Normal_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_2bpp.png", ImageHelper.ColourDepthImage.Depth_2bpp, 0);
 
@@ -271,7 +271,7 @@ public class Bitmap_2Bpp
     [TestMethod]
     public async Task Image_Normal_AddressChange_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_2bpp.png", ImageHelper.ColourDepthImage.Depth_2bpp, 0x1000);
 
@@ -323,7 +323,7 @@ public class Bitmap_2Bpp
     [TestMethod]
     public async Task Image_Normal_PaletteOffset_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_2bpp.png", ImageHelper.ColourDepthImage.Depth_2bpp, 0);
 
@@ -378,7 +378,7 @@ public class Bitmap_2Bpp
     [TestMethod]
     public async Task Image_Scaled_Layer1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.LoadImage(@"Vera\Images\testimage_2bpp.png", ImageHelper.ColourDepthImage.Depth_2bpp, 0);
 

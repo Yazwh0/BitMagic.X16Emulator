@@ -8,7 +8,7 @@ public class SmcWrite
     [TestMethod]
     public async Task PowerOff()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R42
@@ -213,7 +213,7 @@ public class SmcWrite
     [TestMethod]
     public async Task HardReset()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R42
@@ -418,7 +418,7 @@ public class SmcWrite
     [TestMethod]
     public async Task Reset()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R42
@@ -623,7 +623,7 @@ public class SmcWrite
     [TestMethod]
     public async Task Led()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R42
@@ -830,7 +830,7 @@ public class SmcWrite
     [TestMethod]
     public async Task Data_2Bytes()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R42
@@ -1034,7 +1034,7 @@ public class SmcWrite
     [TestMethod]
     public async Task Data_3Bytes()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R42
@@ -1241,7 +1241,7 @@ public class SmcWrite
     [TestMethod]
     public async Task Data_4Bytes()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
             .machine CommanderX16R42

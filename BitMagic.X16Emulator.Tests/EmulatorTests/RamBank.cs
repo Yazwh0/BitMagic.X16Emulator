@@ -8,7 +8,7 @@ public class RamBank
     [TestMethod]
     public async Task RamBank_Read_1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RamBank[0x2000] = 0xff;
 
@@ -27,7 +27,7 @@ public class RamBank
     [TestMethod]
     public async Task RamBank_Read_2()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RamBank[0x4000] = 0xff;
 
@@ -46,7 +46,7 @@ public class RamBank
     [TestMethod]
     public async Task RamBank_Read_255()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RamBank[0x2000 * 255] = 0xff;
 
@@ -65,7 +65,7 @@ public class RamBank
     [TestMethod]
     public async Task RamBank_Inc()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RamBank[0x2000] = 0xff;
 
@@ -83,7 +83,7 @@ public class RamBank
     [TestMethod]
     public async Task RamBank_Read_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         for (var i = 0; i < 256; i++)
         {
@@ -128,7 +128,7 @@ public class RamBank
     [TestMethod]
     public async Task RamBank_PreRomChange_Read_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         for (var i = 0; i < 256; i++)
         {
@@ -178,7 +178,7 @@ public class RamBank
     [TestMethod]
     public async Task RamBank_RomChange_Read_All()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         for (var i = 0; i < 256; i++)
         {
@@ -226,7 +226,7 @@ public class RamBank
     [TestMethod]
     public async Task RamBank_SwitchRead()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RamBank[0x2000] = 0xff;
 
@@ -248,7 +248,7 @@ public class RamBank
     [TestMethod]
     public async Task RamBank_GetBanks()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

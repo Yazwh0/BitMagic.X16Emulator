@@ -9,7 +9,7 @@ public class Cache
     [TestMethod]
     public async Task SetIndex()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0x02;
         emulator.VeraFx.CacheIndex = 0;
@@ -24,7 +24,7 @@ public class Cache
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .CanChange(Registers.A)
@@ -37,7 +37,7 @@ public class Cache
     [TestMethod]
     public async Task FillDirect()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x01;
         emulator.Vera.DcSel = 0x06;
@@ -60,7 +60,7 @@ public class Cache
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.A, 0x04)
@@ -72,7 +72,7 @@ public class Cache
     [TestMethod]
     public async Task FillVram()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
         emulator.VeraFx.CacheIndex = 0;
@@ -98,7 +98,7 @@ public class Cache
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.A, 0x04)
@@ -112,7 +112,7 @@ public class Cache
     [TestMethod]
     public async Task FillVram_Index()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.A = 0x00;
         emulator.VeraFx.CacheIndex = 4; // nibble based
@@ -136,7 +136,7 @@ public class Cache
                 emulator);
 
         snapshot.Snap();
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .CanChange(Registers.A)

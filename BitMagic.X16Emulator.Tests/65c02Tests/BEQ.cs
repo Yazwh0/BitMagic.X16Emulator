@@ -9,7 +9,7 @@ public class BEQ
     [TestMethod]
     public async Task Beq_Jump_Forward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Zero = true;
 
@@ -34,7 +34,7 @@ public class BEQ
     [TestMethod]
     public async Task Beq_Jump_Forward_Far()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Zero = true;
 
@@ -62,7 +62,7 @@ public class BEQ
     [TestMethod]
     public async Task Beq_NoJump()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Zero = false;
 
@@ -87,7 +87,7 @@ public class BEQ
     [TestMethod]
     public async Task Beq_Jump_Backward()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Zero = true;
 

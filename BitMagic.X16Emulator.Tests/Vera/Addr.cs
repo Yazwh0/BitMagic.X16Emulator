@@ -8,7 +8,7 @@ public class Addr
     [TestMethod]
     public async Task AddrL_Set_Data0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 2;
         emulator.Vera.Data0_Address = 0x0000;
@@ -32,7 +32,7 @@ public class Addr
     [TestMethod]
     public async Task AddrL_Set_Data1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 2;
         emulator.Vera.Data1_Address = 0x0000;
@@ -57,7 +57,7 @@ public class Addr
     [TestMethod]
     public async Task AddrM_Set_Data0()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 2;
         emulator.Vera.Data0_Address = 0x0000;
@@ -81,7 +81,7 @@ public class Addr
     [TestMethod]
     public async Task AddrM_Set_Data1()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 2;
         emulator.Vera.Data1_Address = 0x0000;
@@ -106,7 +106,7 @@ public class Addr
     [TestMethod]
     public async Task AddrH_Set_Data0_HighBit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x2345;
@@ -130,7 +130,7 @@ public class Addr
     [TestMethod]
     public async Task AddrH_Set_Data1_HighBit()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x2345;
@@ -155,7 +155,7 @@ public class Addr
     [TestMethod]
     public async Task AddrH_Set_Data0_StepChange()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x2345;
@@ -182,7 +182,7 @@ public class Addr
     [TestMethod]
     public async Task AddrH_Set_Data1_StepChange()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x2345;
@@ -210,7 +210,7 @@ public class Addr
     [TestMethod]
     public async Task AddrH_Set_Data0_StepChange_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 0;
         emulator.Vera.Data0_Address = 0x2345;
@@ -237,7 +237,7 @@ public class Addr
     [TestMethod]
     public async Task AddrH_Set_Data1_StepChange_Negative()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data1_Step = 0;
         emulator.Vera.Data1_Address = 0x2345;
@@ -265,7 +265,7 @@ public class Addr
     [TestMethod]
     public async Task AddrH_Set_CorrectMask()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Vera.Data0_Step = 2;
         emulator.Vera.Data0_Address = 0x0000;

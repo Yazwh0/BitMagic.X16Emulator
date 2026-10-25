@@ -13,7 +13,7 @@ public class LDX
     [TestMethod]
     public async Task Immediate()
     {
-        var emulator = await X16TestHelper.Emulate(@"                
+        using var emulator = await X16TestHelper.Emulate(@"                
                 .machine CommanderX16R40
                 .org $810
                 ldx #$44
@@ -31,7 +31,7 @@ public class LDX
     [TestMethod]
     public async Task Immediate_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = true;
         emulator.Decimal = true;
@@ -52,7 +52,7 @@ public class LDX
     [TestMethod]
     public async Task Immediate_ZeroFlag()
     {
-        var emulator = await X16TestHelper.Emulate(@"                
+        using var emulator = await X16TestHelper.Emulate(@"                
                 .machine CommanderX16R40
                 .org $810
                 ldx #$0
@@ -70,7 +70,7 @@ public class LDX
     [TestMethod]
     public async Task Immediate_NegativeFlag()
     {
-        var emulator = await X16TestHelper.Emulate(@"                
+        using var emulator = await X16TestHelper.Emulate(@"                
                 .machine CommanderX16R40
                 .org $810
                 ldx #$ff
@@ -88,7 +88,7 @@ public class LDX
     [TestMethod]
     public async Task ZeroPage()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x44;
 
@@ -110,7 +110,7 @@ public class LDX
     [TestMethod]
     public async Task ZeroPage_PreserveFlags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x44;
         emulator.Carry = true;
@@ -132,7 +132,7 @@ public class LDX
     [TestMethod]
     public async Task ZeroPageY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x44;
         emulator.Y = 2;
@@ -155,7 +155,7 @@ public class LDX
     [TestMethod]
     public async Task ZeroPageY_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x44;
         emulator.Y = 0x72;
@@ -178,7 +178,7 @@ public class LDX
     [TestMethod]
     public async Task Absolute()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x400] = 0x44;
 
@@ -201,7 +201,7 @@ public class LDX
     [TestMethod]
     public async Task AbsoluteY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x402] = 0x44;
         emulator.Y = 2;

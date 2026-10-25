@@ -9,7 +9,7 @@ public class LDA
     [TestMethod]
     public async Task Immediate()
     {
-        var emulator = await X16TestHelper.Emulate(@"                
+        using var emulator = await X16TestHelper.Emulate(@"                
                 .machine CommanderX16R40
                 .org $810
                 lda #$44
@@ -27,7 +27,7 @@ public class LDA
     [TestMethod]
     public async Task Immediate_Flags()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Carry = true;
         emulator.Decimal = true;
@@ -46,7 +46,7 @@ public class LDA
     [TestMethod]
     public async Task Immediate_ZeroFlag()
     {
-        var emulator = await X16TestHelper.Emulate(@"                
+        using var emulator = await X16TestHelper.Emulate(@"                
                 .machine CommanderX16R40
                 .org $810
                 lda #$0
@@ -64,7 +64,7 @@ public class LDA
     [TestMethod]
     public async Task Immediate_NegativeFlag()
     {
-        var emulator = await X16TestHelper.Emulate(@"                
+        using var emulator = await X16TestHelper.Emulate(@"                
                 .machine CommanderX16R40
                 .org $810
                 lda #$ff
@@ -82,7 +82,7 @@ public class LDA
     [TestMethod]
     public async Task ZeroPage()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x44;
 
@@ -105,7 +105,7 @@ public class LDA
     [TestMethod]
     public async Task ZeroPage_FromRom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x44;
 
@@ -126,7 +126,7 @@ public class LDA
     [TestMethod]
     public async Task ZeroPage_FlagPreserve()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x10] = 0x44;
         emulator.Carry = true;
@@ -146,7 +146,7 @@ public class LDA
     [TestMethod]
     public async Task ZeroPageX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x44;
         emulator.X = 2;
@@ -169,7 +169,7 @@ public class LDA
     [TestMethod]
     public async Task ZeroPageX_Wrap()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x12] = 0x44;
         emulator.X = 0x72;
@@ -192,7 +192,7 @@ public class LDA
     [TestMethod]
     public async Task Absolute()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x400] = 0x44;
 
@@ -215,7 +215,7 @@ public class LDA
     [TestMethod]
     public async Task Absolute_Rom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RomBank[0x0] = 0x44;
 
@@ -233,7 +233,7 @@ public class LDA
     [TestMethod]
     public async Task Absolute_BankedRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.RamBank[0x0] = 0x44;
 
@@ -251,7 +251,7 @@ public class LDA
     [TestMethod]
     public async Task AbsoluteX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x402] = 0x44;
         emulator.X = 2;
@@ -275,7 +275,7 @@ public class LDA
     [TestMethod]
     public async Task AbsoluteX_FromRom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x402] = 0x44;
         emulator.X = 2;
@@ -299,7 +299,7 @@ public class LDA
     [TestMethod]
     public async Task AbsoluteX_PageBoundry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x590] = 0x44;
         emulator.X = 0xf0;
@@ -323,7 +323,7 @@ public class LDA
     [TestMethod]
     public async Task AbsoluteY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x402] = 0x44;
         emulator.Y = 2;
@@ -347,7 +347,7 @@ public class LDA
     [TestMethod]
     public async Task AbsoluteY_PageBoundry()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x590] = 0x44;
         emulator.Y = 0xf0;
@@ -371,7 +371,7 @@ public class LDA
     [TestMethod]
     public async Task IndirectX()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x402] = 0x44;
         emulator.Memory[0x12] = 0x02;
@@ -396,7 +396,7 @@ public class LDA
     [TestMethod]
     public async Task IndirectY()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x402] = 0x44;
         emulator.Memory[0x10] = 0x01;
@@ -421,7 +421,7 @@ public class LDA
     [TestMethod]
     public async Task IndirectY_Zero()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x402] = 0x00;
         emulator.Memory[0x10] = 0x01;
@@ -443,7 +443,7 @@ public class LDA
     [TestMethod]
     public async Task IndirectY_FromRom()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x402] = 0x44;
         emulator.Memory[0x10] = 0x01;
@@ -468,7 +468,7 @@ public class LDA
     [TestMethod]
     public async Task IndirectY_FromBRam()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x402] = 0x44;
         emulator.Memory[0x10] = 0x01;
@@ -493,7 +493,7 @@ public class LDA
     [TestMethod]
     public async Task IndirectY_PageBoundary()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x4a0 + 0xf0] = 0x44;
         emulator.Memory[0xa0] = 0xa0;
@@ -518,7 +518,7 @@ public class LDA
     [TestMethod]
     public async Task IndirectZp()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         emulator.Memory[0x402] = 0x44;
         emulator.Memory[0x10] = 0x02;
@@ -542,7 +542,7 @@ public class LDA
     [TestMethod]
     public async Task IndirectX_WrapAddress()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         // test addresses
         emulator.Memory[0x0ff] = 0x12;
@@ -565,7 +565,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.A, 0x01)
@@ -575,7 +575,7 @@ public class LDA
     [TestMethod]
     public async Task Indirect_WrapAddress()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         // test addresses
         emulator.Memory[0x0ff] = 0x12;
@@ -598,7 +598,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.A, 0x01)
@@ -608,7 +608,7 @@ public class LDA
     [TestMethod]
     public async Task IndirectY_WrapAddress()
     {
-        var emulator = new Emulator();
+        using var emulator = new Emulator();
 
         // test addresses
         emulator.Memory[0x0ff] = 0x12;
@@ -631,7 +631,7 @@ public class LDA
 
         var snapshot = emulator.Snapshot();
 
-        emulator.Emulate();
+        emulator.EmulateWithTimeout();
 
         snapshot.Compare().IgnoreVia()
             .Is(Registers.A, 0x01)

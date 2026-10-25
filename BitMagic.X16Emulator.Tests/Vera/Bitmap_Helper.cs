@@ -1,6 +1,4 @@
-﻿using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Advanced;
+﻿using BitMagic.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,13 +26,13 @@ namespace BitMagic.X16Emulator.Tests.Vera
 
         public static void LoadImage(this Emulator emulator, string filename, ColourDepthImage depth, int address)
         {
-            using var image = Image.Load<Rgba32>(filename);
+            var image = ImageFile.Load(filename);
 
             if ((image.Height != 480 || image.Width != 640) && (image.Height != 240 || image.Width != 320))
                 Assert.Fail("Source image must be 640x480px or 320x240.");
 
             var counter = 1;
-            var colourIndex = new Dictionary<Rgba32, int>();
+            var colourIndex = new Dictionary<PixelRgba, int>();
 
             var maxColours = depth switch {
                 ColourDepthImage.Depth_1bpp => 2,
@@ -62,54 +60,51 @@ namespace BitMagic.X16Emulator.Tests.Vera
                 _ => throw new Exception("Unknown depth")
             };
 
-            image.ProcessPixelRows(accessor =>
+            for (var y = 0; y < image.Height; y++)
             {
-                for (var y = 0; y < image.Height; y++)
+                var rowSpan = image.GetRow(y);
+
+                byte thisEntry = 0;
+                int currentShift = startShift;
+
+                for (var x = 0; x < image.Width; x++)
                 {
-                    var rowSpan = accessor.GetRowSpan(y);
+                    var pixel = rowSpan[x];
 
-                    byte thisEntry = 0;
-                    int currentShift = startShift;
-
-                    for (var x = 0; x < image.Width; x++)
+                    if (!colourIndex.ContainsKey(pixel))
                     {
-                        var pixel = rowSpan[x];
-
-                        if (!colourIndex.ContainsKey(pixel))
-                        {
-                            colourIndex.Add(pixel, counter++);
-                            if (colourIndex.Count > maxColours)
-                                throw new Exception("Too many colours.");
-                        }
-
-                        var index = colourIndex[pixel];
-
-                        thisEntry |= (byte)(index << currentShift);
-
-                        if (currentShift == 0)
-                        {
-                            emulator.Vera.Vram[address++] = thisEntry;
-                            thisEntry = 0;
-                            currentShift = startShift;
-                        }
-                        else 
-                            currentShift -= shift;
+                        colourIndex.Add(pixel, counter++);
+                        if (colourIndex.Count > maxColours)
+                            throw new Exception("Too many colours.");
                     }
+
+                    var index = colourIndex[pixel];
+
+                    thisEntry |= (byte)(index << currentShift);
+
+                    if (currentShift == 0)
+                    {
+                        emulator.Vera.Vram[address++] = thisEntry;
+                        thisEntry = 0;
+                        currentShift = startShift;
+                    }
+                    else
+                        currentShift -= shift;
                 }
-            });
+            }
         }
 
         public static void LoadSprite(this Emulator emulator, string filename, ColourDepthSprite depth, int width, int height, int address)
         {
-            using var image = Image.Load<Rgba32>(filename);
+            var image = ImageFile.Load(filename);
 
             if (image.Height != height || image.Width != width)
                 Assert.Fail($"Source image must be {width}x{height}px. Actual {image.Width}x{image.Height}.");
 
             var counter = 1;
-            var colourIndex = new Dictionary<Rgba32, int>();
+            var colourIndex = new Dictionary<PixelRgba, int>();
 
-            colourIndex.Add(new Rgba32(0, 0, 0, 0), 0);
+            colourIndex.Add(new PixelRgba(0, 0, 0, 0), 0);
 
             var maxColours = depth switch
             {
@@ -132,41 +127,38 @@ namespace BitMagic.X16Emulator.Tests.Vera
                 _ => throw new Exception("Unknown depth")
             };
 
-            image.ProcessPixelRows(accessor =>
+            for (var y = 0; y < image.Height; y++)
             {
-                for (var y = 0; y < image.Height; y++)
+                var rowSpan = image.GetRow(y);
+
+                byte thisEntry = 0;
+                int currentShift = startShift;
+
+                for (var x = 0; x < image.Width; x++)
                 {
-                    var rowSpan = accessor.GetRowSpan(y);
+                    var pixel = rowSpan[x];
 
-                    byte thisEntry = 0;
-                    int currentShift = startShift;
-
-                    for (var x = 0; x < image.Width; x++)
+                    if (!colourIndex.ContainsKey(pixel))
                     {
-                        var pixel = rowSpan[x];
-
-                        if (!colourIndex.ContainsKey(pixel))
-                        {
-                            colourIndex.Add(pixel, counter++);
-                            if (colourIndex.Count > maxColours)
-                                throw new Exception("Too many colours.");
-                        }
-
-                        var index = colourIndex[pixel];
-
-                        thisEntry |= (byte)(index << currentShift);
-
-                        if (currentShift == 0)
-                        {
-                            emulator.Vera.Vram[address++] = thisEntry;
-                            thisEntry = 0;
-                            currentShift = startShift;
-                        }
-                        else
-                            currentShift -= shift;
+                        colourIndex.Add(pixel, counter++);
+                        if (colourIndex.Count > maxColours)
+                            throw new Exception("Too many colours.");
                     }
+
+                    var index = colourIndex[pixel];
+
+                    thisEntry |= (byte)(index << currentShift);
+
+                    if (currentShift == 0)
+                    {
+                        emulator.Vera.Vram[address++] = thisEntry;
+                        thisEntry = 0;
+                        currentShift = startShift;
+                    }
+                    else
+                        currentShift -= shift;
                 }
-            });
+            }
         }
     }
 }

@@ -18,26 +18,6 @@ public class Texture : IDisposable
         _image = image;
         _gl = gl;
 
-        /*            Span<Rgba32> pixelRowSpan = _image.GetPixelRowSpan(0);
-                    for (int x = 0; x < _image.Width; x++)
-                    {
-                        pixelRowSpan[x] = new Rgba32(255, 255, 255, 255);
-                    }
-
-                    for(var i = 0; i < _image.Height; i++)
-                    {
-                        pixelRowSpan = _image.GetPixelRowSpan(i);
-                        pixelRowSpan[0] = new Rgba32(255, 255, 255, 255);
-                        pixelRowSpan[_image.Width - 1] = new Rgba32(255, 255, 255, 255);
-                    }
-
-                    pixelRowSpan = _image.GetPixelRowSpan(_image.Height - 1);
-                    for (int x = 0; x < _image.Width; x++)
-                    {
-                        pixelRowSpan[x] = new Rgba32(255, 255, 255, 255);
-                    }*/
-
-
         fixed (void* data = &MemoryMarshal.GetReference(_image.Pixels))
         {
             Load(gl, data, imageWidth, imageHeight);

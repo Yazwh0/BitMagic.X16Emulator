@@ -2,10 +2,9 @@
 using Silk.NET.Windowing;
 using System.Diagnostics;
 using System.Reflection;
-using Image = SixLabors.ImageSharp.Image;
+using BitMagic.Common;
 using Silk.NET.Core;
 using Silk.NET.Input;
-using SixLabors.ImageSharp.PixelFormats;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -312,21 +311,8 @@ public class EmulatorWindow : IDisposable
             using (Stream stream = assembly.GetManifestResourceStream(resourceName) ?? throw new Exception("butterfly.jpg not found"))
             using (BinaryReader reader = new BinaryReader(stream))
             {
-                var icon = Image.Load<Rgba32>(reader.ReadBytes((int)stream.Length)) ?? throw new Exception("icon image is null");
-                var silkIcon = new byte[icon.Width * icon.Height * 4];
-
-                var index = 0;
-                for (var y = 0; y < icon.Height; y++)
-                {
-                    for (var x = 0; x < icon.Width; x++)
-                    {
-                        var pixel = icon[x, y];
-                        silkIcon[index++] = pixel.R;
-                        silkIcon[index++] = pixel.G;
-                        silkIcon[index++] = pixel.B;
-                        silkIcon[index++] = pixel.A;
-                    }
-                }
+                var icon = ImageFile.Load(reader.ReadBytes((int)stream.Length));
+                var silkIcon = MemoryMarshal.AsBytes(icon.Pixels.AsSpan()).ToArray();
 
                 var rawIcon = new RawImage(icon.Width, icon.Height, new Memory<byte>(silkIcon));
 

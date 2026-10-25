@@ -6,8 +6,6 @@ using BitMagic.TemplateEngine.X16;
 using BitMagic.Compiler;
 using BitMagic.Compiler.Files;
 using BitMagic.X16Emulator.Snapshot;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BitMagic.X16Emulator.TestHelper;
 
@@ -228,34 +226,20 @@ public static class X16TestHelper
 
     public static void SaveDisplay(this Emulator emulator, string filename)
     {
-        using var image = new Image<Rgba32>(800, 640 * 6);
+        var image = new RgbaImage(800, 640 * 6);
 
-        var pixels = emulator.Display;
-
-        var i = 0;
-        for (var l = 0; l < 6; l++)
-        {
-            for (var y = 0; y < 525; y++)
-            {
-                for (var x = 0; x < 800; x++)
-                {
-                    var pixel = pixels[i++];
-                    image[x, y + l * 525] = new Rgba32 { R = pixel.R, G = pixel.G, B = pixel.B, A = pixel.A };
-                }
-            }
-        }
+        // display is 6 layers of 800x525, stacked one after another
+        emulator.Display[..(800 * 525 * 6)].CopyTo(image.Pixels);
 
         using var fs = new FileStream(filename, FileMode.Create);
-        image.SaveAsPng(fs);
-        fs.Flush();
-        fs.Close();
+        ImageFile.SavePng(image, fs);
     }
 
     public static void CompareImage(this Emulator emulator, string filename)
     {
         SaveDisplay(emulator, filename + ".actual.png");
 
-        using var image = Image.Load(filename).CloneAs<Rgba32>();
+        var image = ImageFile.Load(filename);
 
         var pixels = emulator.Display;
 
@@ -267,8 +251,7 @@ public static class X16TestHelper
                 for (var x = 0; x < 800; x++)
                 {
                     var actual = pixels[i++];
-                    var expectedOriginal = image[x, y + l * 525];
-                    var expected = new Common.PixelRgba { R = expectedOriginal.R, G = expectedOriginal.G, B = expectedOriginal.B, A = expectedOriginal.A };
+                    var expected = image[x, y + l * 525];
                     Assert.AreEqual(expected, actual, $"At {x},{y} on display layer {l}.");
                 }
             }

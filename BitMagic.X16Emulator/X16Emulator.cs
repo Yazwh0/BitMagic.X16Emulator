@@ -1027,6 +1027,7 @@ public class Emulator : IDisposable
     public Control Control { get => (Control)_state.Control; set => _state.Control = (uint)value; }
     public FrameControl FrameControl { get => (FrameControl)_state.Frame_Control; set => _state.Frame_Control = (uint)value; }
     public bool Stepping { get => _state.Stepping != 0; set => _state.Stepping = (uint)(value ? 1 : 0); }
+    public bool CpuWaiting => _state.Cpu_Waiting != 0; // executed a WAI and waiting for an interrupt, Pc is past the WAI
 
     public ulong Spi_CsdRegister_0 { get => _state.SpiCsdRegister_0; set => _state.SpiCsdRegister_0 = value; }
     public ulong Spi_CsdRegister_1 { get => _state.SpiCsdRegister_1; set => _state.SpiCsdRegister_1 = value; }

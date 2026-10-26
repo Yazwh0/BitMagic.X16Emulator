@@ -1536,15 +1536,25 @@ public class Emulator : IDisposable
         for (var i = 0; i < BeamBreakpointCount; i++)
             table[i] = i < sorted.Length ? sorted[i] - (i == 0 ? 0 : sorted[i - 1]) : BeamBreakpointEnd;
 
+        SetBeamBreakpointNext();
+    }
+
+    // sets the index and next clock from the table and the current clock
+    private void SetBeamBreakpointNext()
+    {
+        var table = BeamBreakpoints;
         var current = CurrentBeamOffset;
 
         var index = 0;
-        while (index < sorted.Length && sorted[index] <= current)
-            index++;
+        uint offset = 0;
+        while (index < BeamBreakpointCount && table[index] != BeamBreakpointEnd && offset + table[index] <= current)
+            offset += table[index++];
+
+        var found = index < BeamBreakpointCount && table[index] != BeamBreakpointEnd;
 
         // relative to the clock rather than the vsync clock, as that could be before zero at the start
         _state.Beam_Breakpoint_Index = (uint)index;
-        _state.Beam_Breakpoint_Next = index < sorted.Length ? Clock + (sorted[index] - current) : BeamBreakpointNone;
+        _state.Beam_Breakpoint_Next = found ? Clock + (offset + table[index] - current) : BeamBreakpointNone;
     }
 
     /// <summary>
@@ -1591,6 +1601,111 @@ public class Emulator : IDisposable
     {
         _state = state;
         SetPointers();
+    }
+
+    // the native buffers that are part of the machine, saved by SaveState. Not the ROM, the breakpoint tables, the debug
+    // sprite colours or the audio output, which belong to the host or the debugger.
+    private (ulong Ptr, int Size)[] SavedBuffers() =>
+    [
+        (_memory_ptr_rounded, RamSize),
+        (_ram_ptr_rounded, BankedRamSize),
+        (_vram_ptr, VramSize),
+        (_display_ptr, DisplaySize),
+        (_display_buffer_ptr_rounded, DisplayBufferSize),
+        (_palette_ptr, PaletteSize),
+        (_sprite_ptr, SpriteSize),
+        (_psg_ptr, PsgSize),
+        (_pcm_Ptr, PcmSize),
+        (_i2cBuffer_ptr, I2cBufferSize),
+        (_smcKeyboard_ptr, SmcKeyboardBufferSize),
+        (_smcMouse_ptr, SmcMouseBufferSize),
+        (_spiHistory_ptr, SpiHistoryPtrSize),
+        (_spiInboundBufferPtr, SpiInboundBufferPtrSize),
+        (_spiOutboundBufferPtr, SpiOutboundBufferPtrSize),
+        (_rtcNvram_Ptr, RtcNvramSize),
+        (_stackInfo_Ptr, StackInfoSize),
+        (_history_ptr, (int)_state.HistoryLogMask + 1)
+    ];
+
+    /// <summary>
+    /// Copies the machine so it can be put back with RestoreState. Only call this while the emulator isn't running.
+    /// </summary>
+    public unsafe SavedState SaveState() => new()
+    {
+        State = _state,
+        Buffers = SavedBuffers().Select(i => new Span<byte>((void*)i.Ptr, i.Size).ToArray()).ToArray()
+    };
+
+    /// <summary>
+    /// Puts back a state from SaveState. Only call this while the emulator isn't running. What the host and the debugger
+    /// own is kept: the pointers, the run control, the host timing, the audio output position, the YM2151 (its core
+    /// isn't saved, so its fields stay matching it), the UART and the breakpoints. The vsync breakpoint is left as it
+    /// was, the caller needs to re-arm it for the restored frame.
+    /// </summary>
+    public unsafe void RestoreState(SavedState saved)
+    {
+        var buffers = SavedBuffers();
+
+        if (buffers.Length != saved.Buffers.Length || buffers.Where((b, i) => b.Size != saved.Buffers[i].Length).Any())
+            throw new ArgumentException("Saved state doesn't match this emulator.", nameof(saved));
+
+        var current = _state;
+        var state = saved.State;
+
+        // C wrapper and YM2151
+        state.GetTicks = current.GetTicks;
+        state.Sleep = current.Sleep;
+        state.Step_Ym = current.Step_Ym;
+        state.WriteRegister_Ym = current.WriteRegister_Ym;
+        state.Ym_Timer0 = current.Ym_Timer0;
+        state.Ym_Timer1 = current.Ym_Timer1;
+        state.Ym_BusyTimer = current.Ym_BusyTimer;
+        state.Ym_Interrupt = current.Ym_Interrupt;
+        state.Ym_Address = current.Ym_Address;
+        state.Ym_Data = current.Ym_Data;
+        state.Ym_Left = current.Ym_Left;
+        state.Ym_Right = current.Ym_Right;
+        state.WrapperInitialised = current.WrapperInitialised;
+        state.WrapperSpacer = current.WrapperSpacer;
+        state.WrapperFlags = current.WrapperFlags;
+        state.Uart = current.Uart;
+
+        // run control and setup
+        state.Control = current.Control;
+        state.Frame_Control = current.Frame_Control;
+        state.Stepping = current.Stepping;
+        state.Brk_Causes_stop = current.Brk_Causes_stop;
+        state.Headless = current.Headless;
+        state.EnableWifi = current.EnableWifi;
+        state.DebugSprites = current.DebugSprites;
+        state.HistoryLogMask = current.HistoryLogMask;
+        state.InitialStartup = current.InitialStartup;
+
+        // host time. Moving the clock back would otherwise leave the emulator 'behind' and it'd run flat out until it
+        // caught up, so move the base on by the difference (8 cpu cycles a microsecond, base_ticks is milliseconds).
+        state.Clock_Pause = current.Clock_Pause;
+        state.BaseTicks = (ulong)((long)current.BaseTicks + ((long)current.Clock - (long)state.Clock) / 8000);
+
+        // the host reads the audio output as it's written, so it carries on from where it is
+        state.AudioWrite = current.AudioWrite;
+
+        // breakpoints belong to the debugger
+        state.Frame_Count_Breakpoint = current.Frame_Count_Breakpoint;
+        state.BreakpointSource = 0;
+        state.StackBreakpointHit = 0;
+
+        // make sure the window is redrawn
+        state.DisplayDirty = 2;
+        state.RenderReady = 1;
+
+        _state = state;
+        SetPointers();
+
+        for (var i = 0; i < buffers.Length; i++)
+            saved.Buffers[i].CopyTo(new Span<byte>((void*)buffers[i].Ptr, buffers[i].Size));
+
+        // the beam breakpoint table is current, so work out where the next one is from the restored clock
+        SetBeamBreakpointNext();
     }
 
     public unsafe void Reset()

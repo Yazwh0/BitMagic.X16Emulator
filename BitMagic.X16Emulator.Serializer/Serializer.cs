@@ -16,7 +16,7 @@ public static class X16EmulatorSerilizer
         toReturn.Vram = emulator.Vera.Vram.ToArray();
         toReturn.Display = emulator.DisplayRaw.ToArray();
         toReturn.Palette = emulator.Palette.ToArray();
-        toReturn.DisplayBuffer = emulator.DisplayRaw.ToArray();
+        toReturn.DisplayBuffer = emulator.DisplayBuffer.ToArray();
         toReturn.Sprites = emulator.Sprites.ToArray();
         toReturn.I2cBuffer = emulator.I2c.Buffer.ToArray();
         toReturn.SmcKeyboard = emulator.KeyboardBuffer.ToArray();
@@ -50,7 +50,7 @@ public static class X16EmulatorSerilizer
         CopyData(state.Vram, emulator.Vera.Vram);
         CopyData(state.Display, emulator.DisplayRaw);
         CopyData(state.Palette, emulator.Palette);
-        CopyData(state.DisplayBuffer, emulator.DisplayRaw);
+        CopyData(state.DisplayBuffer, emulator.DisplayBuffer);
         CopyData(state.Sprites, emulator.Sprites);
         CopyData(state.I2cBuffer, emulator.I2c.Buffer);
         CopyData(state.SmcKeyboard, emulator.KeyboardBuffer);

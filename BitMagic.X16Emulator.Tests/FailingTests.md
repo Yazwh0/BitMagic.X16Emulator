@@ -7,7 +7,7 @@ emulator core is wrong, against the official emulator (X16Community/x16-emulator
 | | Tests | Status |
 | --- | --- | --- |
 | The test was wrong | 24 | Fixed in the tests |
-| The core is wrong, the test is right | 15 | 13 fixed (sprite layers, AFLOW). 2 turned out to be something else, see below |
+| The core is wrong, the test is right | 15 | Fixed (sprite layers, AFLOW, and 2 sprites a line out with a display start) |
 | Both wrong | 11 | Fixed in the core and the tests |
 
 ## Running just these
@@ -100,7 +100,14 @@ is stored after the shift, so the upper bits can't reach it.
 Check: the 12 tests, then everything in `Vera.Background` and `Vera.Display` (which includes the sprite tests that pass
 now), then look at a sprite debug view in X16E with sprites turned off and on.
 
-### Sprites are a line out with a display start (2)
+### Done: sprites were a line out with a display start (2)
+
+Fixed on 2026-11-08 as in the plan below (steps 1 to 3): `renderstep_next_frame` now only adds `dc_vscale` when
+`dc_vstart == 0` and `dc_vstop > 0`. The new output differs from the old references by one row each, the first active
+line (`Vstart`: row 30 now blank; `Normal_VideoStart`: row 2 now sprite row 0), and both images were replaced. All 558
+`Vera.*` tests pass, and so does the full suite (2,257 passed, 3 skipped). Step 4 is `Vera/VstartLines.cs`: an 8bpp
+layer 0 bitmap with a different colour on each line, checking which bitmap line each display line shows against
+`(lines since the start * DC_VSCALE) >> 7`, for display starts 0, 1 and 10 and scales 128, 64, 32, 96 and 200.
 
 `Vera/Sprites_8bpp_64x64.cs`: `Vstart` (`sprites_8bpp_64x64_vstart.png`). `Vera/Sprites_8bpp_8x8.cs`: `Normal_VideoStart`
 (`sprites_8bpp_8x8_videostart.png`).

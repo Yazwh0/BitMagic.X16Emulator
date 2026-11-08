@@ -403,12 +403,22 @@ renderstep_next_frame proc
 	mov dword ptr [rdx].state.layer0_tiledone, -1
 	mov dword ptr [rdx].state.layer1_tiledone, -1
 
-	; Add line to scaled y
+	; Add line to scaled y, but only if line 0 is in the active area, as renderstep_next_line does.
+	; Otherwise the first active line would show line 1 rather than 0.
+	movzx rax, word ptr [rdx].state.dc_vstart
+	test rax, rax
+	jnz no_y_inc_frame
+
+	movzx rax, word ptr [rdx].state.dc_vstop
+	test rax, rax
+	jz no_y_inc_frame
+
 	mov r12d, dword ptr [rdx].state.scale_y
 	mov eax, [rdx].state.dc_vscale
 	add r12, rax
-	mov [rdx].state.scale_y, r12d		
+	mov [rdx].state.scale_y, r12d
 
+no_y_inc_frame:
 	; next line, reset counters
 	xor r15, 0100000000000b	; flip top bit
 	and r15, 0100000000000b	; and clear count

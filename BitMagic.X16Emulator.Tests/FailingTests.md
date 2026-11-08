@@ -7,17 +7,17 @@ emulator core is wrong, against the official emulator (X16Community/x16-emulator
 | | Tests | Status |
 | --- | --- | --- |
 | The test was wrong | 24 | Fixed in the tests |
-| The core is wrong, the test is right | 15 | 10 fixed (sprite layers). 3 to do (AFLOW). 2 turned out to be something else, see below |
+| The core is wrong, the test is right | 15 | 13 fixed (sprite layers, AFLOW). 2 turned out to be something else, see below |
 | Both wrong | 11 | To do: core first, then the tests |
 
 ## Running just these
 
 Build with MSBuild, then run the project (not the dll, see CLAUDE.md), with a filter rather than the full suite.
 
-The 16 still failing (the filter runs 17: `Name=` ignores case, so `Vstart` also picks up `Background.VStart`, which passes):
+The 13 still failing (the filter runs 14: `Name=` ignores case, so `Vstart` also picks up `Background.VStart`, which passes):
 
 ```powershell
-dotnet test BitMagic.X16Emulator/BitMagic.X16Emulator.Tests/BitMagic.X16Emulator.Tests.csproj --no-build -p:Platform=x64 --filter "Name=Hit_Reset|Name=Interrupt_Aflow|Name=Vstart|Name=Normal_VideoStart|Name=Noise_High_Left_Voice0|Name=Noise_Low_Left_Voice0|Name=Pulse_Both_Voice0|Name=Pulse_Both_Volume2_Voice0|Name=Pulse_Both_VolumeMax_Voice0|Name=Pulse_Left_Voice0|Name=Pulse_Left_Voice15|Name=Pulse_Left_Voice2|Name=Pulse_Right_Voice0|Name=Saw_Left_Voice0|Name=Triangle_Left_Voice0"
+dotnet test BitMagic.X16Emulator/BitMagic.X16Emulator.Tests/BitMagic.X16Emulator.Tests.csproj --no-build -p:Platform=x64 --filter "Name=Vstart|Name=Normal_VideoStart|Name=Noise_High_Left_Voice0|Name=Noise_Low_Left_Voice0|Name=Pulse_Both_Voice0|Name=Pulse_Both_Volume2_Voice0|Name=Pulse_Both_VolumeMax_Voice0|Name=Pulse_Left_Voice0|Name=Pulse_Left_Voice15|Name=Pulse_Left_Voice2|Name=Pulse_Right_Voice0|Name=Saw_Left_Voice0|Name=Triangle_Left_Voice0"
 ```
 
 The classes touched by the test fixes, to check nothing else in them broke:
@@ -119,6 +119,12 @@ showed whether it changed them. To do: check how the official `video.c` picks th
 
 Not caused by the sprite fix (which only changes pixels when sprites are off) or by the uncommitted render ahead and vsync
 breakpoint changes (which don't touch rendering).
+
+### Done: AFLOW (3)
+
+Both fixes below were made on 2026-11-08 (`and eax, 0111b` to `01111b` in each place in `Vera.asm`). The 3 tests pass,
+and so does everything in `Interrupt_Vsync`, `Interrupt_Line`, `Vera_Initialise`, the `Pcm*` tests, `Core.EmulatorTests`
+and `Interrupts` (124 tests).
 
 ### Writing ISR wipes AFLOW (2)
 

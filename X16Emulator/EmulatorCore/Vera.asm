@@ -579,7 +579,7 @@ dc_done:
     ;or al, bl
 
     mov eax, dword ptr [rdx].state.interrupt_mask
-    and eax, 0111b
+    and eax, 01111b                 ; vsync, line, spcol and aflow enables
 
     mov bx, word ptr [rdx].state.interrupt_linenum
     mov byte ptr [rsi+IRQLINE_L], bl
@@ -2738,7 +2738,7 @@ vera_update_isr proc
     and dword ptr [rdx].state.interrupt_hit, eax
 
     and r12d, 0f0h				    ; mask out lower four bits from previous value
-    and eax, 0111b                  ; clear bottom three bits for whats been hit
+    and eax, 01111b                 ; what's been hit, including aflow, which a write can't clear (r13 only clears bits 0-2)
     or r12d, eax                    ; set back whast been hit
     and r12d, r13d                  ; mask off what we've just cleared
     mov byte ptr [rsi+rbx], r12b    ; store

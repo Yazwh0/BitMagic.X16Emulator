@@ -169,9 +169,10 @@ public class Timer1
         emulator.Via.Timer1_Continous = false;
         emulator.A = 0x10;
 
-        emulator.RomBank[0x3ffa] = 0x00;
-        emulator.RomBank[0x3ffb] = 0x09;
+        emulator.RomBank[0x3ffe] = 0x00; // VIA1 drives IRQ on the X16
+        emulator.RomBank[0x3fff] = 0x09;
 
+        // IRQ is level triggered, so the handler stops rather than return into the same interrupt
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
@@ -179,14 +180,15 @@ public class Timer1
                 wai
                 stp
                 .org $900
-                rti
+                stp
                 ",
                 emulator);
 
+        emulator.AssertState(Pc: 0x901);
         Assert.AreEqual(0b11000000, emulator.Memory[0x9f0d]);
         Assert.IsFalse(emulator.Via.Timer1_Running);
         Assert.IsTrue(emulator.Clock > 0x1000);
-        Assert.IsTrue(emulator.Nmi);
+        Assert.IsTrue(emulator.Via.Interrupt);
     }
 
     [TestMethod]
@@ -199,8 +201,8 @@ public class Timer1
         emulator.Via.Timer1_Continous = false;
         emulator.A = 0x10;
 
-        emulator.RomBank[0x3ffa] = 0x00;
-        emulator.RomBank[0x3ffb] = 0x09;
+        emulator.RomBank[0x3ffe] = 0x00; // VIA1 drives IRQ on the X16
+        emulator.RomBank[0x3fff] = 0x09;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -218,7 +220,7 @@ public class Timer1
 
         Assert.AreEqual(0b11000000, emulator.Memory[0x9f0d]);
         Assert.AreEqual(0b10000000, emulator.Memory[0x9f0e]);
-        Assert.IsFalse(emulator.Nmi);
+        Assert.IsFalse(emulator.Via.Interrupt);
         Assert.IsFalse(emulator.Via.Timer1_Running);
         Assert.IsTrue(emulator.Clock > 0x1000);
     }
@@ -233,8 +235,8 @@ public class Timer1
         emulator.Via.Timer1_Continous = false;
         emulator.A = 0x10;
 
-        emulator.RomBank[0x3ffa] = 0x00;
-        emulator.RomBank[0x3ffb] = 0x09;
+        emulator.RomBank[0x3ffe] = 0x00; // VIA1 drives IRQ on the X16
+        emulator.RomBank[0x3fff] = 0x09;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -252,7 +254,7 @@ public class Timer1
 
         Assert.AreEqual(0b00000000, emulator.Memory[0x9f0d]);
         Assert.AreEqual(0b11000000, emulator.Memory[0x9f0e]);
-        Assert.IsFalse(emulator.Nmi);
+        Assert.IsFalse(emulator.Via.Interrupt);
         Assert.IsFalse(emulator.Via.Timer1_Running);
         Assert.IsTrue(emulator.Clock > 0x1000);
     }
@@ -267,12 +269,13 @@ public class Timer1
         emulator.Via.Timer1_Continous = false;
         emulator.A = 0x10;
 
-        emulator.RomBank[0x3ffa] = 0x00;
-        emulator.RomBank[0x3ffb] = 0x09;
+        emulator.RomBank[0x3ffe] = 0x00; // VIA1 drives IRQ on the X16
+        emulator.RomBank[0x3fff] = 0x09;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
+                sei             ; wai still wakes, but the IRQ isn't taken
                 sta V_T1_H
                 wai
                 lda V_T1_L
@@ -284,7 +287,7 @@ public class Timer1
 
         Assert.AreEqual(0b00000000, emulator.Memory[0x9f0d]);
         Assert.AreEqual(0b11000000, emulator.Memory[0x9f0e]);
-        Assert.IsFalse(emulator.Nmi);
+        Assert.IsFalse(emulator.Via.Interrupt);
         Assert.IsFalse(emulator.Via.Timer1_Running);
         Assert.IsTrue(emulator.Clock > 0x1000);
     }
@@ -299,8 +302,8 @@ public class Timer1
         emulator.Via.Timer1_Continous = true;
         emulator.A = 0x10;
 
-        emulator.RomBank[0x3ffa] = 0x00;
-        emulator.RomBank[0x3ffb] = 0x09;
+        emulator.RomBank[0x3ffe] = 0x00; // VIA1 drives IRQ on the X16
+        emulator.RomBank[0x3fff] = 0x09;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
@@ -317,6 +320,6 @@ public class Timer1
         Assert.AreEqual(0b11000000, emulator.Memory[0x9f0d]); // IFR is set
         Assert.IsTrue(emulator.Via.Timer1_Running);
         Assert.IsTrue(emulator.Clock > 0x1000);
-        Assert.IsTrue(emulator.Nmi);
+        Assert.IsTrue(emulator.Via.Interrupt);
     }
 }

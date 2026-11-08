@@ -45,8 +45,9 @@ public class PcmPlay
                 stp",
                 emulator);
 
-        Assert.AreEqual(0xab * 1, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0xab * 1, emulator.AudioOutputBuffer[1]);
+        // samples are signed, shifted up to 16 bit, then scaled by volume / 64, as Play_8bitMono_16Volume at 64
+        Assert.AreEqual(unchecked((short)0xab00) * 1 >> 6, emulator.AudioOutputBuffer[0]);
+        Assert.AreEqual(unchecked((short)0xab00) * 1 >> 6, emulator.AudioOutputBuffer[1]);
     }
 
     [TestMethod]

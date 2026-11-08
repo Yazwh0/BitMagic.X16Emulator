@@ -635,6 +635,7 @@ public class Emulator : IDisposable
         public ulong SpiNextCpuRead = 0; // cpu tick when the next read can occur
 
         public ulong Beam_Breakpoint_Next = 0xffff_ffff_ffff_ffff;
+        public ulong Render_Ahead = 0; // non zero to only render the display this many cpu ticks ahead, see RenderAhead
 
         public uint IgnoreBreakpoint = 0;
         public uint Beam_Breakpoint_Index = 0;
@@ -964,7 +965,15 @@ public class Emulator : IDisposable
         Stepping,
         Breakpoint,
         SmcReset,
+        Rendered, // from RenderAhead, only the display was run
         Unsupported = -1
+    }
+
+    public enum DisplayRenderMode
+    {
+        Beam,           // the display as drawn up to the beam
+        FinishFrame,    // and the rest of the frame drawn to vsync from VERA as it is now
+        FromState       // the whole frame drawn from VERA as it is now
     }
 
     [Flags]
@@ -1160,6 +1169,9 @@ public class Emulator : IDisposable
 
     // Silences the audio at the output stage only, emulation is unaffected.
     public bool MuteAudio { get; set; }
+
+    // The same, but for the debugger to change while running, eg while scrubbing through a frame. On top of MuteAudio.
+    public bool DebuggerMute { get; set; }
 
     public void LoadSdCard(SdCard sdCard)
     {
@@ -1570,6 +1582,75 @@ public class Emulator : IDisposable
 
         return offset;
     }
+
+    /// <summary>
+    /// Cpu cycles from where the beam is now until it's next at or past (x, y), 0 if it's there now.
+    /// </summary>
+    public uint CyclesToBeam(int x, int y) => (BeamOffset(x, y) + BeamCyclesPerFrame - CurrentBeamOffset) % BeamCyclesPerFrame;
+
+    /// <summary>
+    /// Cpu cycles to render ahead for a render mode, see RenderAhead. FromState renders to the next vsync and then to
+    /// the one after, so every visible line is drawn from the state. In the blanking lines after vsync the next vsync
+    /// is already a whole visible frame away, so that's as far as it goes.
+    /// </summary>
+    public ulong RenderAheadCycles(DisplayRenderMode mode)
+    {
+        var toVsync = CyclesToBeam(0, BeamVsyncLine);
+        var inBlanking = CurrentBeamOffset < (BeamHeight - BeamVsyncLine) * BeamCyclesPerLine;
+
+        return mode switch
+        {
+            DisplayRenderMode.Beam => 0,
+            DisplayRenderMode.FinishFrame => toVsync,
+            DisplayRenderMode.FromState => inBlanking && toVsync != 0 ? toVsync : toVsync + BeamCyclesPerFrame,
+            _ => throw new ArgumentOutOfRangeException(nameof(mode))
+        };
+    }
+
+    private byte[]? _renderAheadDisplay;
+    private byte[]? _renderAheadDisplayBuffer;
+
+    /// <summary>
+    /// Runs only the display on from the current clock by cycles, using VERA as it is now. Nothing else is clocked, the
+    /// cpu doesn't run. rendered is called while the display holds the result, then the display and the state are put
+    /// back so the emulator carries on as if this never happened. Only call this while the emulator isn't running.
+    /// </summary>
+    public unsafe void RenderAhead(ulong cycles, Action rendered)
+    {
+        if (cycles == 0 || Headless)
+        {
+            rendered();
+            return;
+        }
+
+        var display = DisplayRaw;
+        var displayBuffer = DisplayBuffer;
+
+        _renderAheadDisplay ??= new byte[DisplaySize];
+        _renderAheadDisplayBuffer ??= new byte[DisplayBufferSize];
+
+        display.CopyTo(_renderAheadDisplay);
+        displayBuffer.CopyTo(_renderAheadDisplayBuffer);
+        var state = _state;
+
+        try
+        {
+            _state.Render_Ahead = cycles;
+            var result = (EmulatorResult)fnEmulatorCode(ref _state);
+
+            if (result != EmulatorResult.Rendered)
+                throw new InvalidOperationException($"Render ahead returned {result}.");
+
+            rendered();
+        }
+        finally
+        {
+            _state = state;
+            _renderAheadDisplay.CopyTo(display);
+            _renderAheadDisplayBuffer.CopyTo(displayBuffer);
+        }
+    }
+
     public ulong AudioOutputPtr => _audioOutput_ptr;
     public SmcBuffer SmcBuffer { get; }
     public EmulatorResult Result { get; internal set; }

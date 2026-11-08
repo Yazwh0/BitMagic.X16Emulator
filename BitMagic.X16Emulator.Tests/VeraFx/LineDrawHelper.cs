@@ -29,7 +29,7 @@ public class LineDrawHelper
             .IgnoreVera()
             .AssertNoOtherChanges();
 
-        Assert.AreEqual(0x00003fc0u, emulator.VeraFx.IncrementX);
+        Assert.AreEqual(0x00007f80u, emulator.VeraFx.IncrementX); // 6.9 fixed point, stored as 16.16
     }
 
     [TestMethod]
@@ -38,7 +38,7 @@ public class LineDrawHelper
         using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0x03;
-        emulator.VeraFx.AddrMode = 2; // line draw
+        emulator.VeraFx.AddrMode = 1; // line draw (2 is polygon fill)
         emulator.A = 0x7f;
 
         var (_, snapshot) = await X16TestHelper.EmulateChanges(@"
@@ -56,7 +56,7 @@ public class LineDrawHelper
             .IgnoreVera()
             .AssertNoOtherChanges();
 
-        Assert.AreEqual(0x001fc000u, emulator.VeraFx.IncrementX);
+        Assert.AreEqual(0x003f8000u, emulator.VeraFx.IncrementX); // 6.9 fixed point, stored as 16.16
         Assert.AreEqual(0x00008000u, emulator.VeraFx.PositionX);
         Assert.IsFalse(emulator.VeraFx.Mult32X);
     }
@@ -67,7 +67,7 @@ public class LineDrawHelper
         using var emulator = new Emulator();
 
         emulator.Vera.DcSel = 0x03;
-        emulator.VeraFx.AddrMode = 2; // line draw
+        emulator.VeraFx.AddrMode = 1; // line draw (2 is polygon fill)
         emulator.A = 0xff;
 
         var (_, snapshot) = await X16TestHelper.EmulateChanges(@"
@@ -85,7 +85,7 @@ public class LineDrawHelper
             .IgnoreVera()
             .AssertNoOtherChanges();
 
-        Assert.AreEqual(0x001fc000u, emulator.VeraFx.IncrementX);
+        Assert.AreEqual(0x003f8000u, emulator.VeraFx.IncrementX); // 6.9 fixed point, stored as 16.16
         Assert.AreEqual(0x00008000u, emulator.VeraFx.PositionX);
         Assert.IsTrue(emulator.VeraFx.Mult32X);
     }
@@ -114,7 +114,7 @@ public class LineDrawHelper
             .IgnoreVera()
             .AssertNoOtherChanges();
 
-        Assert.AreEqual(0x001fc000u, emulator.VeraFx.IncrementX);
+        Assert.AreEqual(0x003f8000u, emulator.VeraFx.IncrementX); // 6.9 fixed point, stored as 16.16
         Assert.AreEqual(0x00000000u, emulator.VeraFx.PositionX);
         Assert.IsFalse(emulator.VeraFx.Mult32X);
     }

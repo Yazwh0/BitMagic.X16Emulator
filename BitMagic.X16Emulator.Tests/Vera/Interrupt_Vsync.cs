@@ -6,7 +6,11 @@ namespace BitMagic.X16Emulator.Tests;
 public class Interrupt_Vsync
 {
     private const int VSYNC = 0x01;
+    private const int LINE = 0x02;
     private const int AFLOW = 0x08;
+
+    // The LINE flag is set whenever the beam reaches IRQLINE (0 by default), whether or not the line interrupt is
+    // enabled: IEN only decides if the flag raises an IRQ. So a test that runs past line 0 sees it set.
 
     [TestMethod]
     public async Task Hit()
@@ -82,9 +86,9 @@ public class Interrupt_Vsync
         // emulation
         emulator.AssertState(Pc: 0x821);
         Assert.AreEqual(true, emulator.Vera.Interrupt_Vsync_Hit);
-        Assert.AreEqual(false, emulator.Vera.Interrupt_Line_Hit);
+        Assert.AreEqual(true, emulator.Vera.Interrupt_Line_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_SpCol_Hit);
-        Assert.AreEqual(VSYNC + AFLOW, emulator.Memory[0x9F27]);
+        Assert.AreEqual(VSYNC + LINE + AFLOW, emulator.Memory[0x9F27]);
     }
 
     [TestMethod]
@@ -201,9 +205,9 @@ public class Interrupt_Vsync
 
         emulator.AssertState(0xab);
         Assert.AreEqual(true, emulator.Vera.Interrupt_Vsync_Hit);
-        Assert.AreEqual(false, emulator.Vera.Interrupt_Line_Hit);
+        Assert.AreEqual(true, emulator.Vera.Interrupt_Line_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_SpCol_Hit);
-        Assert.AreEqual(VSYNC + AFLOW, emulator.Memory[0x9F27]);
+        Assert.AreEqual(VSYNC + LINE + AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Interrupt);
     }
 
@@ -244,9 +248,9 @@ public class Interrupt_Vsync
 
         emulator.AssertState(0xab);
         Assert.AreEqual(true, emulator.Vera.Interrupt_Vsync_Hit);
-        Assert.AreEqual(false, emulator.Vera.Interrupt_Line_Hit);
+        Assert.AreEqual(true, emulator.Vera.Interrupt_Line_Hit);
         Assert.AreEqual(false, emulator.Vera.Interrupt_SpCol_Hit);
-        Assert.AreEqual(VSYNC + AFLOW, emulator.Memory[0x9F27]);
+        Assert.AreEqual(VSYNC + LINE + AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Interrupt);
     }
 
@@ -288,7 +292,7 @@ public class Interrupt_Vsync
         // emulation
         Assert.AreEqual(0x01, emulator.Memory[0x03]);
         Assert.AreEqual(0x00, emulator.Memory[0x9F26]);
-        Assert.AreEqual(AFLOW, emulator.Memory[0x9F27]);
+        Assert.AreEqual(LINE + AFLOW, emulator.Memory[0x9F27]);
         Assert.IsFalse(emulator.Interrupt);
     }
 

@@ -1,8 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Used by 'dotnet test' on the project and by Visual Studio. Running 'dotnet test' on the dll skips it unless it's
+     passed with the settings option. -->
 <RunSettings>
   <MSTest>
     <!-- per test, in ms, override with [Timeout] on a test. a hung emulation is stopped by
          X16TestHelper.EmulateWithTimeout, this is the backstop for anything else -->
     <TestTimeout>15000</TestTimeout>
   </MSTest>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <!-- the last resort: if a test is still running after this, eg the native core is stuck where MSTest's timeout
+           can't stop it, the test host is killed and the hung test is named in the output -->
+      <DataCollector friendlyName="blame" enabled="True">
+        <Configuration>
+          <CollectDumpOnTestSessionHang TestTimeout="60s" HangDumpType="None" />
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+  <LoggerRunSettings>
+    <Loggers>
+      <!-- list each test as it finishes, as the full run takes over ten minutes and is otherwise silent -->
+      <Logger friendlyName="console" enabled="True">
+        <Configuration>
+          <Verbosity>normal</Verbosity>
+        </Configuration>
+      </Logger>
+    </Loggers>
+  </LoggerRunSettings>
 </RunSettings>

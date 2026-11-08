@@ -126,6 +126,7 @@ state struct
 	spi_nextcpuread			qword ?
 
 	beam_breakpoint_next    qword ?
+	render_ahead			qword ?	; non zero to only render the display this many cpu ticks ahead, see X16Emulator.RenderAhead
 
 	; ---------- dword start
 

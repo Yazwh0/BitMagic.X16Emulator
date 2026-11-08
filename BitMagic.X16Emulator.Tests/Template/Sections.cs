@@ -669,4 +669,30 @@ public static void Process(ViewFile file)
         Assert.AreEqual(0x10, emulator.A);
         Assert.AreEqual(0x20, emulator.X);
     }
+
+    [TestMethod]
+    public async Task SameNameFromDifferentFoldersNeedsALibraryName()
+    {
+        // both would build as 'BitMagic.App.globals.Template', so one would load the other's cached build
+        var e = await BuildFails(Files(
+            ("main.bmasm", "import X=\"a/x.bmasm\";\nimport Y=\"b/y.bmasm\";\n" + Header + "    stp\n"),
+            ("a/x.bmasm", "library FolderA.X;\nimport G=\"globals.bmasm\";\n"),
+            ("a/globals.bmasm", "public static int Value = 0x10;\n"),
+            ("b/y.bmasm", "library FolderB.Y;\nimport G=\"globals.bmasm\";\n"),
+            ("b/globals.bmasm", "public static int Value = 0x20;\n")));
+
+        AssertError(e, "b/globals.bmasm", -1, "both build as 'BitMagic.App.globals.Template'. Rename one, or give it a 'library' name.");
+    }
+
+    [TestMethod]
+    public async Task SameLibraryNameIsAnError()
+    {
+        var e = await BuildFails(Files(
+            ("main.bmasm", "import A=\"a.bmasm\";\nimport B=\"b.bmasm\";\n" + Header + "    stp\n"),
+            ("a.bmasm", "library Test.Same;\n"),
+            ("b.bmasm", "; b\nlibrary Test.Same;\n")));
+
+        AssertError(e, "b.bmasm", 2, "a.bmasm' and '");
+        StringAssert.Contains(e.Errors[0].ErrorText, "b.bmasm' both build as 'Test.Same'.");
+    }
 }

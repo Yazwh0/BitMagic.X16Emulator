@@ -205,7 +205,8 @@ public class EmulatorTests
     {
         using var emulator = new Emulator();
 
-        emulator.InterruptHit = InterruptSource.Vsync;
+        // nothing pending, so no interrupt is taken
+        emulator.InterruptHit = InterruptSource.None;
         emulator.InterruptMask = InterruptSource.Vsync;
 
         await X16TestHelper.Emulate(@"

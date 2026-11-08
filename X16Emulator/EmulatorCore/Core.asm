@@ -39,6 +39,7 @@ EXIT_SMC_POWEROFF equ 4
 EXIT_STEPPING equ 5
 EXIT_BREAKPOINT equ 6
 EXIT_SMC_RESET equ 7
+EXIT_RENDERED equ 8
 
 readonly_memory equ 0c000h - 1		; stop all writes above this location
 
@@ -223,7 +224,12 @@ asm_func proc state_ptr:QWORD
     jne not_supported
 
     pop rdx
-    
+
+    ; only run the display forward render_ahead cpu ticks, nothing else is clocked. see X16Emulator.RenderTo
+    mov rax, [rdx].state.render_ahead
+    test rax, rax
+    jnz render_ahead
+
     push rdx
     push rcx
     call qword ptr [rdx].state.get_ticks
@@ -735,8 +741,11 @@ vera_render_done:
     inc eax
     mov dword ptr [rdx].state.frame_count, eax
 
+    ; flag the breakpoint rather than exit, so the rest of vsync is done first (the irqs especially), vsync_done exits
     cmp eax, dword ptr [rdx].state.frame_count_breakpoint
-    je breakpoint_exit_vsync
+    jne vsync_no_breakpoint
+    or [rdx].state.breakpoint_source, BREAKPOINT_VSYNC
+vsync_no_breakpoint:
 
     ;add dword ptr [rdx].state.frame_count, 1
 
@@ -832,7 +841,7 @@ vsync_test:
     mov ecx, dword ptr [rdx].state.interrupt_mask
     and ecx, INTERRUPT_VSYNC
     ;test cl, cl
-    jz main_loop
+    jz vsync_done
 
     ; set vsync
     ; todo: use rbx from above??
@@ -840,6 +849,11 @@ vsync_test:
     or dword ptr [rdx].state.interrupt_hit, INTERRUPT_VSYNC
     ;mov byte ptr [rdx].state.interrupt_vsync_hit, 1
     ;mov byte ptr [rdx].state.interrupt, 1
+
+vsync_done:
+    ; the vsync breakpoint stops here, with the irqs pending so they're taken when it carries on
+    test [rdx].state.breakpoint_source, BREAKPOINT_VSYNC
+    jnz breakpoint_exit
 
     jmp main_loop
 
@@ -870,6 +884,15 @@ not_supported:
     mov rax, EXIT_NOTSUPPORTED
     ret
 
+render_ahead:
+    mov r14, [rdx].state.clock          ; the renderer works to the clock in r14, the state's clock isn't changed
+    add r14, rax
+    call vera_render_display
+    mov qword ptr [rdx].state.render_ahead, 0
+    restore_registers
+    mov rax, EXIT_RENDERED
+    ret
+
 step_exit:
     call vera_render_display
     mov [rdx].state.render_ready, 1						; signal that we need to redraw the UI
@@ -896,10 +919,6 @@ breakpoint_exit_stack:
 
 breakpoint_exit_normal:
     or [rdx].state.breakpoint_source, BREAKPOINT
-    jmp breakpoint_exit
-
-breakpoint_exit_vsync:
-    or [rdx].state.breakpoint_source, BREAKPOINT_VSYNC
     jmp breakpoint_exit
 
     ; move past every entry the beam has reached, the table is deltas from the previous entry.

@@ -63,7 +63,7 @@ public class PsgRegisters
                 stp",
                 emulator);
 
-        Assert.AreEqual(01u, emulator.VeraAudio.PsgVoices[0].Volume);
+        Assert.AreEqual(4u, emulator.VeraAudio.PsgVoices[0].Volume); // volume_lut[1]
     }
 
     [TestMethod]
@@ -81,7 +81,7 @@ public class PsgRegisters
                 stp",
                 emulator);
 
-        Assert.AreEqual(04u, emulator.VeraAudio.PsgVoices[0].Volume);
+        Assert.AreEqual(33u, emulator.VeraAudio.PsgVoices[0].Volume); // volume_lut[16]
     }
 
     [TestMethod]
@@ -99,7 +99,7 @@ public class PsgRegisters
                 stp",
                 emulator);
 
-        Assert.AreEqual(63u, emulator.VeraAudio.PsgVoices[0].Volume);
+        Assert.AreEqual(511u, emulator.VeraAudio.PsgVoices[0].Volume); // volume_lut[63]
     }
 
     [TestMethod]
@@ -172,7 +172,7 @@ public class PsgRegisters
                 emulator);
 
         Assert.AreEqual(03u, emulator.VeraAudio.PsgVoices[0].LeftRight);
-        Assert.AreEqual(0x3fu, emulator.VeraAudio.PsgVoices[0].Volume);
+        Assert.AreEqual(511u, emulator.VeraAudio.PsgVoices[0].Volume); // volume_lut[63]
     }
 
     [TestMethod]
@@ -284,7 +284,7 @@ public class PsgRegisters
                 stp",
                 emulator);
 
-        Assert.AreEqual(01u, emulator.VeraAudio.PsgVoices[1].Volume);
+        Assert.AreEqual(4u, emulator.VeraAudio.PsgVoices[1].Volume); // volume_lut[1]
     }
 
     [TestMethod]
@@ -302,7 +302,7 @@ public class PsgRegisters
                 stp",
                 emulator);
 
-        Assert.AreEqual(04u, emulator.VeraAudio.PsgVoices[1].Volume);
+        Assert.AreEqual(33u, emulator.VeraAudio.PsgVoices[1].Volume); // volume_lut[16]
     }
 
     [TestMethod]
@@ -320,7 +320,7 @@ public class PsgRegisters
                 stp",
                 emulator);
 
-        Assert.AreEqual(63u, emulator.VeraAudio.PsgVoices[1].Volume);
+        Assert.AreEqual(511u, emulator.VeraAudio.PsgVoices[1].Volume); // volume_lut[63]
     }
 
     [TestMethod]
@@ -486,7 +486,7 @@ public class PsgRegisters
                 stp",
                 emulator);
 
-        Assert.AreEqual(01u, emulator.VeraAudio.PsgVoices[15].Volume);
+        Assert.AreEqual(4u, emulator.VeraAudio.PsgVoices[15].Volume); // volume_lut[1]
     }
 
     [TestMethod]
@@ -504,7 +504,7 @@ public class PsgRegisters
                 stp",
                 emulator);
 
-        Assert.AreEqual(04u, emulator.VeraAudio.PsgVoices[15].Volume);
+        Assert.AreEqual(33u, emulator.VeraAudio.PsgVoices[15].Volume); // volume_lut[16]
     }
 
     [TestMethod]
@@ -522,7 +522,7 @@ public class PsgRegisters
                 stp",
                 emulator);
 
-        Assert.AreEqual(63u, emulator.VeraAudio.PsgVoices[15].Volume);
+        Assert.AreEqual(511u, emulator.VeraAudio.PsgVoices[15].Volume); // volume_lut[63]
     }
 
     [TestMethod]

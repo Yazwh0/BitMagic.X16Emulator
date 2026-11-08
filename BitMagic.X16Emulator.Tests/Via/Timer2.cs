@@ -113,8 +113,8 @@ public class Timer2
         emulator.Via.Interrupt_Timer2 = true;
         emulator.A = 0x10;
 
-        emulator.RomBank[0x3ffa] = 0x00;
-        emulator.RomBank[0x3ffb] = 0x09;
+        emulator.RomBank[0x3ffe] = 0x00; // VIA1 drives IRQ on the X16
+        emulator.RomBank[0x3fff] = 0x09;
 
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40

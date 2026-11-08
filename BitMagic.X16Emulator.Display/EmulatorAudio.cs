@@ -116,7 +116,7 @@ public unsafe class EmulatorAudio : IDisposable
         {
             RenderAudio(stream, length);
 
-            if (Muted)
+            if (Muted || _emulator.DebuggerMute)
                 new Span<byte>(stream, length).Clear();
         }
         catch

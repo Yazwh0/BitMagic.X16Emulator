@@ -636,8 +636,10 @@ depth_jump_table:
 	dq depth_2 - depth_jump_table
 	dq depth_3 - depth_jump_table
 
-depth_0:
-sprites_not_enabled:										; rax will be zero, so no write
+sprites_not_enabled:
+	xor eax, eax											; only al was cleared, so clear the rest for a transparent pixel
+	xor r11d, r11d											; r11 is still the buffer index, not a debug colour
+depth_0:													; eax is zero and r11d is the debug colour
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L1], eax
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L2], eax
 	mov dword ptr [rdi + r9 * 4 + SPRITE_L3], eax

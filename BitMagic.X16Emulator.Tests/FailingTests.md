@@ -7,17 +7,17 @@ emulator core is wrong, against the official emulator (X16Community/x16-emulator
 | | Tests | Status |
 | --- | --- | --- |
 | The test was wrong | 24 | Fixed in the tests |
-| The core is wrong, the test is right | 15 | To do: needs `.asm` changes |
+| The core is wrong, the test is right | 15 | 10 fixed (sprite layers). 3 to do (AFLOW). 2 turned out to be something else, see below |
 | Both wrong | 11 | To do: core first, then the tests |
 
 ## Running just these
 
 Build with MSBuild, then run the project (not the dll, see CLAUDE.md), with a filter rather than the full suite.
 
-The 26 still failing:
+The 16 still failing (the filter runs 17: `Name=` ignores case, so `Vstart` also picks up `Background.VStart`, which passes):
 
 ```powershell
-dotnet test BitMagic.X16Emulator/BitMagic.X16Emulator.Tests/BitMagic.X16Emulator.Tests.csproj --no-build -p:Platform=x64 --filter "Name=Hit_Reset|Name=Interrupt_Aflow|Name=Area|Name=Colour|Name=DisabeledMidway|Name=EnabledMidway|Name=HStart|Name=HStop|Name=VStart|Name=VStop|Name=Vstart|Name=Normal_VideoStart|Name=Normal_192HScale_Layer0|Name=Normal_192HScale_Layer1|Name=Noise_High_Left_Voice0|Name=Noise_Low_Left_Voice0|Name=Pulse_Both_Voice0|Name=Pulse_Both_Volume2_Voice0|Name=Pulse_Both_VolumeMax_Voice0|Name=Pulse_Left_Voice0|Name=Pulse_Left_Voice15|Name=Pulse_Left_Voice2|Name=Pulse_Right_Voice0|Name=Saw_Left_Voice0|Name=Triangle_Left_Voice0"
+dotnet test BitMagic.X16Emulator/BitMagic.X16Emulator.Tests/BitMagic.X16Emulator.Tests.csproj --no-build -p:Platform=x64 --filter "Name=Hit_Reset|Name=Interrupt_Aflow|Name=Vstart|Name=Normal_VideoStart|Name=Noise_High_Left_Voice0|Name=Noise_Low_Left_Voice0|Name=Pulse_Both_Voice0|Name=Pulse_Both_Volume2_Voice0|Name=Pulse_Both_VolumeMax_Voice0|Name=Pulse_Left_Voice0|Name=Pulse_Left_Voice15|Name=Pulse_Left_Voice2|Name=Pulse_Right_Voice0|Name=Saw_Left_Voice0|Name=Triangle_Left_Voice0"
 ```
 
 The classes touched by the test fixes, to check nothing else in them broke:
@@ -43,7 +43,19 @@ The order of work: fix a group, run the filter above, then a full run only once 
 
 These need `.asm` changes, so check with the user first.
 
-### Sprite layers get garbage when sprites are disabled (12)
+### Done: sprite layers got garbage when sprites were disabled (10 of the 12)
+
+Fixed in `Vera_Display.asm` as described below, on 2026-11-08. Results:
+
+- 10 of the 12 pass.
+- `Sprites_8bpp_64x64.Disabeled`, which passed before, then failed: its reference image
+  (`Vera/Images/sprites_8bpp_64x64_disabled.png`) had been captured with the bug, and every one of its differences was
+  `0x00000200` expected where the core now writes 0. The image was replaced with the new output.
+- `Vstart` and `Normal_VideoStart` still fail, for a different reason that the garbage at 0,0 was hiding. See "Sprites are
+  a line out with a display start" below.
+- Everything in `Vera.Background`, `Vera.Display`, `Sprites*` and `Tiles*`: 207 pass, only those 2 fail.
+
+The original notes:
 
 `Vera/Background.cs`: `Area`, `Colour`, `HStart`, `HStop`, `VStart`, `VStop`. `Vera/Display/Sprites_8bpp_64x64.cs` (3),
 `Sprites_8bpp_8x8.cs` (1), `Tiles_1Bpp.cs` (2): `Vstart`, `EnabledMidway`, `DisabeledMidway`, `Normal_VideoStart`,
@@ -87,6 +99,26 @@ is stored after the shift, so the upper bits can't reach it.
 
 Check: the 12 tests, then everything in `Vera.Background` and `Vera.Display` (which includes the sprite tests that pass
 now), then look at a sprite debug view in X16E with sprites turned off and on.
+
+### Sprites are a line out with a display start (2)
+
+`Vera/Sprites_8bpp_64x64.cs`: `Vstart` (`sprites_8bpp_64x64_vstart.png`). `Vera/Sprites_8bpp_8x8.cs`: `Normal_VideoStart`
+(`sprites_8bpp_8x8_videostart.png`).
+
+Found once the sprite layer garbage was fixed. Every difference is in sprite layer 1 (`SPRITE_L1`), and the sprites are a
+line out:
+
+- `Vstart`: 840 pixels differ. The expected sprite covers rows 30 to 93 (64 lines), the actual 30 to 92 (63 lines); inside
+  it, 343 pixels go from white to clear and 336 from clear to white, as if one line of the sprite is skipped.
+- `Normal_VideoStart`: 6,340 pixels differ, the same pattern; the sprites' last row moves from 478 to 479.
+
+Not yet known which is right. Both tests set a display start (`DC_VSTART` and the like), and `4b8ab2f` (2025-12-30, "Fix
+vstop bug and adds line irqs past line 480") changed that area, after these tests were already failing at 0,0, so nothing
+showed whether it changed them. To do: check how the official `video.c` picks the sprite line when the display start isn't
+0, then decide whether the core or the reference images are wrong.
+
+Not caused by the sprite fix (which only changes pixels when sprites are off) or by the uncommitted render ahead and vsync
+breakpoint changes (which don't touch rendering).
 
 ### Writing ISR wipes AFLOW (2)
 

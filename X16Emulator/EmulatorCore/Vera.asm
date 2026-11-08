@@ -458,7 +458,7 @@ dc_done:
     mov bl, byte ptr [rdx].state.layer0_colourDepth
     and rbx, 00000011b
     or al, bl
-    mov ebx, dword ptr [rdx].state.layer1_t256c
+    mov ebx, dword ptr [rdx].state.layer0_t256c
     shl ebx, 3
     or al, bl
 

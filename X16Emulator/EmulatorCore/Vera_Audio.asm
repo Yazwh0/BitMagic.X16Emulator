@@ -43,7 +43,7 @@ psg_voice struct
 psg_voice ends
 
 vera_psg macro voicenumber
-local donothing, render_done, right, done, no_noise_change
+local donothing, donothing_reset, render_done, right, done, no_noise_reload
 	; ---------------------------------
 	; calculate new noise
 	mov ebx, [rdx].state.psg_noise_signal
@@ -69,13 +69,7 @@ local donothing, render_done, right, done, no_noise_change
 	or ecx, edi
 	and ecx, 0ffffh
 	mov [rdx].state.psg_noise_signal, ecx
-
-	mov ebx, [rdx].state.psg_noise
-	shl ebx, 1
-	and ecx, 1
-	or ebx, ecx
-	and ebx, 111111b
-	mov [rdx].state.psg_noise, ebx
+	; state.psg_noise is no longer used, the noise value comes from psg_noise_signal below
 
 	; move on phase
 	mov ebx, [rsi].psg_voice.leftright
@@ -88,15 +82,28 @@ local donothing, render_done, right, done, no_noise_change
 	and eax, 1ffffh
 	mov [rsi].psg_voice.phase, eax
 
+	; the noise value is reloaded when bit 16 of the phase falls, whatever the waveform, as on VERA
+	test ecx, 10000h
+	jz no_noise_reload
+	test eax, 10000h
+	jnz no_noise_reload
+	mov edi, [rdx].state.psg_noise_signal
+	shr edi, 1
+	and edi, 03fh
+	mov [rsi].psg_voice.noise, edi
+	no_noise_reload:
+
+	; eax is the new phase
 	jmp [rsi].psg_voice.generator
 
 	psg_&voicenumber&_pulse::
 	mov edi, [rsi].psg_voice.widthx
 	mov ecx, eax
 	shr ecx, 10
-	cmp edi, ecx			; set carry if greater (unsigned overflow)
+	cmp edi, ecx			; set carry if phase >> 10 is greater than the width
 	sbb ecx, ecx			; will be -1 if greater, 0 otherwise
 	and ecx, 03fh
+	xor ecx, 03fh			; $3f while phase >> 10 <= width, 0 after
 
 	jmp render_done
 
@@ -104,10 +111,12 @@ local donothing, render_done, right, done, no_noise_change
 	mov ecx, eax
 	shr ecx, 11
 	xor ecx, [rsi].psg_voice.widthx
+	xor ecx, 03fh			; ^ (width ^ $3f), so the default width of 63 leaves it alone
 
 	jmp render_done
 
 	psg_&voicenumber&_triangle::
+	mov ecx, eax			; the new phase
 	xor edi, edi
 	mov eax, 0ffffh
 	test ecx, 10000h		; high bit set? then we're decreasing
@@ -116,26 +125,23 @@ local donothing, render_done, right, done, no_noise_change
 	and ecx, 0ffffh			; mask of top bit
 	shr ecx, 10
 	xor ecx, [rsi].psg_voice.widthx
+	xor ecx, 03fh			; ^ (width ^ $3f), as the sawtooth
 
 	jmp render_done
 
 	psg_&voicenumber&_noise::
-	xor eax, ecx
-	test eax, 10000h
-	jz no_noise_change
-	mov ecx, [rdx].state.psg_noise
-	mov [rsi].psg_voice.noise, ecx			; store for next sample
-	mov edi, [rsi].psg_voice.widthx
-	xor edi, 03fh
-	and ecx, edi
-
-	jmp render_done
-
-	no_noise_change:
-	mov ecx, [rsi].psg_voice.noise
+	mov ecx, [rsi].psg_voice.noise			; reloaded above, on a falling edge of bit 16. the width isn't used
 	jmp render_done
 
 	donothing:
+	; the phase goes to 0, which is a falling edge for the noise value if bit 16 was set
+	test dword ptr [rsi].psg_voice.phase, 10000h
+	jz donothing_reset
+	mov edi, [rdx].state.psg_noise_signal
+	shr edi, 1
+	and edi, 03fh
+	mov [rsi].psg_voice.noise, edi
+	donothing_reset:
 	xor ecx, ecx
 	mov [rsi].psg_voice.phase, ecx
 	jmp done
@@ -155,14 +161,14 @@ local donothing, render_done, right, done, no_noise_change
 	sar ecx, 3
 	;shl ecx, 11								; convert to 32bit net of >> 3 << 14
 
-	test ebx, 1
+	test ebx, 1				; left?
 	je right
 
 	add r12d, ecx
-	;and ebx, 2 ??
-	je done
 
 	right:
+	test ebx, 2				; right?
+	jz done
 	add r13d, ecx
 
 	done:

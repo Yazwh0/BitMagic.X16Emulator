@@ -8,16 +8,16 @@ emulator core is wrong, against the official emulator (X16Community/x16-emulator
 | --- | --- | --- |
 | The test was wrong | 24 | Fixed in the tests |
 | The core is wrong, the test is right | 15 | 13 fixed (sprite layers, AFLOW). 2 turned out to be something else, see below |
-| Both wrong | 11 | To do: core first, then the tests |
+| Both wrong | 11 | Fixed in the core and the tests |
 
 ## Running just these
 
 Build with MSBuild, then run the project (not the dll, see CLAUDE.md), with a filter rather than the full suite.
 
-The 13 still failing (the filter runs 14: `Name=` ignores case, so `Vstart` also picks up `Background.VStart`, which passes):
+The 2 still failing (the filter runs 3: `Name=` ignores case, so `Vstart` also picks up `Background.VStart`, which passes):
 
 ```powershell
-dotnet test BitMagic.X16Emulator/BitMagic.X16Emulator.Tests/BitMagic.X16Emulator.Tests.csproj --no-build -p:Platform=x64 --filter "Name=Vstart|Name=Normal_VideoStart|Name=Noise_High_Left_Voice0|Name=Noise_Low_Left_Voice0|Name=Pulse_Both_Voice0|Name=Pulse_Both_Volume2_Voice0|Name=Pulse_Both_VolumeMax_Voice0|Name=Pulse_Left_Voice0|Name=Pulse_Left_Voice15|Name=Pulse_Left_Voice2|Name=Pulse_Right_Voice0|Name=Saw_Left_Voice0|Name=Triangle_Left_Voice0"
+dotnet test BitMagic.X16Emulator/BitMagic.X16Emulator.Tests/BitMagic.X16Emulator.Tests.csproj --no-build -p:Platform=x64 --filter "Name=Vstart|Name=Normal_VideoStart"
 ```
 
 The classes touched by the test fixes, to check nothing else in them broke:
@@ -112,13 +112,78 @@ line out:
   it, 343 pixels go from white to clear and 336 from clear to white, as if one line of the sprite is skipped.
 - `Normal_VideoStart`: 6,340 pixels differ, the same pattern; the sprites' last row moves from 478 to 479.
 
-Not yet known which is right. Both tests set a display start (`DC_VSTART` and the like), and `4b8ab2f` (2025-12-30, "Fix
-vstop bug and adds line irqs past line 480") changed that area, after these tests were already failing at 0,0, so nothing
-showed whether it changed them. To do: check how the official `video.c` picks the sprite line when the display start isn't
-0, then decide whether the core or the reference images are wrong.
+Not caused by the sprite fix (which only changes pixels when sprites are off) or by the render ahead and vsync breakpoint
+changes (which don't touch rendering).
 
-Not caused by the sprite fix (which only changes pixels when sprites are off) or by the uncommitted render ahead and vsync
-breakpoint changes (which don't touch rendering).
+#### What VERA does
+
+From the VERA Verilog (X16Community/vera-module, main, `fpga/source/graphics/composer.v`, `sprite_renderer.v`, `top.v`,
+`video/video_vga.v`). The official emulator isn't reliable here.
+
+- The line number the layers and sprites draw (`line_idx`) is a scaled counter, `scaled_y_counter_r[15:7]`. It's set to
+  0 (not moved on) on the first line where the composer's line counter reaches `active_vstart`, then has `DC_VSCALE`
+  added once per line while active, up to 480.
+- Each line is rendered one line ahead into a double buffer (`video_vga.v`: "Start rendering one line earlier"), so the
+  first active line (`scanline == vstart`) shows `line_idx` 0, the next shows 1 (at a scale of 128), and so on.
+- `DC_VSTART` is in 2 line units: `dc_active_vstart_next[8:1] = write_data; [0] = 0`. `DC_HSTART` is in 4 pixel units.
+- A sprite covers a line when `line_idx - y <= height` (10 bit, so lines above it wrap and fail), and the row drawn is
+  `line_idx - y` (or `height - that` flipped).
+- Horizontally the line buffer index is 0 at the first active pixel (`x_counter == active_hstart`), so sprite and layer
+  x are relative to `DC_HSTART`.
+
+So with `DC_VSTART = $0F` (line 30) and a 64 high sprite at y = 1: line 30 shows none of it, lines 31 to 93 show its
+rows 0 to 62 (its row 63 is blank). With `DC_VSTART = 1` (line 2) and sprites at y = 0: line 2 shows their row 0.
+
+#### Which side is wrong: both
+
+Row by row (sprite layer 1):
+
+| | First active line | After that |
+| --- | --- | --- |
+| VERA | `line_idx` 0 | 1, 2, 3 ... |
+| Reference images (from the emulator in 2023) | 1 | 1, 2, 3 ... (right) |
+| Core now | 1 | 2, 3, 4 ... (one line early throughout) |
+
+`Vstart`: the reference has rows 31 to 93 right, but row 30 repeats row 31. The core has the sprite on rows 30 to 92.
+`Normal_VideoStart`: the reference has rows 3 onwards right (row 8 is sprite row 6), but row 2 repeats row 3. The core is
+one line early everywhere, top and bottom. Horizontally both are right (`DC_HSTART = 2` puts x 0 at column 8).
+
+#### Why
+
+In `Vera_Display.asm`:
+
+- `renderstep_reset_buffer` (the line before the frame wraps) sets `scale_y` to 0.
+- `renderstep_next_line` adds `dc_vscale` when `vstart <= beam_y < vstop`.
+- `renderstep_next_frame` (the wrap to line 0) always adds `dc_vscale`, with no vstart check.
+
+With `vstart` 0 the add at the wrap is the right one, so every other sprite and layer test passes. With `vstart` above 0
+it moves the counter on before the active area starts, so everything is a line early.
+
+Before `4b8ab2f`, `renderstep_next_line` used `jge` (add only when `beam_y > vstart`). That cancelled the extra add
+except on the first active line, which is exactly what the reference images show. `4b8ab2f` changed it to `jg`, which is
+the right rule on its own, but with the add at the wrap it moved every line.
+
+#### Plan
+
+1. Core (`Vera_Display.asm`, needs the go ahead): in `renderstep_next_frame`, only add `dc_vscale` when line 0 is in the
+   active area, the same check `renderstep_next_line` makes (`vstart <= 0 < vstop`, so `dc_vstart == 0` and
+   `dc_vstop > 0`). Keep `jg` in `renderstep_next_line`. With `vstart` 0 nothing changes. With `vstart` above 0, the
+   counter stays at 0 until the line before the first active line, which matches VERA's reset to 0 at `vstart`.
+2. Check the new output against VERA before touching the reference images: it should be identical to the current
+   reference everywhere except the first active line, which should show `line_idx` 0 (`Vstart`: row 30 empty of sprite;
+   `Normal_VideoStart`: row 2 shows sprite row 0, the same row the reference shows at 474). Diff with the fast
+   (LockBits) comparison.
+3. Replace `sprites_8bpp_64x64_vstart.png` and `sprites_8bpp_8x8_videostart.png` with the new output.
+4. Add tests for what isn't covered:
+   - a layer (bitmap) with `DC_VSTART` set, as the layers use the same counter and were a line early too;
+   - `DC_VSTART` with `DC_VSCALE` other than 128 (eg 64, each line shown twice from the first active line), where the
+     first fractional step matters.
+   These can check where the first rows land rather than compare whole images.
+5. Run everything in `Vera.*` (display, sprites, tiles, bitmaps, background, display registers), the beam breakpoint,
+   render ahead and vsync breakpoint tests (they step the renderer), then the full suite, as this was the last group.
+
+Only these two tests use a non-zero `DC_VSTART`: `Background.VStart` has no layer or sprite content, and the
+`Sprites_*_16x8` tests write 0.
 
 ### Done: AFLOW (3)
 
@@ -146,7 +211,23 @@ Fix: keep bit 3 from `interrupt_hit` (`and eax, 01111b`), while still only letti
 
 Fix: `and eax, 01111b`.
 
-## To do: both wrong (11)
+## Done: both wrong (11)
+
+Done on 2026-11-08, as planned below:
+
+- `Vera_Audio.asm`: the five fixes in the `vera_psg` macro. The code that kept `state.psg_noise` up to date was removed
+  (nothing read it); the field stays.
+- `VeraAudio/PsgReference.cs`: the port of the official `render()`.
+- `VeraAudio/PsgPlay.cs`: every test now plays a voice and compares the first 64 stereo samples with the reference, and
+  fails if both are silent. The test names are kept. Changes beyond that:
+  - `Pulse_Both_VolumeMax_Voice0` uses 511, the real maximum after the volume table, rather than 64.
+  - New: `Pulse_Left_HalfWidth`, `Saw_Left_Width32`, `Triangle_Left_Width32` and `Noise_Left_Width0` (the width
+    handling), and `Reference` (the port against the hand worked values below).
+  - The commented out `Pulse_Left_MultipleVoice` was removed.
+- Checked: everything in `PsgPlay`, `PsgRegisters`, `Pcm*` and `AudioRecording` passes (76 tests). Still to do: listen to
+  PSG music in X16E, especially for the left and right fix.
+
+The original notes:
 
 `VeraAudio/PsgPlay.cs`: `Pulse_Left_Voice0`, `Pulse_Left_Voice2`, `Pulse_Left_Voice15`, `Pulse_Right_Voice0`,
 `Pulse_Both_Voice0`, `Pulse_Both_Volume2_Voice0`, `Pulse_Both_VolumeMax_Voice0`, `Saw_Left_Voice0`, `Triangle_Left_Voice0`,
@@ -168,8 +249,46 @@ The official phase is advanced before the wave is worked out:
 `new_phase = (left \|\| right) ? ((phase + freq) & 0x1FFFF) : 0`, and `sv = (v ^ 0x20)` sign extended from bit 5 (the core's
 `sub ecx, 32` is the same thing).
 
-Order: fix the core, then set the tests to the official values, not to whatever the core outputs. Worked out from the
-official code, with a volume of 1 and width 63, starting from phase 0:
+There's also a fifth problem, in how a voice is added to the left and right totals:
+
+```asm
+	test ebx, 1			; left?
+	je right
+	add r12d, ecx		; left total
+	je done				; <-- tests the flags from the add, not the right bit
+right:
+	add r13d, ecx		; right total
+```
+
+So a left only voice is also added to the right whenever the left total so far isn't zero, and a voice on both sides
+skips the right whenever the left total happens to be zero. Official: `if (ch->left) l += val >> 3; if (ch->right) r += val >> 3;`.
+
+### Plan
+
+Step 1, the core: all in the `vera_psg` macro in `Vera_Audio.asm`, which is expanded once per voice, so each change
+covers all 16. Needs the go ahead, as it's `.asm`.
+
+| | Change |
+| --- | --- |
+| Pulse | After `and ecx, 03fh`, add `xor ecx, 03fh`, so it's `0x3F` while `phase >> 10 <= pw`, and 0 after. |
+| Saw | After `xor ecx, [rsi].psg_voice.widthx`, add `xor ecx, 03fh`, making it `^ (pw ^ 0x3f)`. `phase >> 11` is never over 63, so this is exact. |
+| Triangle | Start with `mov ecx, eax` (the new phase; `ecx` is the old one at that point), and the same `xor ecx, 03fh` after the width. |
+| Noise | Reload only on a falling edge of bit 16 (old phase has it, new phase doesn't), from `(psg_noise_signal >> 1) & 3fh`, with no width mask. Do the reload before the waveform jump, as the official code does for every waveform, so switching to noise picks up the right value. `state.psg_noise` (the core's own 6 bit history, which is one step out from the official value) is then unused, but stays in `State.asm` and the C# struct, as their layouts must match. |
+| Left/right | Replace `je done` with `test ebx, 2` / `jz done`. |
+
+The LFSR itself already matches: it starts at 1 (`PsgNoiseSignal = 1`), uses the same taps, and steps once per voice per
+sample, as the macro runs for all 16 voices.
+
+Step 2, the tests: take the expected values from the official code rather than typing them in. Add a small C# port of
+the official `render()` (phase, the four waves, the LFSR, volume and `>> 3`, left and right) to the test project, and have
+each `PsgPlay` test compare the core's first samples with it, for the same voice settings. The noise tests especially
+need this, as their values depend on the LFSR. The hand worked values below are a check on the port.
+
+Step 3, check: the 11 tests, `PsgRegisters`, `PcmPlay` and `AudioRecording` (the other audio tests; none of the passing
+tests depends on PSG output, and `Pulse_Left_MultipleVoice` is commented out), then listen to something with PSG music
+in X16E.
+
+Worked out from the official code, with a volume of 1 and width 63, starting from phase 0:
 
 - Pulse, frequency `$FFFF`: 3, -4, 3, -4 ... (volume 2: 7, -8; volume 64: 248, -256).
 - Saw, frequency `$4000` (8 samples a cycle): -3, -2, -1, 0, 1, 2, 3, -4.

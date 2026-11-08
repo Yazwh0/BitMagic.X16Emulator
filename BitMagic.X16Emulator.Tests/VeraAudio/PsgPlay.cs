@@ -2,197 +2,32 @@
 
 namespace BitMagic.X16Emulator.Tests.Vera.Audio;
 
+// The core's PSG output, compared sample by sample with PsgReference, a port of the official emulator's render().
 [TestClass]
 public class PsgPlay
 {
     private const int PSG_BASE = 0x1f9c0;
-    private const int FREQ_L = 0x00;
-    private const int FREQ_H = 0x01;
-    private const int LR_VOLUME = 0x02;
     private const int WAVE_WIDTH = 0x03;
     private const int VOICE = 0x04;
 
     private const int WIDTH = 63;
-    private const int PULSE = 0x00;
-    private const int SAWTOOTH = 0x01 << 6;
-    private const int TRIANGLE = 0x02 << 6;
-    private const int NOISE = 0x03 << 6;
 
-    [TestMethod]
-    public async Task Pulse_Left_Voice0()
+    // stereo samples compared, the program below runs for about 120
+    private const int Samples = 64;
+
+    /// <summary>
+    /// Sets up a voice, writes its waveform and width with the CPU (as a program would), runs for a while, then checks
+    /// the first samples against the reference.
+    /// </summary>
+    private static async Task Play(int voice, ushort frequency, uint leftRight, uint volume, int waveform, int width = WIDTH)
     {
         using var emulator = new Emulator();
 
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
-        emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff; // change every sample
-        emulator.VeraAudio.PsgVoices[0].LeftRight = 0x01;
-        emulator.VeraAudio.PsgVoices[0].Volume = 1;
-        emulator.A = WIDTH + PULSE;
-        emulator.Clock_AudioNext = 10; // enough for the sta DATA0
-        emulator.X = 0xff;
-
-        await X16TestHelper.Emulate(@"
-                .machine CommanderX16R40
-                .org $810
-                sta DATA0
-                .loop:
-                dex
-                bne loop
-                stp",
-                emulator);
-
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[7]);
-    }
-
-    [TestMethod]
-    public async Task Pulse_Right_Voice0()
-    {
-        using var emulator = new Emulator();
-
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
-        emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff;
-        emulator.VeraAudio.PsgVoices[0].LeftRight = 0x02;
-        emulator.VeraAudio.PsgVoices[0].Volume = 1;
-        emulator.A = WIDTH + PULSE;
-        emulator.Clock_AudioNext = 10; // enough for the sta DATA0
-        emulator.X = 0xff;
-
-        await X16TestHelper.Emulate(@"
-                .machine CommanderX16R40
-                .org $810
-                sta DATA0
-                .loop:
-                dex
-                bne loop
-                stp",
-                emulator);
-
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[7]);
-    }
-
-    [TestMethod]
-    public async Task Pulse_Both_Voice0()
-    {
-        using var emulator = new Emulator();
-
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
-        emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff;
-        emulator.VeraAudio.PsgVoices[0].LeftRight = 0x03;
-        emulator.VeraAudio.PsgVoices[0].Volume = 1;
-        emulator.A = WIDTH + PULSE;
-        emulator.Clock_AudioNext = 10; // enough for the sta DATA0
-        emulator.X = 0xff;
-
-        await X16TestHelper.Emulate(@"
-                .machine CommanderX16R40
-                .org $810
-                sta DATA0
-                .loop:
-                dex
-                bne loop
-                stp",
-                emulator);
-
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[7]);
-    }
-
-    [TestMethod]
-    public async Task Pulse_Both_Volume2_Voice0()
-    {
-        using var emulator = new Emulator();
-
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
-        emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff;
-        emulator.VeraAudio.PsgVoices[0].LeftRight = 0x03;
-        emulator.VeraAudio.PsgVoices[0].Volume = 2;
-        emulator.A = WIDTH + PULSE;
-        emulator.Clock_AudioNext = 10; // enough for the sta DATA0
-        emulator.X = 0xff;
-
-        await X16TestHelper.Emulate(@"
-                .machine CommanderX16R40
-                .org $810
-                sta DATA0
-                .loop:
-                dex
-                bne loop
-                stp",
-                emulator);
-
-        Assert.AreEqual(-64, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(-64, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(62, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(62, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(-64, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(-64, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(62, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(62, emulator.AudioOutputBuffer[7]);
-    }
-
-    [TestMethod]
-    public async Task Pulse_Both_VolumeMax_Voice0()
-    {
-        using var emulator = new Emulator();
-
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
-        emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff;
-        emulator.VeraAudio.PsgVoices[0].LeftRight = 0x03;
-        emulator.VeraAudio.PsgVoices[0].Volume = 64;
-        emulator.A = WIDTH + PULSE;
-        emulator.Clock_AudioNext = 10; // enough for the sta DATA0
-        emulator.X = 0xff;
-
-        await X16TestHelper.Emulate(@"
-                .machine CommanderX16R40
-                .org $810
-                sta DATA0
-                .loop:
-                dex
-                bne loop
-                stp",
-                emulator);
-
-        Assert.AreEqual(-2048, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(-2048, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(1984, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(1984, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(-2048, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(-2048, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(1984, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(1984, emulator.AudioOutputBuffer[7]);
-    }
-
-    [TestMethod]
-    public async Task Saw_Left_Voice0()
-    {
-        using var emulator = new Emulator();
-
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
-        emulator.VeraAudio.PsgVoices[0].Frequency = 0x4000; // takes 8 samples to complete a cycle
-        emulator.VeraAudio.PsgVoices[0].LeftRight = 0x01;
-        emulator.VeraAudio.PsgVoices[0].Volume = 1;
-        emulator.A = WIDTH + SAWTOOTH;
+        emulator.Vera.Data0_Address = PSG_BASE + VOICE * voice + WAVE_WIDTH;
+        emulator.VeraAudio.PsgVoices[voice].Frequency = frequency;
+        emulator.VeraAudio.PsgVoices[voice].LeftRight = leftRight;
+        emulator.VeraAudio.PsgVoices[voice].Volume = volume;
+        emulator.A = (byte)(width + (waveform << 6));
         emulator.Clock_AudioNext = 10; // enough for the sta DATA0
         emulator.X = 0xff;
         emulator.Y = 0x10;
@@ -209,281 +44,91 @@ public class PsgPlay
                 stp",
                 emulator);
 
-        Assert.AreEqual(-24, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(-16, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(-8, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[7]);
-        Assert.AreEqual(8, emulator.AudioOutputBuffer[8]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[9]);
-        Assert.AreEqual(16, emulator.AudioOutputBuffer[10]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[11]);
-        Assert.AreEqual(24, emulator.AudioOutputBuffer[12]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[13]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[14]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[15]);
-        Assert.AreEqual(-24, emulator.AudioOutputBuffer[16]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[17]);
+        var reference = new PsgReference();
+        var ch = reference.Voices[voice];
+        ch.Frequency = frequency;
+        ch.Left = (leftRight & 1) != 0;
+        ch.Right = (leftRight & 2) != 0;
+        ch.Volume = (int)volume;
+        ch.Width = width;
+        ch.Waveform = waveform;
+
+        var heard = false;
+        for (var i = 0; i < Samples; i++)
+        {
+            var (left, right) = reference.Render();
+            Assert.AreEqual(left, emulator.AudioOutputBuffer[i * 2], $"Left, sample {i}.");
+            Assert.AreEqual(right, emulator.AudioOutputBuffer[i * 2 + 1], $"Right, sample {i}.");
+            heard |= left != 0 || right != 0;
+        }
+
+        Assert.IsTrue(heard, "No sound, so the comparison proves nothing.");
     }
 
+    // the reference against values worked out by hand from the official code: volume 1, width 63, from phase 0
+    [TestMethod]
+    [DataRow(PsgReference.Pulse, 0xffff, new short[] { 3, -4, 3, -4 })]
+    [DataRow(PsgReference.Sawtooth, 0x4000, new short[] { -3, -2, -1, 0, 1, 2, 3, -4 })]
+    [DataRow(PsgReference.Triangle, 0x4000, new short[] { -2, 0, 2, 3, 1, -1, -3, -4 })]
+    public void Reference(int waveform, int frequency, short[] expected)
+    {
+        var reference = new PsgReference();
+        var ch = reference.Voices[0];
+        ch.Frequency = (ushort)frequency;
+        ch.Left = true;
+        ch.Volume = 1;
+        ch.Width = WIDTH;
+        ch.Waveform = waveform;
+
+        CollectionAssert.AreEqual(expected, expected.Select(_ => reference.Render().Left).ToArray());
+    }
+
+    // $ffff moves the pulse on every sample
+    [TestMethod]
+    public async Task Pulse_Left_Voice0() => await Play(0, 0xffff, 0x01, 1, PsgReference.Pulse);
 
     [TestMethod]
-    public async Task Triangle_Left_Voice0()
-    {
-        using var emulator = new Emulator();
-
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
-        emulator.VeraAudio.PsgVoices[0].Frequency = 0x4000; // takes 8 samples to complete a cycle
-        emulator.VeraAudio.PsgVoices[0].LeftRight = 0x01;
-        emulator.VeraAudio.PsgVoices[0].Volume = 1;
-        emulator.A = WIDTH + TRIANGLE;
-        emulator.Clock_AudioNext = 10; // enough for the sta DATA0
-        emulator.X = 0xff;
-        emulator.Y = 0x10;
-
-        await X16TestHelper.Emulate(@"
-                .machine CommanderX16R40
-                .org $810
-                sta DATA0
-                .loop:
-                dex
-                bne loop
-                dey
-                bne loop
-                stp",
-                emulator);
-
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(-16, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(16, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[7]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[8]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[9]);
-        Assert.AreEqual(15, emulator.AudioOutputBuffer[10]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[11]);
-        Assert.AreEqual(-1, emulator.AudioOutputBuffer[12]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[13]);
-        Assert.AreEqual(-17, emulator.AudioOutputBuffer[14]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[15]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[16]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[17]);
-    }
+    public async Task Pulse_Right_Voice0() => await Play(0, 0xffff, 0x02, 1, PsgReference.Pulse);
 
     [TestMethod]
-    public async Task Noise_High_Left_Voice0()
-    {
-        using var emulator = new Emulator();
-
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
-        emulator.VeraAudio.PsgVoices[0].Frequency = 0xffff; // every sample changes
-        emulator.VeraAudio.PsgVoices[0].LeftRight = 0x01;
-        emulator.VeraAudio.PsgVoices[0].Volume = 1;
-        emulator.A = WIDTH + NOISE;
-        emulator.Clock_AudioNext = 10; // enough for the sta DATA0
-        emulator.X = 0xff;
-        emulator.Y = 0x10;
-
-        await X16TestHelper.Emulate(@"
-                .machine CommanderX16R40
-                .org $810
-                sta DATA0
-                .loop:
-                dex
-                bne loop
-                dey
-                bne loop
-                stp",
-                emulator);
-
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(13, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(30, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(-11, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[7]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[8]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[9]);
-        Assert.AreEqual(10, emulator.AudioOutputBuffer[10]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[11]);
-        Assert.AreEqual(-11, emulator.AudioOutputBuffer[12]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[13]);
-        Assert.AreEqual(-22, emulator.AudioOutputBuffer[14]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[15]);
-        Assert.AreEqual(-14, emulator.AudioOutputBuffer[16]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[17]);
-    }
+    public async Task Pulse_Both_Voice0() => await Play(0, 0xffff, 0x03, 1, PsgReference.Pulse);
 
     [TestMethod]
-    public async Task Noise_Low_Left_Voice0()
-    {
-        using var emulator = new Emulator();
-
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
-        emulator.VeraAudio.PsgVoices[0].Frequency = 0x8009; // every other sample changes
-        emulator.VeraAudio.PsgVoices[0].LeftRight = 0x01;
-        emulator.VeraAudio.PsgVoices[0].Volume = 1;
-        emulator.A = WIDTH + NOISE;
-        emulator.Clock_AudioNext = 10; // enough for the sta DATA0
-        emulator.X = 0xff;
-        emulator.Y = 0x10;
-
-        await X16TestHelper.Emulate(@"
-                .machine CommanderX16R40
-                .org $810
-                sta DATA0
-                .loop:
-                dex
-                bne loop
-                dey
-                bne loop
-                stp",
-                emulator);
-
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(13, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(13, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(-11, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[7]);
-        Assert.AreEqual(-11, emulator.AudioOutputBuffer[8]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[9]);
-        Assert.AreEqual(10, emulator.AudioOutputBuffer[10]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[11]);
-        Assert.AreEqual(10, emulator.AudioOutputBuffer[12]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[13]);
-        Assert.AreEqual(-22, emulator.AudioOutputBuffer[14]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[15]);
-        Assert.AreEqual(-22, emulator.AudioOutputBuffer[16]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[17]);
-    }
+    public async Task Pulse_Both_Volume2_Voice0() => await Play(0, 0xffff, 0x03, 2, PsgReference.Pulse);
 
     [TestMethod]
-    public async Task Pulse_Left_Voice2()
-    {
-        using var emulator = new Emulator();
-
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 2 + WAVE_WIDTH;
-        emulator.VeraAudio.PsgVoices[2].Frequency = 0xffff; // change every sample
-        emulator.VeraAudio.PsgVoices[2].LeftRight = 0x01;
-        emulator.VeraAudio.PsgVoices[2].Volume = 1;
-        emulator.A = WIDTH + PULSE;
-        emulator.Clock_AudioNext = 10; // enough for the sta DATA0
-        emulator.X = 0xff;
-
-        await X16TestHelper.Emulate(@"
-                .machine CommanderX16R40
-                .org $810
-                sta DATA0
-                .loop:
-                dex
-                bne loop
-                stp",
-                emulator);
-
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[7]);
-    }
+    public async Task Pulse_Both_VolumeMax_Voice0() => await Play(0, 0xffff, 0x03, 511, PsgReference.Pulse);
 
     [TestMethod]
-    public async Task Pulse_Left_Voice15()
-    {
-        using var emulator = new Emulator();
+    public async Task Pulse_Left_Voice2() => await Play(2, 0xffff, 0x01, 1, PsgReference.Pulse);
 
-        emulator.Vera.Data0_Address = PSG_BASE + VOICE * 15 + WAVE_WIDTH;
-        emulator.VeraAudio.PsgVoices[15].Frequency = 0xffff; // change every sample
-        emulator.VeraAudio.PsgVoices[15].LeftRight = 0x01;
-        emulator.VeraAudio.PsgVoices[15].Volume = 1;
-        emulator.A = WIDTH + PULSE;
-        emulator.Clock_AudioNext = 10; // enough for the sta DATA0
-        emulator.X = 0xff;
+    [TestMethod]
+    public async Task Pulse_Left_Voice15() => await Play(15, 0xffff, 0x01, 1, PsgReference.Pulse);
 
-        await X16TestHelper.Emulate(@"
-                .machine CommanderX16R40
-                .org $810
-                sta DATA0
-                .loop:
-                dex
-                bne loop
-                stp",
-                emulator);
+    [TestMethod]
+    public async Task Pulse_Left_HalfWidth() => await Play(0, 0x1000, 0x01, 1, PsgReference.Pulse, 32);
 
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[0]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[1]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[2]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[3]);
-        Assert.AreEqual(-32, emulator.AudioOutputBuffer[4]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[5]);
-        Assert.AreEqual(31, emulator.AudioOutputBuffer[6]);
-        Assert.AreEqual(0, emulator.AudioOutputBuffer[7]);
-    }
+    // $4000 takes 8 samples to complete a cycle
+    [TestMethod]
+    public async Task Saw_Left_Voice0() => await Play(0, 0x4000, 0x01, 1, PsgReference.Sawtooth);
 
-    //[TestMethod]
-    //public async Task Pulse_Left_MultipleVoice()
-    //{
-    //    var emulator = new Emulator();
+    [TestMethod]
+    public async Task Saw_Left_Width32() => await Play(0, 0x1000, 0x01, 1, PsgReference.Sawtooth, 32);
 
-    //    emulator.Vera.Data0_Address = PSG_BASE + VOICE * 0 + WAVE_WIDTH;
-    //    emulator.Vera.Data0_Step = 4;
-    //    emulator.VeraAudio.PsgVoices[0].Frequency = 0x1000; // change every sample
-    //    emulator.VeraAudio.PsgVoices[0].LeftRight = 0x01;
-    //    emulator.VeraAudio.PsgVoices[0].Volume = 64;
+    [TestMethod]
+    public async Task Triangle_Left_Voice0() => await Play(0, 0x4000, 0x01, 1, PsgReference.Triangle);
 
-    //    emulator.VeraAudio.PsgVoices[1].Frequency = 0x1000; // change every sample
-    //    emulator.VeraAudio.PsgVoices[1].LeftRight = 0x01;
-    //    emulator.VeraAudio.PsgVoices[1].Volume = 64;
+    [TestMethod]
+    public async Task Triangle_Left_Width32() => await Play(0, 0x1000, 0x01, 1, PsgReference.Triangle, 32);
 
-    //    emulator.VeraAudio.PsgVoices[2].Frequency = 0x1000; // change every sample
-    //    emulator.VeraAudio.PsgVoices[2].LeftRight = 0x01;
-    //    emulator.VeraAudio.PsgVoices[2].Volume = 64;
+    // a new noise value is taken each time bit 16 of the phase falls
+    [TestMethod]
+    public async Task Noise_High_Left_Voice0() => await Play(0, 0xffff, 0x01, 1, PsgReference.Noise);
 
-    //    emulator.VeraAudio.PsgVoices[3].Frequency = 0x1000; // change every sample
-    //    emulator.VeraAudio.PsgVoices[3].LeftRight = 0x01;
-    //    emulator.VeraAudio.PsgVoices[3].Volume = 64;
+    [TestMethod]
+    public async Task Noise_Low_Left_Voice0() => await Play(0, 0x8009, 0x01, 1, PsgReference.Noise);
 
-    //    emulator.A = WIDTH + PULSE;
-    //    emulator.Clock_AudioNext = 150; // enough for the sta DATA0
-    //    emulator.X = 0xff;
-    //    emulator.Y = 0x20;
-
-    //    await X16TestHelper.Emulate(@"
-    //            .machine CommanderX16R40
-    //            .org $810
-    //            sta DATA0
-    //            sta DATA0
-    //            sta DATA0
-    //            sta DATA0
-    //            .loop:
-    //            dex
-    //            bne loop
-    //            dey
-    //            bne loop
-    //            stp",
-    //            emulator);
-
-    //    Assert.AreEqual(31, emulator.AudioOutputBuffer[0]);
-    //    Assert.AreEqual(0, emulator.AudioOutputBuffer[1]);
-    //    Assert.AreEqual(-32, emulator.AudioOutputBuffer[2]);
-    //    Assert.AreEqual(0, emulator.AudioOutputBuffer[3]);
-    //    Assert.AreEqual(31, emulator.AudioOutputBuffer[4]);
-    //    Assert.AreEqual(0, emulator.AudioOutputBuffer[5]);
-    //    Assert.AreEqual(-32, emulator.AudioOutputBuffer[6]);
-    //    Assert.AreEqual(0, emulator.AudioOutputBuffer[7]);
-    //}
+    // the width doesn't change noise
+    [TestMethod]
+    public async Task Noise_Left_Width0() => await Play(0, 0xffff, 0x01, 1, PsgReference.Noise, 0);
 }

@@ -692,6 +692,20 @@ sprite_render_done:
 ;	Display complete.
 ;
 draw_end:
+	; output mode 0 (DC_VIDEO bits 0-1) is video off: VERA drives its outputs to 0, so black. Everything else, the
+	; timing, interrupts and rendering, carries on as normal (vera-module top.v), so only the pixel is changed.
+	test dword ptr [rdx].state.video_output, 011b
+	jz output_off
+	ret
+
+output_off:
+	mov dword ptr [rdi + r9 * 4 + BACKGROUND], 0ff000000h	; opaque black
+	xor eax, eax
+	mov dword ptr [rdi + r9 * 4 + SPRITE_L1], eax
+	mov dword ptr [rdi + r9 * 4 + LAYER0], eax
+	mov dword ptr [rdi + r9 * 4 + SPRITE_L2], eax
+	mov dword ptr [rdi + r9 * 4 + LAYER1], eax
+	mov dword ptr [rdi + r9 * 4 + SPRITE_L3], eax
 	ret
 render_from_buffer endp
 

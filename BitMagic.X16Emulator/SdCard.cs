@@ -4,15 +4,16 @@ using BitMagic.DiscUtils.Vhd;
 using BitMagic.DiscUtils;
 using BitMagic.DiscUtils.Partitions;
 using BitMagic.Common;
+using System.Runtime.InteropServices;
 
 namespace BitMagic.X16Emulator;
 
 public unsafe class SdCard : IDisposable
 {
-    private ulong _memoryPtr;
-    private MemoryStream _data;
+    private ulong _rawPtr;      // as allocated, to free
+    private ulong _memoryPtr;   // aligned, used by the core
+    private UnmanagedMemoryStream _data = null!;
     private ulong _size;
-    private ulong _offset;
     private const int Padding = 32;
     private FileSystemWatcher? _watcher;
     public FatFileSystem FileSystem { get; }
@@ -174,46 +175,52 @@ public unsafe class SdCard : IDisposable
         }
     }
 
+    // The card is in native memory rather than a managed array: the core holds a pointer to it, so it mustn't move,
+    // and managed arrays stop at 2GB. It's zeroed, and aligned to 32 bytes for the core's block copies.
     private void InitNewCard(ulong size)
     {
         _size = size;
-        var rawMemory = new byte[_size + Padding]; // 32 so we can allign the data correctly
-        fixed (byte* ptr = rawMemory)
-        {
-            _memoryPtr = (ulong)ptr;
-            _memoryPtr = (_memoryPtr & ~((ulong)Padding - 1)) + Padding;
-            _offset = (_memoryPtr - (ulong)ptr);
-        }
-        _data = new MemoryStream(rawMemory, (int)_offset, (int)_size, true);
+        _rawPtr = (ulong)NativeMemory.AllocZeroed((nuint)(_size + Padding));
+        _memoryPtr = (_rawPtr + Padding - 1) & ~((ulong)Padding - 1);
+        _data = new UnmanagedMemoryStream((byte*)_memoryPtr, (long)_size, (long)_size, FileAccess.ReadWrite);
     }
 
     private void InitNewCard(Stream stream)
     {
-        _size = (ulong)stream.Length;
-        var rawMemory = new byte[_size + Padding]; // 32 so we can allign the data correctly
-        fixed (byte* ptr = rawMemory)
-        {
-            _memoryPtr = (ulong)ptr;
-            _memoryPtr = (_memoryPtr & ~((ulong)Padding - 1)) + Padding;
-            _offset = (_memoryPtr - (ulong)ptr);
-        }
+        InitNewCard((ulong)stream.Length);
 
-        stream.Read(rawMemory, (int)_offset, (int)_size);
-
-        _data = new MemoryStream(rawMemory, (int)_offset, (int)_size, true);
+        stream.CopyTo(_data);
+        _data.Position = 0;
     }
 
     public ulong Size => _size - 512; // take off VHD header
 
     public ulong MemoryPtr => _memoryPtr;
 
-    public unsafe Span<byte> Image => new Span<byte>((void*)_memoryPtr, (int)Size);
+    /// <summary>
+    /// The card's contents, for the debugger. A span can't reach past 2GB, so on a bigger card this is only the start.
+    /// </summary>
+    public unsafe Span<byte> Image => new Span<byte>((void*)_memoryPtr, (int)Math.Min(Size, int.MaxValue));
 
     public void Dispose()
     {
         _watcher?.Dispose();
+        FileSystem?.Dispose();  // before the stream, which it writes to
         _data?.Dispose();
-        FileSystem?.Dispose();
+        FreeMemory();
+        GC.SuppressFinalize(this);
+    }
+
+    ~SdCard() => FreeMemory();
+
+    private void FreeMemory()
+    {
+        if (_rawPtr == 0)
+            return;
+
+        NativeMemory.Free((void*)_rawPtr);
+        _rawPtr = 0;
+        _memoryPtr = 0;
     }
 
     // Copies a directory and starts a watcher

@@ -315,9 +315,9 @@ spi_read_single_block proc
 
 	mov dword ptr [rdx].state.spi_sectorread, ebx
 
-	mov r13d, dword ptr [rdx].state.spi_sdcardsize
+	mov r13d, dword ptr [rdx].state.spi_sdcardsize	; number of blocks, so the last is size - 1
 	cmp rbx, r13
-	jg spi_do_nothing ; not sure what to do if we exceed the disk size
+	jae spi_do_nothing ; not sure what to do if we exceed the disk size
 
 	; ebx now contains the block number
 	shl rbx, 9	; * 512 to get offset of the sd card
@@ -392,14 +392,13 @@ spi_write_single_block proc
 	shl rbx, 8
 	mov bl, byte ptr [rax + 4]
 
-	mov r13d, dword ptr [rdx].state.spi_sdcardsize
+	mov r13d, dword ptr [rdx].state.spi_sdcardsize	; number of blocks, so the last is size - 1
 	cmp rbx, r13
-	jg spi_do_nothing ; not sure what to do if we exceed the disk size
+	jae spi_do_nothing ; not sure what to do if we exceed the disk size
 
-	; ebx now contains the block number
-	shl rbx, 9	; * 512 to get offset of the sd card
-
-	or rbx, 1	; set low bit so we know we're receiving. will remove before writing to sd card.
+	; ebx now contains the block number. store it + 1, so it's non zero while we're receiving. the byte offset can
+	; be more than 32 bits, so it's worked out when the data has arrived.
+	inc ebx
 
 	mov dword ptr [rdx].state.spi_writeblock, ebx
 
@@ -425,8 +424,9 @@ spi_write_complete proc
 	; rax is the inbound data buffer
 	mov rdi, qword ptr [rdx].state.sdcard_ptr
 	mov ebx, dword ptr [rdx].state.spi_writeblock
-	xor ebx, 1 ; remove the bit we set earlier
-	
+	dec ebx		; block number, stored + 1
+	shl rbx, 9	; * 512 to get offset of the sd card (mov ebx cleared the top of rbx)
+
 	; copying from buffer to sdcard
 	; sd card is aligned, buffer isn't
 	vmovdqu ymm0, ymmword ptr [rax + 1 + 00h]

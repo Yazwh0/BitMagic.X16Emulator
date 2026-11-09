@@ -60,6 +60,36 @@ vera_update_spi_data proc
 	test eax, eax
 	jz dont_change_message
 
+	; while a block is being read (CMD17), every byte clocks out the next byte of it whatever the host sends, as SPI is
+	; full duplex. a command can arrive at the same time, see spi_command_mid_reply. only for a read: a short reply the
+	; host doesn't read all of, eg CMD8's, doesn't stop the next command.
+	mov eax, dword ptr [rdx].state.spi_sendlength
+	test eax, eax
+	jz not_sending
+
+	mov eax, dword ptr [rdx].state.spi_previouscommand
+	cmp eax, 17
+	jne not_sending
+
+	mov ebx, dword ptr [rdx].state.spi_receivecount
+	test ebx, ebx
+	jnz collect_mid_reply
+
+	mov al, r13b						; only a command's first byte (01xxxxxx) starts one
+	and al, 11000000b
+	cmp al, 01000000b
+	jne spi_send_data
+
+collect_mid_reply:
+	mov rax, qword ptr [rdx].state.spi_inbound_buffer_ptr
+	mov byte ptr [rax + rbx], r13b
+	inc ebx
+	mov dword ptr [rdx].state.spi_receivecount, ebx
+	cmp ebx, 6
+	je spi_command_mid_reply
+	jmp spi_send_data
+
+not_sending:
 	; ignore all 0xff's if we have an empty receive buffer
 
 	; do we have data?
@@ -226,6 +256,54 @@ spi_send_data proc
 
 	ret
 spi_send_data endp
+
+; A whole command has arrived while a reply was being sent. On hardware (SD spec 7.2.8, checked on a real X16, issue
+; #195) the card keeps sending the reply while the command arrives, then drops it and sends a stuff byte and an R1:
+; CMD12 (stop transmission) is accepted, R1 $00 then busy. Anything else is rejected, R1 $04 (illegal command), and
+; isn't carried out. The stuff byte's value isn't defined, $FF is used.
+spi_command_mid_reply proc
+	mov dword ptr [rdx].state.spi_receivecount, 0
+
+	call spi_send_data					; this byte still gets the reply's next byte
+
+	; if that was the reply's last byte, the command came just as it finished, so it's a normal command
+	mov eax, dword ptr [rdx].state.spi_sendlength
+	test eax, eax
+	jz after_reply
+
+	mov rax, qword ptr [rdx].state.spi_inbound_buffer_ptr
+	movzx ebx, byte ptr [rax]
+	and ebx, 00111111b
+	mov dword ptr [rdx].state.spi_previouscommand, ebx	; the read is over, so its reply isn't a read
+
+	mov rax, qword ptr [rdx].state.spi_outbound_buffer_ptr
+	mov byte ptr [rax], 0ffh			; stuff byte
+	mov dword ptr [rdx].state.spi_sendcount, 0
+
+	cmp ebx, 12
+	jne rejected
+
+	mov byte ptr [rax + 1], 0			; R1, accepted
+	mov byte ptr [rax + 2], 0			; busy
+	mov dword ptr [rdx].state.spi_sendlength, 3
+	ret
+
+rejected:
+	mov byte ptr [rax + 1], SPI_ILLEGAL_COMMAND	; R1
+	mov dword ptr [rdx].state.spi_sendlength, 2
+	ret
+
+after_reply:
+	; run it, but keep the reply byte just sent rather than the $FF spi_handle_command puts out
+	movzx r13, byte ptr [rsi+SPI_DATA]
+	push r13
+	mov rax, qword ptr [rdx].state.spi_inbound_buffer_ptr
+	call spi_handle_command
+	pop r13
+	mov byte ptr [rsi+SPI_DATA], r13b
+	mov dword ptr [rdx].state.spi_previousvalue, r13d
+	ret
+spi_command_mid_reply endp
 
 spi_handle_command proc
 	mov r13b, SPI_DEFAULT_RESPONSE

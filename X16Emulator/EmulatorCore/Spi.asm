@@ -60,16 +60,19 @@ vera_update_spi_data proc
 	test eax, eax
 	jz dont_change_message
 
-	; while a block is being read (CMD17), every byte clocks out the next byte of it whatever the host sends, as SPI is
-	; full duplex. a command can arrive at the same time, see spi_command_mid_reply. only for a read: a short reply the
-	; host doesn't read all of, eg CMD8's, doesn't stop the next command.
+	; while blocks are being read (CMD17 or CMD18), every byte clocks out the next byte whatever the host sends, as SPI
+	; is full duplex. a command can arrive at the same time, see spi_command_mid_reply. only for a read: a short reply
+	; the host doesn't read all of, eg CMD8's, doesn't stop the next command.
 	mov eax, dword ptr [rdx].state.spi_sendlength
 	test eax, eax
 	jz not_sending
 
 	mov eax, dword ptr [rdx].state.spi_previouscommand
 	cmp eax, 17
+	je reading
+	cmp eax, 18
 	jne not_sending
+reading:
 
 	mov ebx, dword ptr [rdx].state.spi_receivecount
 	test ebx, ebx
@@ -187,6 +190,10 @@ vera_afterread_spidata proc
 	mov dword ptr [rdx].state.spi_sendcount, ebx
 	mov dword ptr [rdx].state.spi_sendlength, r13d
 
+	test r13d, r13d									; finished a block of a CMD18, so on to the next
+	jnz not_autotx
+	call spi_reply_finished
+
 not_autotx:
 	ret
 
@@ -249,6 +256,10 @@ spi_send_data proc
 	mov dword ptr [rdx].state.spi_sendcount, ebx
 	mov dword ptr [rdx].state.spi_sendlength, r13d
 
+	test r13d, r13d									; finished a block of a CMD18, so on to the next
+	jnz not_finished
+	call spi_reply_finished
+not_finished:
 
 	movzx r13, byte ptr [rsi+SPI_DATA] ; for logging
 
@@ -257,10 +268,47 @@ spi_send_data proc
 	ret
 spi_send_data endp
 
-; A whole command has arrived while a reply was being sent. On hardware (SD spec 7.2.8, checked on a real X16, issue
-; #195) the card keeps sending the reply while the command arrives, then drops it and sends a stuff byte and an R1:
-; CMD12 (stop transmission) is accepted, R1 $00 then busy. Anything else is rejected, R1 $04 (illegal command), and
-; isn't carried out. The stuff byte's value isn't defined, $FF is used.
+; A reply has just been sent. If it was a block of a multiple block read (CMD18), the next block follows: its $FE
+; token, the data and the CRC. Past the end of the card an error token ($08, out of range) is sent instead, and the
+; read ends. (Hardware sends a few $FF before each token, checked on a real X16, issue #216. The host waits for the
+; token, so they're left out.)
+spi_reply_finished proc
+	mov eax, dword ptr [rdx].state.spi_previouscommand
+	cmp eax, 18
+	jne done
+
+	mov ebx, dword ptr [rdx].state.spi_sectorread
+	inc ebx
+	mov dword ptr [rdx].state.spi_sectorread, ebx
+
+	mov rax, qword ptr [rdx].state.spi_outbound_buffer_ptr
+	mov dword ptr [rdx].state.spi_sendcount, 0
+
+	mov r13d, dword ptr [rdx].state.spi_sdcardsize	; number of blocks
+	cmp rbx, r13
+	jae past_end
+
+	mov byte ptr [rax], 0feh						; token
+	mov byte ptr [rax + 1 + 512], 0					; crc bytes
+	mov byte ptr [rax + 1 + 512 + 1], 0
+	inc rax
+	call spi_copy_block
+	mov dword ptr [rdx].state.spi_sendlength, 1 + 512 + 2
+	ret
+
+past_end:
+	mov byte ptr [rax], 08h							; error token, out of range
+	mov dword ptr [rdx].state.spi_sendlength, 1
+	mov dword ptr [rdx].state.spi_previouscommand, 0	; the read is over
+done:
+	ret
+spi_reply_finished endp
+
+; A whole command has arrived while blocks were being read. On hardware (SD spec 7.2.8, checked on a real X16, issues
+; #195 and #216) the card keeps sending the block while the command arrives, then drops the read and sends a stuff
+; byte and an R1: CMD12 (stop transmission) is accepted, R1 $00 (the spec allows busy after it, the card tested gave
+; none). Anything else is rejected, R1 $04 (illegal command), and isn't carried out. The stuff byte's value isn't
+; defined, $FF is used.
 spi_command_mid_reply proc
 	mov dword ptr [rdx].state.spi_receivecount, 0
 
@@ -274,23 +322,22 @@ spi_command_mid_reply proc
 	mov rax, qword ptr [rdx].state.spi_inbound_buffer_ptr
 	movzx ebx, byte ptr [rax]
 	and ebx, 00111111b
-	mov dword ptr [rdx].state.spi_previouscommand, ebx	; the read is over, so its reply isn't a read
 
 	mov rax, qword ptr [rdx].state.spi_outbound_buffer_ptr
 	mov byte ptr [rax], 0ffh			; stuff byte
 	mov dword ptr [rdx].state.spi_sendcount, 0
+	mov dword ptr [rdx].state.spi_sendlength, 2
 
 	cmp ebx, 12
 	jne rejected
 
 	mov byte ptr [rax + 1], 0			; R1, accepted
-	mov byte ptr [rax + 2], 0			; busy
-	mov dword ptr [rdx].state.spi_sendlength, 3
+	mov dword ptr [rdx].state.spi_previouscommand, ebx	; the read is over, so this reply isn't a read
 	ret
 
 rejected:
 	mov byte ptr [rax + 1], SPI_ILLEGAL_COMMAND	; R1
-	mov dword ptr [rdx].state.spi_sendlength, 2
+	mov dword ptr [rdx].state.spi_previouscommand, 0	; the read is over, and the command wasn't carried out
 	ret
 
 after_reply:
@@ -397,57 +444,14 @@ spi_read_single_block proc
 	cmp rbx, r13
 	jae spi_do_nothing ; not sure what to do if we exceed the disk size
 
-	; ebx now contains the block number
-	shl rbx, 9	; * 512 to get offset of the sd card
-
-	; fill outbound buffer
+	; fill outbound buffer: R1, token, the block, crc
 	mov rax, qword ptr [rdx].state.spi_outbound_buffer_ptr
-	mov rdi, qword ptr [rdx].state.sdcard_ptr
-
-	; need to copy 512 bytes from sdcard rdi + rbx, to rax + 2
-	; sd card is alligned, buffer isn't
-
-	vmovdqa ymm0, ymmword ptr [rdi + rbx + 00h]
-	vmovdqu ymmword ptr [rax + 2 + 00h], ymm0
-	vmovdqa ymm1, ymmword ptr [rdi + rbx + 20h]
-	vmovdqu ymmword ptr [rax + 2 + 20h], ymm1
-	vmovdqa ymm2, ymmword ptr [rdi + rbx + 40h]
-	vmovdqu ymmword ptr [rax + 2 + 40h], ymm2
-	vmovdqa ymm3, ymmword ptr [rdi + rbx + 60h]
-	vmovdqu ymmword ptr [rax + 2 + 60h], ymm3
-
-	vmovdqa ymm4, ymmword ptr [rdi + rbx + 080h]
-	vmovdqu ymmword ptr [rax + 2 + 080h], ymm4
-	vmovdqa ymm5, ymmword ptr [rdi + rbx + 0a0h]
-	vmovdqu ymmword ptr [rax + 2 + 0a0h], ymm5
-	vmovdqa ymm6, ymmword ptr [rdi + rbx + 0c0h]
-	vmovdqu ymmword ptr [rax + 2 + 0c0h], ymm6
-	vmovdqa ymm7, ymmword ptr [rdi + rbx + 0e0h]
-	vmovdqu ymmword ptr [rax + 2 + 0e0h], ymm7
-	
-	vmovdqa ymm8, ymmword ptr [rdi + rbx + 100h]
-	vmovdqu ymmword ptr [rax + 2 + 100h], ymm8
-	vmovdqa ymm9, ymmword ptr [rdi + rbx + 120h]
-	vmovdqu ymmword ptr [rax + 2 + 120h], ymm9
-	vmovdqa ymm10, ymmword ptr [rdi + rbx + 140h]
-	vmovdqu ymmword ptr [rax + 2 + 140h], ymm10
-	vmovdqa ymm11, ymmword ptr [rdi + rbx + 160h]
-	vmovdqu ymmword ptr [rax + 2 + 160h], ymm11
-
-	vmovdqa ymm12, ymmword ptr [rdi + rbx + 180h]
-	vmovdqu ymmword ptr [rax + 2 + 180h], ymm12
-	vmovdqa ymm13, ymmword ptr [rdi + rbx + 1a0h]
-	vmovdqu ymmword ptr [rax + 2 + 1a0h], ymm13
-	vmovdqa ymm14, ymmword ptr [rdi + rbx + 1c0h]
-	vmovdqu ymmword ptr [rax + 2 + 1c0h], ymm14
-	vmovdqa ymm15, ymmword ptr [rdi + rbx + 1e0h]
-	vmovdqu ymmword ptr [rax + 2 + 1e0h], ymm15
-
-	; header
 	mov byte ptr [rax], 0
 	mov byte ptr [rax+1], 0feh
 	mov byte ptr [rax+512+2], 0			; crc bytes
 	mov byte ptr [rax+512+2+1], 0
+	add rax, 2
+	call spi_copy_block
 
 	mov dword ptr [rdx].state.spi_sendcount, 0
 	mov dword ptr [rdx].state.spi_sendlength, 512 + 2 + 2
@@ -456,6 +460,64 @@ spi_read_single_block proc
 
 	ret
 spi_read_single_block endp
+
+; copies block rbx of the sd card (already checked to be on it) to rax
+spi_copy_block proc
+	shl rbx, 9	; * 512 to get offset of the sd card
+	mov rdi, qword ptr [rdx].state.sdcard_ptr
+
+	; sd card is alligned, buffer isn't
+	vmovdqa ymm0, ymmword ptr [rdi + rbx + 00h]
+	vmovdqu ymmword ptr [rax + 00h], ymm0
+	vmovdqa ymm1, ymmword ptr [rdi + rbx + 20h]
+	vmovdqu ymmword ptr [rax + 20h], ymm1
+	vmovdqa ymm2, ymmword ptr [rdi + rbx + 40h]
+	vmovdqu ymmword ptr [rax + 40h], ymm2
+	vmovdqa ymm3, ymmword ptr [rdi + rbx + 60h]
+	vmovdqu ymmword ptr [rax + 60h], ymm3
+
+	vmovdqa ymm4, ymmword ptr [rdi + rbx + 080h]
+	vmovdqu ymmword ptr [rax + 080h], ymm4
+	vmovdqa ymm5, ymmword ptr [rdi + rbx + 0a0h]
+	vmovdqu ymmword ptr [rax + 0a0h], ymm5
+	vmovdqa ymm6, ymmword ptr [rdi + rbx + 0c0h]
+	vmovdqu ymmword ptr [rax + 0c0h], ymm6
+	vmovdqa ymm7, ymmword ptr [rdi + rbx + 0e0h]
+	vmovdqu ymmword ptr [rax + 0e0h], ymm7
+
+	vmovdqa ymm8, ymmword ptr [rdi + rbx + 100h]
+	vmovdqu ymmword ptr [rax + 100h], ymm8
+	vmovdqa ymm9, ymmword ptr [rdi + rbx + 120h]
+	vmovdqu ymmword ptr [rax + 120h], ymm9
+	vmovdqa ymm10, ymmword ptr [rdi + rbx + 140h]
+	vmovdqu ymmword ptr [rax + 140h], ymm10
+	vmovdqa ymm11, ymmword ptr [rdi + rbx + 160h]
+	vmovdqu ymmword ptr [rax + 160h], ymm11
+
+	vmovdqa ymm12, ymmword ptr [rdi + rbx + 180h]
+	vmovdqu ymmword ptr [rax + 180h], ymm12
+	vmovdqa ymm13, ymmword ptr [rdi + rbx + 1a0h]
+	vmovdqu ymmword ptr [rax + 1a0h], ymm13
+	vmovdqa ymm14, ymmword ptr [rdi + rbx + 1c0h]
+	vmovdqu ymmword ptr [rax + 1c0h], ymm14
+	vmovdqa ymm15, ymmword ptr [rdi + rbx + 1e0h]
+	vmovdqu ymmword ptr [rax + 1e0h], ymm15
+
+	ret
+spi_copy_block endp
+
+; CMD12 with no read going on: accepted, R1 $00 (checked on a real X16, issue #216). During a read it's handled by
+; spi_command_mid_reply.
+spi_stop_transmission proc
+	mov rax, qword ptr [rdx].state.spi_outbound_buffer_ptr
+	mov byte ptr [rax], 0
+	mov dword ptr [rdx].state.spi_sendcount, 0
+	mov dword ptr [rdx].state.spi_sendlength, 1
+
+	spi_log_fromsdcard
+
+	ret
+spi_stop_transmission endp
 
 spi_write_single_block proc
 	; get requested block number
@@ -625,13 +687,13 @@ spi_command_table:
 	qword spi_read_csd	- spi_command_table ;  9
 	qword spi_not_known - spi_command_table ;  10
 	qword spi_not_known - spi_command_table ;  11
-	qword spi_not_known - spi_command_table ;  12
+	qword spi_stop_transmission - spi_command_table ;  12
 	qword spi_read_send_status - spi_command_table ;  13
 	qword spi_not_known - spi_command_table ;  14
 	qword spi_not_known - spi_command_table ;  15
 	qword spi_not_known - spi_command_table ;  16
 	qword spi_read_single_block - spi_command_table ;  17
-	qword spi_not_known - spi_command_table ;  18
+	qword spi_read_single_block - spi_command_table ;  18, the same start, spi_reply_finished sends the next blocks
 	qword spi_not_known - spi_command_table ;  19
 	qword spi_not_known - spi_command_table ;  20
 	qword spi_not_known - spi_command_table ;  21

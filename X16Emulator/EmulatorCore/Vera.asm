@@ -1074,13 +1074,178 @@ local done, fx_4bit_pixels, fx_2_byte, cache_done
 endm
 
 
+; One data port, DATA0 (port 0) or DATA1 (port 1). Both work the same way, apart from the FX line helper's extra step,
+; which only applies to ADDR1.
+;
 ; rbx			address
 ; [rsi+rbx]		output location in main memory
 ; r12			previous value
-; 
+; ecx			extra reads on a read-modify-write (doublestep)
+; rsi			pushed by the caller, popped here
+vera_port_access macro port, doublestep, write_value
+    local no_read_breakpoint, no_write_breakpoint, breakpoint_step_loop, read_loop, read_loop_done, no_fx_step, not_fx, set_address
+
+    if port eq 0
+        port_address textequ <[rdx].state.data0_address>
+        port_step textequ <[rdx].state.data0_step>
+    else
+        port_address textequ <[rdx].state.data1_address>
+        port_step textequ <[rdx].state.data1_step>
+    endif
+
+    mov rdi, port_address
+
+    if write_value eq 0
+        ; check for breakpoint on read
+        mov eax, [rdx].state.stepping
+        or eax, [rdx].state.ignore_breakpoint
+        jnz no_read_breakpoint
+
+        mov r13, [rdx].state.vrambreakpoint_ptr
+        movzx r13d, byte ptr [r13 + rdi]
+        and r13d, VERA_BREAKPOINT_READ
+        shl r13d, 1								; convert 0001b into BREAKPOINT_VRAM
+        or [rdx].state.breakpoint_source, r13d
+        jz no_read_breakpoint
+        pop rsi
+        pop rax									; pull the return address off
+        jmp next_opcode
+
+        no_read_breakpoint:
+    endif
+
+    if write_value eq 1
+        ; check for breakpoint on write
+        mov eax, [rdx].state.stepping
+        or eax, [rdx].state.ignore_breakpoint
+        jnz no_write_breakpoint
+
+        mov r13, [rdx].state.vrambreakpoint_ptr
+
+        if doublestep eq 1
+            ; a read-modify-write writes after its ecx + 1 reads, each of which steps
+            lea eax, [ecx + 1]
+            breakpoint_step_loop:
+            add rdi, port_step
+            and rdi, 1ffffh						; mask off high bits so we wrap
+            dec eax
+            jnz breakpoint_step_loop
+        endif
+
+        movzx r13d, byte ptr [r13 + rdi]
+        and r13d, VERA_BREAKPOINT_WRITE			; BREAKPOINT_WRITE is the same as VERA_BREAKPOINT so no change needed
+        or [rdx].state.breakpoint_source, r13d
+        jz no_write_breakpoint
+
+        ; breaking so reverse the change in RAM
+        mov byte ptr [rsi + rbx], r12b
+
+        pop rsi
+        pop rax									; pull the return address off
+        jmp next_opcode
+
+        no_write_breakpoint:
+        mov rdi, port_address					; restore rdi back to the address
+    endif
+
+    mov rax, [rdx].state.vram_ptr				; get value from vram
+
+    if write_value eq 1 and doublestep eq 0
+        vera_write_dataport
+    endif
+
+    if write_value eq 0
+        vera_read_dataport_cache
+    endif
+
+    if doublestep eq 1
+        ; a read-modify-write reads ecx + 1 times before it writes. Each read steps, the last step is the one below.
+        read_loop:
+        vera_read_dataport_cache
+
+        test ecx, ecx
+        jz read_loop_done
+
+        add rdi, port_step
+        and rdi, 1ffffh
+        dec ecx
+        jmp read_loop
+
+        read_loop_done:
+    endif
+
+    add rdi, port_step
+    and rdi, 1ffffh								; mask off high bits so we wrap
+
+    if port eq 1
+        ; FX line helper, ADDR1 steps on by ADDR0's step each time x passes a whole pixel. Polyfill and affine are
+        ; handled elsewhere.
+        cmp dword ptr [rdx].state.fx_addr_mode, 1
+        jne not_fx
+
+        mov r13d, [rdx].state.fx_x_position
+        add r13d, [rdx].state.fx_x_increment
+
+        test r13d, 00010000h
+        jz no_fx_step
+
+        and r13d, 0fffeffffh					; always mask out the increment bit
+        mov [rdx].state.fx_x_position, r13d
+
+        add rdi, [rdx].state.data0_step
+        and rdi, 1ffffh
+
+        jmp not_fx
+
+        no_fx_step:
+        mov [rdx].state.fx_x_position, r13d
+
+        not_fx:
+    endif
+
+    if doublestep eq 1
+        if write_value eq 1
+            vera_write_dataport
+        endif
+
+        add rdi, port_step						; perform second step
+        and rdi, 1ffffh							; mask off high bits so we wrap
+    endif
+
+    mov port_address, rdi
+
+    mov r13b, byte ptr [rax+rdi]
+    mov [rsi+rbx], r13b							; store in ram
+
+    xor r13, r13								; clear r13b, as we use this to detect if we need to call vera
+
+    cmp [rdx].state.addrsel, port
+    je set_address
+    pop rsi
+    ret
+
+set_address:
+    mov word ptr [rsi + ADDRx_L], di			; write L and M bytes
+
+    shr rdi, 16									; need to add bottom bit of the address, so shift and mask
+    and rdi, 1
+    movzx rax, byte ptr [rsi + ADDRx_H]			; Add on stepping nibble
+    and eax, 0f8h								; mask off what isnt changable
+    or rdi, rax
+    mov byte ptr [rsi + ADDRx_H], dil
+
+    xor r13, r13								; clear r13b, as we use this to detect if we need to call vera
+    pop rsi
+    ret
+endm
+
+; rbx			address
+; [rsi+rbx]		output location in main memory
+; r12			previous value
+;
 ; should only be called if data0\data1 is read\written.
 vera_dataaccess_body macro doublestep, write_value
-    local cache_write_0, done_0, no_transparancy_0, fx_4bit_pixels_0, cache_write_1, done_1, no_transparancy_1 ,cache_done, no_fx_step_1, polyfill_1, not_fx_1, affine_1, read_loop, no_breakpoint_0, no_breakpoint_1
+    local step_data1
 
     push rsi
     mov rsi, [rdx].state.memory_ptr				; we need memory context;
@@ -1088,255 +1253,10 @@ vera_dataaccess_body macro doublestep, write_value
     cmp rbx, DATA0
     jne step_data1
 
-    mov rdi, [rdx].state.data0_address
-    
-    ; check breakpoint on read data
-    if write_value eq 0
-        mov eax, [rdx].state.stepping
-        or eax, [rdx].state.ignore_breakpoint
-        jnz no_read_breakpoint_0
-
-        ; read breakpoint
-        mov r13, [rdx].state.vrambreakpoint_ptr
-        movzx r13d, byte ptr [r13 + rdi]
-        and r13d, VERA_BREAKPOINT_READ
-        shl r13d, 1								; convert 0001b into BREAKPOINT_VRAM
-        or [rdx].state.breakpoint_source, r13d
-        jz no_read_breakpoint_0
-        pop rsi
-        pop rax									; pull the return address off
-        jmp next_opcode
-        
-        no_read_breakpoint_0:
-    endif
-
-    if write_value eq 1 and doublestep eq 0
-        ; check for breakpoint on write
-        mov eax, [rdx].state.stepping
-        or eax, [rdx].state.ignore_breakpoint
-        jnz no_write_breakpoint_0
-
-        ; write breakpoint
-        mov r13, [rdx].state.vrambreakpoint_ptr
-        movzx r13d, byte ptr [r13 + rdi]
-        and r13d, VERA_BREAKPOINT_WRITE			; BREAKPOINT_WRITE is the same as VERA_BREAKPOINT so no change needed
-        or [rdx].state.breakpoint_source, r13d
-        jz no_write_breakpoint_0
-
-        ; breaking so reverse the change in RAM
-        mov byte ptr [rsi + rbx], r12b
-        
-        pop rsi
-        pop rax									; pull the return address off
-        jmp next_opcode
-        
-        no_write_breakpoint_0:
-        mov rax, [rdx].state.vram_ptr				; get value from vram
-
-        vera_write_dataport
-    endif
-
-    if write_value eq 1 and doublestep eq 1
-        ; check for breakpoint on write
-        mov eax, [rdx].state.stepping
-        or eax, [rdx].state.ignore_breakpoint
-        jnz no_step_write_breakpoint_0
-
-        ; write breakpoint
-        mov r13, [rdx].state.vrambreakpoint_ptr
-        add rdi, [rdx].state.data0_step			; add on a step as we write to the next position
-        and rdi, 1ffffh							; mask off high bits so we wrap
-        movzx r13d, byte ptr [r13 + rdi]		
-        and r13d, VERA_BREAKPOINT_WRITE			; BREAKPOINT_WRITE is the same as VERA_BREAKPOINT so no change needed
-        or [rdx].state.breakpoint_source, r13d
-        jz no_step_write_breakpoint_0
-
-        ; breaking so reverse the change in RAM
-        mov byte ptr [rsi + rbx], r12b
-
-        pop rsi
-        pop rax									; pull the return address off
-        jmp next_opcode
-        
-        no_step_write_breakpoint_0:
-        mov rdi, [rdx].state.data0_address		; restoer rdi back to the address
-    endif
-
-    mov rax, [rdx].state.vram_ptr				; get value from vram
-
-    if doublestep eq 0
-
-        if write_value eq 0
-            vera_read_dataport_cache
-        endif
-
-        add rdi, [rdx].state.data0_step
-        and rdi, 1ffffh								; mask off high bits so we wrap
-
-    endif
-
-    if doublestep eq 1
-
-        inc ecx
-
-        read_loop:
-
-        vera_read_dataport_cache
-
-        add rdi, [rdx].state.data0_step
-        and rdi, 1ffffh	
-        
-        sub ecx, 1
-        jnz read_loop
-
-        if write_value eq 1
-            ; check for breakpoint on write
-            vera_write_dataport
-        endif
-
-        add rdi, [rdx].state.data0_step			; perform second step
-        and rdi, 1ffffh							; mask off high bits so we wrap
-
-    endif
-
-    mov [rdx].state.data0_address, rdi
-
-    mov r13b, byte ptr [rax+rdi]
-    mov [rsi+rbx], r13b							; store in ram
-
-    xor r13, r13								; clear r13b, as we use this to detect if we need to call vera
-
-    cmp [rdx].state.addrsel, 0
-    je set_data0_address
-    pop rsi
-    ret
-
-set_data0_address:
-        
-    ;mov rsi, [rdx].state.memory_ptr
-    mov word ptr [rsi + ADDRx_L], di			; write M and L bytes
-
-    ;shr rdi, 8
-    ;mov byte ptr [rsi + ADDRx_M], dil
-
-    shr rdi, 16									; need to add bottom bit of the address, so shift and mask
-    and rdi, 1
-    movzx rax, byte ptr [rsi + ADDRx_H]			; Add on stepping nibble
-    and eax, 0f8h								; mask off what isnt changable
-    or rdi, rax
-    mov byte ptr [rsi + ADDRx_H], dil
-
-    xor r13, r13								; clear r13b, as we use this to detect if we need to call vera
-    pop rsi
-    ret
+    vera_port_access 0, doublestep, write_value
 
 step_data1:
-    mov rdi, [rdx].state.data1_address
-
-    ; check for breakpoints
-    if write_value eq 0
-        mov eax, [rdx].state.stepping
-        or eax, [rdx].state.ignore_breakpoint
-        jnz no_read_breakpoint_1
-
-        ; read breakpoint
-        mov r13, [rdx].state.vrambreakpoint_ptr
-        movzx r13d, byte ptr [r13 + rdi]
-        and r13d, VERA_BREAKPOINT_READ
-        shl r13d, 1								; convert 0001b into BREAKPOINT_VRAM
-        or [rdx].state.breakpoint_source, r13d
-        jz no_read_breakpoint_1
-        pop rsi
-        pop rax									; pull the return address off
-        jmp next_opcode
-        no_read_breakpoint_1:
-    endif
-
-    mov rax, [rdx].state.vram_ptr				; get value from vram
-
-    if write_value eq 1 and doublestep eq 0
-        vera_write_dataport
-    endif
-
-    if write_value eq 0
-        vera_read_dataport_cache
-    endif
-
-    add rdi, [rdx].state.data1_step
-    and rdi, 1ffffh								; mask off high bits so we wrap
-    ;int 3
-
-    mov r13d, [rdx].state.fx_addr_mode
-    test r13d, r13d
-    jz not_fx_1
-    cmp r13d, 2
-    je polyfill_1
-    jg affine_1	
-
-    ; line helper mode, so stop on x
-    mov r13d, [rdx].state.fx_x_position
-    add r13d, [rdx].state.fx_x_increment
-    
-    test r13d, 00010000h
-    jz no_fx_step_1
-    
-    and r13d, 0fffeffffh					; always mask out the increment bit
-    mov [rdx].state.fx_x_position, r13d
-
-    ;step on data1 by data0's step
-    add rdi, [rdx].state.data0_step
-    and rdi, 1ffffh
-
-    jmp not_fx_1
-
-no_fx_step_1:
-    mov [rdx].state.fx_x_position, r13d
-
-    jmp not_fx_1
-polyfill_1:
-affine_1:
-
-not_fx_1:
-    if doublestep eq 1
-        if write_value eq 1
-            vera_write_dataport
-        endif
-
-        add rdi, [rdx].state.data1_step
-        and rdi, 1ffffh							; mask off high bits so we wrap
-    endif
-
-    mov [rdx].state.data1_address, rdi
-
-    mov r13b, byte ptr [rax+rdi]
-    mov [rsi+rbx], r13b							; store in ram
-
-    xor r13, r13								; clear r13b, as we use this to detect if we need to call vera
-
-    cmp [rdx].state.addrsel, 1
-    je set_data1_address
-    pop rsi
-    ret
-
-set_data1_address:
-        
-    ;mov rsi, [rdx].state.memory_ptr
-    mov word ptr [rsi + ADDRx_L], di			; write L and M bytes
-
-    ;shr rdi, 8
-    ;mov byte ptr [rsi + ADDRx_M], dil
-
-    shr rdi, 16									; need to add bottom bit of the address, so shift and mask
-    and rdi, 1
-    movzx rax, byte ptr [rsi + ADDRx_H]			; Add on stepping nibble
-    and eax, 0f8h								; mask off what isnt changable
-    or rdi, rax
-    mov byte ptr [rsi + ADDRx_H], dil
-
-    xor r13, r13								; clear r13b, as we use this to detect if we need to call vera
-    pop rsi
-
-    ret
+    vera_port_access 1, doublestep, write_value
 endm
 
 ;

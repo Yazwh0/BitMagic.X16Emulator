@@ -290,6 +290,13 @@ public class EmulatorWindow : IDisposable
         _window.SetDefaultIcon();
         _gl = GL.GetApi(_window);
 
+        // The default viewport is the framebuffer size when the context was created. Where the
+        // framebuffer isn't the window's logical size (Wayland, including WSLg, at a display
+        // scale other than 100%) it's resized afterwards, so the viewport has to follow it or
+        // the image only fills part of the window.
+        SetViewport(_window.FramebufferSize);
+        _window.FramebufferResize += SetViewport;
+
         _layers = new GlObject[_images.Length];
 
         for (var i = 0; i < _images.Length; i++)
@@ -326,6 +333,12 @@ public class EmulatorWindow : IDisposable
         {
             DwmSetWindowAttribute(handle.Value, 33, ref pvAttribute, Marshal.SizeOf(pvAttribute));
         }
+    }
+
+    private void SetViewport(Silk.NET.Maths.Vector2D<int> framebufferSize)
+    {
+        if (framebufferSize.X > 0 && framebufferSize.Y > 0)
+            _gl?.Viewport(0, 0, (uint)framebufferSize.X, (uint)framebufferSize.Y);
     }
 
     // If we lose focus, then stop capturing the mouse

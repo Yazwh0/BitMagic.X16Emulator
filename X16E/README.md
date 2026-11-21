@@ -34,12 +34,15 @@ Linux. X16E looks for a ROM in this order:
 
 ## Linux prerequisites
 
-X16E needs SDL2, OpenGL and OpenAL, and `--fetch-rom` needs `curl` and `unzip`. On
-Debian/Ubuntu:
+X16E needs glibc 2.34 or later and libstdc++ from GCC 11 or later (Ubuntu 22.04, Debian 12,
+Fedora 35, RHEL 9 or newer), OpenGL, OpenAL and an X11 or Wayland display, and `--fetch-rom`
+needs `curl` and `unzip`. SDL2 and GLFW are bundled. On Debian/Ubuntu:
 
 ```bash
-sudo apt install libsdl2-2.0-0 libgl1 libopenal1 curl unzip
+sudo apt install libopenal1 libgl1 libgl1-mesa-dri curl unzip
 ```
+
+`check-prerequisites.sh` in the build folder checks all of these.
 
 ## Usage
 

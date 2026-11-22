@@ -246,6 +246,15 @@ state struct
 	fx_y_mult_32			dword ?
 	;fx_spacer				dword ?
 
+	; 4 bit mode nibble addressing
+	data0_nibble			dword ?		; nibble address, 0 is the high nibble (left pixel)
+	data1_nibble			dword ?
+	data0_nibble_incr		dword ?		; ADDRx_H's nibble increment, 1 forward, -1 back (DECR), 0 off
+	data1_nibble_incr		dword ?
+	data0_nibble_step		dword ?		; nibble_incr when it applies (4 bit mode and increment 0), otherwise 0
+	data1_nibble_step		dword ?
+	fx_line_fixed			dword ?		; config: 1 to draw steep 4bpp lines properly, rather than as the hardware does
+
 	vram_data				dword ?
 	history_log_mask		dword ?
 

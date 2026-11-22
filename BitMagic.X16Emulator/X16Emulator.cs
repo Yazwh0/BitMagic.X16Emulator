@@ -126,8 +126,21 @@ public class Emulator : IDisposable
         public unsafe Span<byte> Vram => new Span<byte>((void*)_emulator._state.VramPtr, VramSize);
         public int Data0_Address { get => (int)_emulator._state.Data0_Address; set => _emulator._state.Data0_Address = (ulong)value; }
         public int Data1_Address { get => (int)_emulator._state.Data1_Address; set => _emulator._state.Data1_Address = (ulong)value; }
-        public int Data0_Step { get => (int)_emulator._state.Data0_Step; set => _emulator._state.Data0_Step = (ulong)value; }
-        public int Data1_Step { get => (int)_emulator._state.Data1_Step; set => _emulator._state.Data1_Step = (ulong)value; }
+        public int Data0_Step { get => (int)_emulator._state.Data0_Step; set { _emulator._state.Data0_Step = (ulong)value; UpdateNibbleSteps(); } }
+        public int Data1_Step { get => (int)_emulator._state.Data1_Step; set { _emulator._state.Data1_Step = (ulong)value; UpdateNibbleSteps(); } }
+        // 4 bit mode: the nibble address (0 is the high nibble) and ADDRx_H's nibble increment (1, -1 with DECR, or 0)
+        public int Data0_Nibble { get => (int)_emulator._state.Data0_Nibble; set => _emulator._state.Data0_Nibble = (uint)value & 1; }
+        public int Data1_Nibble { get => (int)_emulator._state.Data1_Nibble; set => _emulator._state.Data1_Nibble = (uint)value & 1; }
+        public int Data0_NibbleIncrement { get => _emulator._state.Data0_NibbleIncr; set { _emulator._state.Data0_NibbleIncr = Math.Sign(value); UpdateNibbleSteps(); } }
+        public int Data1_NibbleIncrement { get => _emulator._state.Data1_NibbleIncr; set { _emulator._state.Data1_NibbleIncr = Math.Sign(value); UpdateNibbleSteps(); } }
+
+        // mirrors vera_update_nibble_step in Vera.asm, the core only works it out when ADDRx_H or FX_CTRL is written
+        internal void UpdateNibbleSteps()
+        {
+            ref var s = ref _emulator._state;
+            s.Data0_NibbleStep = s.Fx4BitMode != 0 && s.Data0_Step == 0 ? s.Data0_NibbleIncr : 0;
+            s.Data1_NibbleStep = s.Fx4BitMode != 0 && s.Data1_Step == 0 ? s.Data1_NibbleIncr : 0;
+        }
         public bool AddrSel { get => _emulator._state.AddrSel != 0; set => _emulator._state.AddrSel = (value ? (byte)1 : (byte)0); }
         public byte DcSel { get => _emulator._state.DcSel; set => _emulator._state.DcSel = value; }
         public UInt32 VideoOutput { get => _emulator._state.VideoOutput; set => _emulator._state.VideoOutput = value; }
@@ -248,7 +261,7 @@ public class Emulator : IDisposable
         }
 
         public uint AddrMode { get => _emulator._state.FxAddrMode; set => _emulator._state.FxAddrMode = value; }
-        public bool Fx4BitMode { get => _emulator._state.Fx4BitMode != 0; set => _emulator._state.Fx4BitMode = value ? 1u : 0u; }
+        public bool Fx4BitMode { get => _emulator._state.Fx4BitMode != 0; set { _emulator._state.Fx4BitMode = value ? 1u : 0u; _emulator.Vera.UpdateNibbleSteps(); } }
         public bool CacheWrite { get => _emulator._state.FxCacheWrite != 0; set => _emulator._state.FxCacheWrite = value ? 1u : 0u; }
         public bool Cachefill { get => _emulator._state.FxCacheFill != 0; set => _emulator._state.FxCacheFill = value ? 1u : 0u; }
         public bool TransparantWrites { get => _emulator._state.FxTransparancy != 0; set => _emulator._state.FxTransparancy = value ? 1u : 0u; }
@@ -751,6 +764,15 @@ public class Emulator : IDisposable
         public uint FxYMult32 = 0;
         //public uint FxSpacer = 0;
 
+        // 4 bit mode nibble addressing
+        public uint Data0_Nibble = 0;
+        public uint Data1_Nibble = 0;
+        public int Data0_NibbleIncr = 0;
+        public int Data1_NibbleIncr = 0;
+        public int Data0_NibbleStep = 0;
+        public int Data1_NibbleStep = 0;
+        public uint FxLineFixed = 0; // config, see Emulator.FixedFxLineDraw
+
         // End FX
 
         public uint VramData = 0; // used to pass data between the IO and the opcode thats reading from memory
@@ -1003,6 +1025,13 @@ public class Emulator : IDisposable
     // Must be set before the first Emulate() call (uart_init runs on the initial_startup
     // branch). With this off, any access to $9fe0-$9fe7 hits an uninitialised UART.
     public bool EnableWifi { get => _state.EnableWifi != 0; set => _state.EnableWifi = value ? 1u : 0u; }
+
+    /// <summary>
+    /// Draw steep 4bpp lines with the FX line helper properly. On hardware (the VERA Verilog) ADDR0's nibble increment
+    /// doesn't move ADDR1's nibble, so they come out wrong. With this on, ADDR1's nibble steps in ADDR0's direction, as
+    /// the official emulator does.
+    /// </summary>
+    public bool FixedFxLineDraw { get => _state.FxLineFixed != 0; set => _state.FxLineFixed = value ? 1u : 0u; }
 
     public byte A { get => _state.A; set => _state.A = value; }
     public byte X { get => _state.X; set => _state.X = value; }
@@ -1758,6 +1787,7 @@ public class Emulator : IDisposable
         state.Brk_Causes_stop = current.Brk_Causes_stop;
         state.Headless = current.Headless;
         state.EnableWifi = current.EnableWifi;
+        state.FxLineFixed = current.FxLineFixed;
         state.DebugSprites = current.DebugSprites;
         state.HistoryLogMask = current.HistoryLogMask;
         state.InitialStartup = current.InitialStartup;

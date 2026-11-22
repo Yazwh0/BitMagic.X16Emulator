@@ -44,11 +44,117 @@ VERA_BREAKPOINT_READ equ  0001b
 VERA_BREAKPOINT_WRITE equ 0010b
 VERA_BREAKPOINT_LOAD equ  0100b
 
-vera_setaddress_0 macro 
-    local search_loop, match, not_negative
+; Names for one data port's state, so the macros below are written once for both ports.
+vera_port_fields macro port
+    if port eq 0
+        port_address textequ <[rdx].state.data0_address>
+        port_step textequ <[rdx].state.data0_step>
+        port_nibble textequ <[rdx].state.data0_nibble>
+        port_nibble_incr textequ <[rdx].state.data0_nibble_incr>
+        port_nibble_step textequ <[rdx].state.data0_nibble_step>
+    else
+        port_address textequ <[rdx].state.data1_address>
+        port_step textequ <[rdx].state.data1_step>
+        port_nibble textequ <[rdx].state.data1_nibble>
+        port_nibble_incr textequ <[rdx].state.data1_nibble_incr>
+        port_nibble_step textequ <[rdx].state.data1_nibble_step>
+    endif
+endm
+
+; The nibble increment only applies in 4 bit mode with an increment of 0. Worked out here, when ADDRx_H or FX_CTRL is
+; written, so stepping only has to check port_nibble_step. Uses eax.
+vera_update_nibble_step macro port
+    local done
+    vera_port_fields port
+
+    xor eax, eax
+    cmp qword ptr port_step, 0
+    jne done
+    test dword ptr [rdx].state.fx_4bit_mode, 1
+    jz done
+    mov eax, port_nibble_incr
+done:
+    mov port_nibble_step, eax
+endm
+
+; Flips a nibble address in direction's direction (1 forwards, -1 backwards, 0 does nothing), moving rdi on a byte
+; going from nibble 1 to 0, or back a byte going from 0 to 1.
+vera_nibble_step macro nibble, direction
+    local done, backwards
+
+    cmp dword ptr direction, 0
+    je done									; the usual case
+    jl backwards
+
+    xor dword ptr nibble, 1
+    jnz done								; was nibble 0
+    inc edi
+    and edi, 1ffffh
+    jmp done
+
+backwards:
+    xor dword ptr nibble, 1
+    jz done									; was nibble 1
+    dec edi
+    and edi, 1ffffh
+done:
+endm
+
+; Steps rdi by the port's own increment. With a nibble increment the nibble steps instead. Updates the port's nibble.
+vera_port_step macro port
+    vera_port_fields port
+
+    add rdi, port_step
+    and rdi, 1ffffh
+    vera_nibble_step port_nibble, port_nibble_step
+endm
+
+; The line helper adds ADDR0's increment to rdi (ADDR1) when x passes a whole pixel.
+;
+; Hardware (the VERA Verilog, addr_data.v): ADDR1's nibble isn't changed. With a nibble increment on ADDR0 it adds what
+; ADDR0 would step by: 1 forwards from nibble 1, -1 backwards from nibble 0, otherwise nothing. So steep 4bpp lines
+; don't draw properly.
+;
+; Fixed (fx_line_fixed, as the official emulator does): in 4 bit mode with a nibble increment on ADDR0, ADDR1's nibble
+; steps in ADDR0's direction.
+; Uses r13.
+vera_line_step_addr0 macro
+    local done, backwards, hardware
+
+    add rdi, [rdx].state.data0_step
+
+    cmp dword ptr [rdx].state.fx_line_fixed, 0
+    je hardware
+    test dword ptr [rdx].state.fx_4bit_mode, 1
+    jz done
+    vera_nibble_step <[rdx].state.data1_nibble>, <[rdx].state.data0_nibble_incr>
+    jmp done
+
+hardware:
+    mov r13d, [rdx].state.data0_nibble_step
+    test r13d, r13d
+    jz done
+    js backwards
+
+    add edi, [rdx].state.data0_nibble
+    jmp done
+
+backwards:
+    mov r13d, [rdx].state.data0_nibble
+    dec r13d								; -1 from nibble 0
+    movsxd r13, r13d
+    add rdi, r13
+done:
+    and rdi, 1ffffh
+endm
+
+; Sets ADDRx_L/M/H for a port, eg when ADDRSEL changes.
+vera_setaddress macro port
+    local search_loop, match, not_negative, no_nibble_incr
+    vera_port_fields port
 
     xor r12, r12						; use r12 to store if decr should be set
-    mov rax, [rdx].state.data0_step
+    mov rax, port_step
 
     test rax, rax
     jns not_negative
@@ -71,52 +177,24 @@ search_loop:
 match:
     and rbx, 11110b						; mask off index step (nof 0x0t as we x2 this value earlier)
     shl rbx, 4+8+8-1					; shift to the correct position for the registers
-    mov rdi, [rdx].state.data0_address
+    mov rdi, port_address
     or rdi, rbx
-    
+
     mov rsi, [rdx].state.memory_ptr
     mov [rsi+ADDRx_L], di
 
     shr rdi, 16
     or dil, r12b						; or on the DECR bit
-    mov [rsi+ADDRx_H], dil
-endm
 
-vera_setaddress_1 macro 
-    local search_loop, match
-
-    xor r12, r12						; use r12 to store if decr should be set
-    mov rax, [rdx].state.data1_step
-
-    test rax, rax
-    jns not_negative
-
-    mov r12b, 1000b
-    neg rax
-
-not_negative:
-
-    xor rbx, rbx
-    lea rsi, vera_step_table
-
-search_loop:
-    cmp ax, word ptr [rsi+rbx]
-    je match
-    add rbx, 2
-    cmp rbx, 20h
-    jne search_loop
-
-match:
-    and rbx, 11110b
-    shl rbx, 4+8+8-1
-    mov rdi, [rdx].state.data1_address
-    or rdi, rbx
-    
-    mov rsi, [rdx].state.memory_ptr
-    mov [rsi+ADDRx_L], di
-
-    shr rdi, 16
-    or dil, r12b						; or on the DECR bit
+    mov eax, port_nibble				; nibble address
+    lea edi, [rdi + rax * 2]
+    mov eax, port_nibble_incr			; nibble increment, a step of 0 can't carry DECR so it comes from here too
+    test eax, eax
+    jz no_nibble_incr
+    or dil, 0100b
+    jns no_nibble_incr
+    or dil, 1000b
+no_nibble_incr:
     mov [rsi+ADDRx_H], dil
 endm
 
@@ -342,12 +420,12 @@ vera_init proc
     jne set_address1
 
     ; Set Address 0 - init to ctrl as 0
-    vera_setaddress_0
+    vera_setaddress 0
     mov byte ptr [rsi+CTRL], 0
     jmp addr_done
 
 set_address1:
-    vera_setaddress_1
+    vera_setaddress 1
     mov byte ptr [rsi+CTRL], 1
     
 addr_done:
@@ -797,8 +875,10 @@ skip:
     pop rsi
 endm
 
-vera_write_dataport macro
-local cannot_cache_write, cache_write, fx_4bit_pixels, no_transparancy, done, no_multiplication
+vera_write_dataport macro port
+local cannot_cache_write, cache_write, fx_4bit_pixels, no_transparancy, done, no_multiplication, store
+    vera_port_fields port
+
     cmp rdi, 01f9c0h
     jge cannot_cache_write
 
@@ -806,6 +886,18 @@ local cannot_cache_write, cache_write, fx_4bit_pixels, no_transparancy, done, no
     jnz cache_write
 cannot_cache_write:
     movzx r13, byte ptr [rsi+rbx]			; get value that has been written
+    test dword ptr [rdx].state.fx_4bit_mode, 1
+    jz store
+
+    ; 4 bit mode only writes the addressed nibble, taken from the same nibble of the value
+    mov ecx, port_nibble
+    neg ecx									; 0 or -1
+    xor ecx, 0f0h							; $f0 for nibble 0, $..0f for nibble 1
+    and r13d, ecx
+    not ecx
+    and cl, byte ptr [rax + rdi]			; the other nibble from vram
+    or r13b, cl
+store:
     mov byte ptr [rax + rdi], r13b			; store in vram
     vera_dataupdate_stuctures
     jmp done
@@ -979,8 +1071,9 @@ no_transparancy:
 done:
 endm
 
-vera_read_dataport_cache macro
+vera_read_dataport_cache macro port
 local done, fx_4bit_pixels, fx_2_byte, cache_done
+        vera_port_fields port
         ; if cache fill is enabled need to add the current data 0 value to the cache
         test [rdx].state.fx_cache_fill, 1
         jz done
@@ -1041,9 +1134,12 @@ local done, fx_4bit_pixels, fx_2_byte, cache_done
 
     fx_4bit_pixels:
 
-        mov eax, 00fh							
-        and r13d, 0f0h							; isolate bottom 4 bits and move into position
-        shr r13d, 4
+        mov eax, port_nibble					; the addressed nibble, the high one for nibble 0
+        xor eax, 1
+        shl eax, 2
+        shrx r13d, r13d, eax
+        and r13d, 0fh
+        mov eax, 00fh
         xor r12d, 4								; adjust for endieness of 4 bit data
 
         shlx eax, eax, r12d						; mask
@@ -1085,13 +1181,7 @@ endm
 vera_port_access macro port, doublestep, write_value
     local no_read_breakpoint, no_write_breakpoint, breakpoint_step_loop, read_loop, read_loop_done, no_fx_step, not_fx, set_address
 
-    if port eq 0
-        port_address textequ <[rdx].state.data0_address>
-        port_step textequ <[rdx].state.data0_step>
-    else
-        port_address textequ <[rdx].state.data1_address>
-        port_step textequ <[rdx].state.data1_step>
-    endif
+    vera_port_fields port
 
     mov rdi, port_address
 
@@ -1120,18 +1210,19 @@ vera_port_access macro port, doublestep, write_value
         or eax, [rdx].state.ignore_breakpoint
         jnz no_write_breakpoint
 
-        mov r13, [rdx].state.vrambreakpoint_ptr
-
         if doublestep eq 1
-            ; a read-modify-write writes after its ecx + 1 reads, each of which steps
+            ; a read-modify-write writes after its ecx + 1 reads, each of which steps. Stepping changes the nibble, so
+            ; it's put back afterwards.
+            mov r13d, port_nibble
             lea eax, [ecx + 1]
             breakpoint_step_loop:
-            add rdi, port_step
-            and rdi, 1ffffh						; mask off high bits so we wrap
+            vera_port_step port
             dec eax
             jnz breakpoint_step_loop
+            mov port_nibble, r13d
         endif
 
+        mov r13, [rdx].state.vrambreakpoint_ptr
         movzx r13d, byte ptr [r13 + rdi]
         and r13d, VERA_BREAKPOINT_WRITE			; BREAKPOINT_WRITE is the same as VERA_BREAKPOINT so no change needed
         or [rdx].state.breakpoint_source, r13d
@@ -1151,31 +1242,29 @@ vera_port_access macro port, doublestep, write_value
     mov rax, [rdx].state.vram_ptr				; get value from vram
 
     if write_value eq 1 and doublestep eq 0
-        vera_write_dataport
+        vera_write_dataport port
     endif
 
     if write_value eq 0
-        vera_read_dataport_cache
+        vera_read_dataport_cache port
     endif
 
     if doublestep eq 1
         ; a read-modify-write reads ecx + 1 times before it writes. Each read steps, the last step is the one below.
         read_loop:
-        vera_read_dataport_cache
+        vera_read_dataport_cache port
 
         test ecx, ecx
         jz read_loop_done
 
-        add rdi, port_step
-        and rdi, 1ffffh
+        vera_port_step port
         dec ecx
         jmp read_loop
 
         read_loop_done:
     endif
 
-    add rdi, port_step
-    and rdi, 1ffffh								; mask off high bits so we wrap
+    vera_port_step port
 
     if port eq 1
         ; FX line helper, ADDR1 steps on by ADDR0's step each time x passes a whole pixel. Polyfill and affine are
@@ -1192,8 +1281,7 @@ vera_port_access macro port, doublestep, write_value
         and r13d, 0fffeffffh					; always mask out the increment bit
         mov [rdx].state.fx_x_position, r13d
 
-        add rdi, [rdx].state.data0_step
-        and rdi, 1ffffh
+        vera_line_step_addr0
 
         jmp not_fx
 
@@ -1205,11 +1293,10 @@ vera_port_access macro port, doublestep, write_value
 
     if doublestep eq 1
         if write_value eq 1
-            vera_write_dataport
+            vera_write_dataport port
         endif
 
-        add rdi, port_step						; perform second step
-        and rdi, 1ffffh							; mask off high bits so we wrap
+        vera_port_step port						; perform second step
     endif
 
     mov port_address, rdi
@@ -1229,9 +1316,11 @@ set_address:
 
     shr rdi, 16									; need to add bottom bit of the address, so shift and mask
     and rdi, 1
-    movzx rax, byte ptr [rsi + ADDRx_H]			; Add on stepping nibble
-    and eax, 0f8h								; mask off what isnt changable
-    or rdi, rax
+    movzx eax, byte ptr [rsi + ADDRx_H]			; keep the increment, DECR and nibble increment
+    and eax, 0fch
+    or edi, eax
+    mov eax, port_nibble						; and the current nibble
+    lea edi, [rdi + rax * 2]
     mov byte ptr [rsi + ADDRx_H], dil
 
     xor r13, r13								; clear r13b, as we use this to detect if we need to call vera
@@ -1428,58 +1517,56 @@ write_data1:
     ret
 vera_update_addrm endp
 
-vera_update_addrh proc	
-    mov r13b, byte ptr [rsi+rbx]						; value that has been written
-    and r13, 11111001b
-    mov byte ptr [rsi+rbx], r13b						; write back masked value
-    cmp byte ptr [rdx].state.addrsel, 0					; data 0 or 1?
+; r13d is the value written to ADDRx_H: increment (7-4), DECR (3), nibble increment (2), nibble address (1), bit 16 (0)
+vera_update_addrh_port macro port
+    local no_decr
+    vera_port_fields port
 
+    mov eax, r13d
+    and eax, 1
+    mov byte ptr port_address + 2, al					; address bit 16
+
+    mov eax, r13d
+    shr eax, 1
+    and eax, 1
+    mov port_nibble, eax
+
+    mov r12d, r13d
+    and r12d, 11110000b									; mask off the index
+    shr r12d, 3											; index in the table, not 4 as its a word
+    lea rax, vera_step_table
+    movzx r12d, word ptr [rax + r12]					; get value from table
+
+    xor eax, eax
+    test r13d, 0100b									; nibble increment
+    setnz al
+
+    test r13d, 1000b									; DECR
+    jz no_decr
+    neg r12
+    neg eax
+no_decr:
+    mov qword ptr port_step, r12
+    mov port_nibble_incr, eax
+    vera_update_nibble_step port
+
+    if port eq 0
+        vera_update_data0
+    else
+        vera_update_data1
+    endif
+    ret
+endm
+
+vera_update_addrh proc
+    movzx r13d, byte ptr [rsi+rbx]						; value that has been written, all bits are kept
+    cmp byte ptr [rdx].state.addrsel, 0					; data 0 or 1?
     jnz write_data1
 
-    ; Top address bit
-    xor r12, r12
-    bt r13w, 0											; check bit 0, if set then set r12b and move to data address
-    setc r12b
-    mov byte ptr [rdx].state.data0_address + 2, r12b
-
-    ; Index
-    mov r12, r13
-    and r12, 11110000b									; mask off the index
-    shr r12, 3											; index in the table, not 4 as its a word
-    lea rax, vera_step_table
-    mov r12w, word ptr [rax + r12]						; get value from table
-
-    bt r13w, 3											; check DECR
-    jnc no_decr_0
-    neg r12
-    
-no_decr_0:
-    mov qword ptr [rdx].state.data0_step, r12
-    vera_update_data0
-    ret
+    vera_update_addrh_port 0
 
 write_data1:
-    ; Top address bit
-    xor r12, r12
-    bt r13w, 0											; check bit 0, if set then set r12b and move to data address
-    setc r12b
-    mov byte ptr [rdx].state.data1_address + 2, r12b
-
-    ; Index
-    mov r12, r13
-    and r12, 11110000b									; mask off the index
-    shr r12, 3											; index in the table, not 4 as its a word
-    lea rax, vera_step_table
-    mov r12w, word ptr [rax + r12]						; get value from table
-
-    bt r13w, 3											; check DECR
-    jnc no_decr_1
-    neg r12
-    
-no_decr_1:
-    mov qword ptr [rdx].state.data1_step, r12
-    vera_update_data1
-    ret
+    vera_update_addrh_port 1
 vera_update_addrh endp
 
 vera_update_ctrl proc
@@ -1495,12 +1582,12 @@ vera_update_ctrl proc
     jc set_addr
 
     mov byte ptr [rdx].state.addrsel, 0
-    vera_setaddress_0
+    vera_setaddress 0
     jmp addr_done
 
 set_addr:
     mov byte ptr [rdx].state.addrsel, 1
-    vera_setaddress_1
+    vera_setaddress 1
 
 addr_done:
     pop r13
@@ -1821,7 +1908,12 @@ dc_sel2:
     and eax, 0100b
     shr eax, 2
     mov [rdx].state.fx_4bit_mode, eax
-    
+
+    ; the nibble increments only apply in 4 bit mode
+    vera_update_nibble_step 0
+    vera_update_nibble_step 1
+    mov eax, [rdx].state.fx_4bit_mode
+
     ; set cache index if based on 4bit mode
     test eax, 1
     jnz dc_sel2_4bit

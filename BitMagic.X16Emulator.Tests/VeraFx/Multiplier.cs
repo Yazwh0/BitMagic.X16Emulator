@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using BitMagic.X16Emulator.Snapshot;
 
 namespace BitMagic.X16Emulator.Tests.Vera.Fx;
@@ -111,7 +111,7 @@ public class Multiplier
 
         emulator.Vera.DcSel = 2;
         emulator.VeraFx.Accumulator = 0;
-        emulator.A = 0b01000000;
+        emulator.A = 0b01010000; // accumulate, multiplier on
         emulator.VeraFx.Cache = 0x01010202;
 
         var (_, snapshot) = await X16TestHelper.EmulateChanges(@"
@@ -137,7 +137,7 @@ public class Multiplier
 
         emulator.Vera.DcSel = 2;
         emulator.VeraFx.Accumulator = 0x123;
-        emulator.A = 0b01000000;
+        emulator.A = 0b01010000; // accumulate, multiplier on
         emulator.VeraFx.Cache = 0x01010202;
 
         var (_, snapshot) = await X16TestHelper.EmulateChanges(@"
@@ -164,7 +164,7 @@ public class Multiplier
 
         emulator.Vera.DcSel = 2;
         emulator.VeraFx.Accumulator = 0x123;
-        emulator.A = 0b01100000;
+        emulator.A = 0b01110000; // accumulate, subtract, multiplier on
         emulator.VeraFx.Cache = 0x01010202;
         emulator.VeraFx.AccumulateDirection = 0;
 
@@ -215,6 +215,7 @@ public class Multiplier
 
         emulator.Vera.DcSel = 6;
         emulator.VeraFx.Accumulator = 0;
+        emulator.VeraFx.MultiplierEnable = true;
         emulator.VeraFx.Cache = 0x01010202;
 
         var (_, snapshot) = await X16TestHelper.EmulateChanges(@"
@@ -240,6 +241,7 @@ public class Multiplier
 
         emulator.Vera.DcSel = 6;
         emulator.VeraFx.Accumulator = 0x123;
+        emulator.VeraFx.MultiplierEnable = true;
         emulator.VeraFx.Cache = 0x01010202;
 
         var (_, snapshot) = await X16TestHelper.EmulateChanges(@"
@@ -265,6 +267,7 @@ public class Multiplier
 
         emulator.Vera.DcSel = 6;
         emulator.VeraFx.Accumulator = 0xfffffffe;
+        emulator.VeraFx.MultiplierEnable = true;
         emulator.VeraFx.Cache = 0xffff0002;
 
         var (_, snapshot) = await X16TestHelper.EmulateChanges(@"
@@ -290,6 +293,7 @@ public class Multiplier
 
         emulator.Vera.DcSel = 6;
         emulator.VeraFx.Accumulator = 0x40000;
+        emulator.VeraFx.MultiplierEnable = true;
         emulator.VeraFx.Cache = 0x01010202;
         emulator.VeraFx.AccumulateDirection = 1;
 
@@ -307,6 +311,56 @@ public class Multiplier
         snapshot.Compare().IgnoreVia().CanChange(Registers.A).CanChange(CpuFlags.Negative).AssertNoOtherChanges();
 
         Assert.AreEqual(0x40000u - 0x101u * 0x202u, emulator.VeraFx.Accumulator);
+    }
+
+    // With the multiplier off, accumulating loads the cache into the accumulator. mult_accum.v passes the cache through
+    // with OLOAD when the multiplier is off. Not checked on hardware, the official emulator adds the product instead.
+    [TestMethod]
+    public async Task SetAccumulation_MultiplierOff_LoadsCache()
+    {
+        using var emulator = new Emulator();
+
+        emulator.Vera.DcSel = 6;
+        emulator.VeraFx.Accumulator = 0x123;
+        emulator.VeraFx.MultiplierEnable = false;
+        emulator.VeraFx.Cache = 0x01010202;
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                stp
+                lda FX_ACCUM
+                stp",
+                emulator);
+
+        emulator.EmulateWithTimeout();
+
+        Assert.AreEqual(0x01010202u, emulator.VeraFx.Accumulator);
+    }
+
+    // fxFixed adds the product whether or not the multiplier is on, as the official emulator does
+    [TestMethod]
+    public async Task SetAccumulation_MultiplierOff_FxFixed_AddsProduct()
+    {
+        using var emulator = new Emulator();
+
+        emulator.FxFixed = true;
+        emulator.Vera.DcSel = 6;
+        emulator.VeraFx.Accumulator = 0x123;
+        emulator.VeraFx.MultiplierEnable = false;
+        emulator.VeraFx.Cache = 0x01010202;
+
+        await X16TestHelper.Emulate(@"
+                .machine CommanderX16R40
+                .org $810
+                stp
+                lda FX_ACCUM
+                stp",
+                emulator);
+
+        emulator.EmulateWithTimeout();
+
+        Assert.AreEqual(0x101u * 0x202u + 0x123, emulator.VeraFx.Accumulator);
     }
 
     [TestMethod]

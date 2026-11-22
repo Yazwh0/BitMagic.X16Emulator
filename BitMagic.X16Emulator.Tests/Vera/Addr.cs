@@ -283,6 +283,6 @@ public class Addr
 
         Assert.AreEqual(0x00, emulator.Memory[0x9F20]);
         Assert.AreEqual(0x00, emulator.Memory[0x9F21]);
-        Assert.AreEqual(0xf9, emulator.Memory[0x9F22]);
+        Assert.AreEqual(0xff, emulator.Memory[0x9F22]); // all bits read back, including the nibble increment and address (top.v)
     }
 }

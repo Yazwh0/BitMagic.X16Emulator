@@ -1,4 +1,4 @@
-﻿
+
 using BitMagic.Compiler;
 using BitMagic.Decompiler;
 using BitMagic.X16Emulator;
@@ -87,6 +87,9 @@ static class Program
 
         [Option("wifi", Required = false, HelpText = "Enable the wifi card at $9fe0.")]
         public bool Wifi { get; set; } = false;
+
+        [Option("fxfixed", Required = false, HelpText = "Make VERA FX behave like the official emulator where it differs from the hardware.")]
+        public bool FxFixed { get; set; } = false;
 
         [Option("scale", Required = false, HelpText = "Window scale, e.g. 2 for double size.")]
         public double Scale { get; set; } = 1;
@@ -317,6 +320,7 @@ static class Program
 
         emulator.Brk_Causes_Stop = false;
         emulator.EnableWifi = options.Wifi;
+        emulator.FxFixed = options.FxFixed;
         emulator.WindowScale = options.Scale;
         emulator.MuteAudio = options.Mute;
 

@@ -246,6 +246,30 @@ state struct
 	fx_y_mult_32			dword ?
 	;fx_spacer				dword ?
 
+	; 4 bit mode nibble addressing
+	data0_nibble			dword ?		; nibble address, 0 is the high nibble (left pixel)
+	data1_nibble			dword ?
+	data0_nibble_incr		dword ?		; ADDRx_H's nibble increment, 1 forward, -1 back (DECR), 0 off
+	data1_nibble_incr		dword ?
+	data0_nibble_step		dword ?		; nibble_incr when it applies (4 bit mode and increment 0), otherwise 0
+	data1_nibble_step		dword ?
+	fx_fixed			dword ?		; config: 1 to behave like the official emulator where VERA FX differs from the hardware
+
+	; more VERA FX, following addr_data.v. Positions are 16.16 (11 bit integer, the hardware's 11.9), increments are
+	; sign extended to 16.16 with x32 applied.
+	fx_x_incr_raw			dword ?		; FX_X_INCR_L/H as written, bit 15 is x32
+	fx_y_incr_raw			dword ?		; FX_Y_INCR_L/H as written, bit 15 is x32
+	fx_tile_base			dword ?		; affine tile data address
+	fx_map_base				dword ?		; affine map address
+	fx_map_shift			dword ?		; affine map size in tiles as a power of 2: 1, 3, 5 or 7
+	fx_affine_clip			dword ?
+	fx_2bit_polygon			dword ?
+	fx_2bit_poke			dword ?		; ADDR1_L written in 2-bit polygon mode, the next DATA1 write pokes 2 bits
+	fx_16bit_hop			dword ?
+	fx_hop_start			dword ?		; ADDR1_L's low 2 bits when it was written with 16-bit hop on
+	fx_hop_active			dword ?		; 16-bit hop is on and ADDR1's increment is 4 or 320
+	fx_write_special		dword ?		; one-byte cycling, transparent writes or 4-bit mode, plain writes take the slow path
+
 	vram_data				dword ?
 	history_log_mask		dword ?
 

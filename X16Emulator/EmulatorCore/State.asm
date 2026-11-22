@@ -165,9 +165,18 @@ state struct
 	smc_mouse_readposition  dword ?
 	smc_mouse_writeposition	dword ?
 
-	rtc_offset				dword ?
+	rtc_offset				dword ?		; register pointer
 	rtc_data				dword ?
-	rtc_datacount			dword ?
+	rtc_datacount			dword ?		; bytes received in this write, the first is the register pointer
+
+	; RTC time. Not stepped, the time is worked out when it's read from the CPU clock: rtc_seconds +
+	; (clock - rtc_base_clock) / 8000000 while running.
+	rtc_base_clock			qword ?		; cpu clock when rtc_seconds was set
+	rtc_seconds				dword ?		; seconds since 2000-01-01 00:00:00 at rtc_base_clock, or the time it stopped at
+	rtc_running				dword ?		; ST
+	rtc_h24					dword ?		; 1 for 24 hour mode
+	rtc_vbaten				dword ?
+	rtc_wkday_offset		dword ?		; the weekday is its own counter: (days + offset) % 7 + 1
 
 	spi_position			dword ?
 	spi_chipselect			dword ?

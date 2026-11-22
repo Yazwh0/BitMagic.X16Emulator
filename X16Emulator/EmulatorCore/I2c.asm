@@ -501,6 +501,7 @@ send_address_ack proc
 	jne unknown_address
 
 known_address:
+	mov dword ptr [rdx].state.rtc_datacount, 0		; a new transaction, the RTC's first byte is the register pointer
 	movzx rax, byte ptr [rdx].state.via_register_a_invalue
 	and rax, 11111110b	; set data low
 	mov byte ptr [rdx].state.via_register_a_invalue, al

@@ -709,6 +709,14 @@ public class Emulator : IDisposable
         public uint RtcData = 0;
         public uint RtcDataCount = 0;
 
+        // RTC time, see State.asm. Starts stopped at 2000-01-01 00:00:00 (a Saturday), as the chip does at power on.
+        public ulong RtcBaseClock = 0;
+        public uint RtcSeconds = 0;
+        public uint RtcRunning = 0;
+        public uint RtcH24 = 1;
+        public uint RtcVbaten = 0;
+        public uint RtcWkdayOffset = 0;
+
         public uint SpiPosition = 0;
         public uint SpiChipSelect = 0;
         public uint SpiAutoTx = 0;
@@ -1069,6 +1077,69 @@ public class Emulator : IDisposable
     /// </list>
     /// </summary>
     public bool FxFixed { get => _state.FxFixed != 0; set => _state.FxFixed = value ? 1u : 0u; }
+
+    // The RTC keeps time from the cpu clock, see Rtc.asm. It covers 2000-2099.
+    private const ulong RtcCyclesPerSecond = 8_000_000;
+    private static readonly DateTime RtcEpoch = new(2000, 1, 1);
+
+    /// <summary>
+    /// Sets the RTC's date and time, eg from the host at startup. Only the emulator's clock changes. The weekday is
+    /// set as the official emulator does, Monday is 1 and Sunday is 7.
+    /// </summary>
+    public void SetRtc(DateTime time, bool running = true)
+    {
+        var year = time.Year % 100;     // the chip only has 2 digits
+        var inRange = new DateTime(2000 + year, time.Month, time.Day, time.Hour, time.Minute, time.Second);
+        var seconds = (long)(inRange - RtcEpoch).TotalSeconds;
+        var days = seconds / 86400;
+        var weekday = time.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)time.DayOfWeek;
+
+        _state.RtcSeconds = (uint)seconds;
+        _state.RtcBaseClock = _state.Clock;
+        _state.RtcRunning = running ? 1u : 0u;
+        _state.RtcH24 = 1;
+        _state.RtcVbaten = 1;
+        _state.RtcWkdayOffset = (uint)(((weekday - 1 - days % 7) % 7 + 7) % 7);
+    }
+
+    /// <summary>
+    /// The RTC's date and time now, worked out from the cpu clock as Rtc.asm does.
+    /// </summary>
+    public DateTime RtcDateTime
+    {
+        get
+        {
+            var seconds = (ulong)_state.RtcSeconds;
+            if (_state.RtcRunning != 0)
+                seconds += (_state.Clock - _state.RtcBaseClock) / RtcCyclesPerSecond;
+
+            var days = seconds / 86400 % 36525;     // wraps after 2099, as the chip does
+            return RtcEpoch.AddDays(days).AddSeconds(seconds % 86400);
+        }
+    }
+
+    public bool RtcRunning => _state.RtcRunning != 0;
+
+    /// <summary>
+    /// Starts the RTC from a setting: "host" (or empty) for the host's local date and time, "stopped" to leave it as
+    /// the chip is at power on, or a date and time.
+    /// </summary>
+    public void StartRtc(string? setting)
+    {
+        if (string.IsNullOrWhiteSpace(setting) || setting.Equals("host", StringComparison.OrdinalIgnoreCase))
+        {
+            SetRtc(DateTime.Now);
+            return;
+        }
+
+        if (setting.Equals("stopped", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        if (!DateTime.TryParse(setting, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var time))
+            throw new ArgumentException($"RTC setting '{setting}' isn't \"host\", \"stopped\" or a date and time, eg \"2026-01-01T12:00:00\".");
+
+        SetRtc(time);
+    }
 
     public byte A { get => _state.A; set => _state.A = value; }
     public byte X { get => _state.X; set => _state.X = value; }

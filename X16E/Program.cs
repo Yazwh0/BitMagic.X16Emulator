@@ -91,6 +91,9 @@ static class Program
         [Option("fxfixed", Required = false, HelpText = "Make VERA FX behave like the official emulator where it differs from the hardware.")]
         public bool FxFixed { get; set; } = false;
 
+        [Option("rtc", Required = false, HelpText = "What the RTC starts at: host (the default), stopped, or a date and time, eg 2026-01-01T12:00:00.")]
+        public string Rtc { get; set; } = "host";
+
         [Option("scale", Required = false, HelpText = "Window scale, e.g. 2 for double size.")]
         public double Scale { get; set; } = 1;
 
@@ -321,6 +324,7 @@ static class Program
         emulator.Brk_Causes_Stop = false;
         emulator.EnableWifi = options.Wifi;
         emulator.FxFixed = options.FxFixed;
+        emulator.StartRtc(options.Rtc);
         emulator.WindowScale = options.Scale;
         emulator.MuteAudio = options.Mute;
 

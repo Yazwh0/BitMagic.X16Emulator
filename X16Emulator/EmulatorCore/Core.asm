@@ -1752,6 +1752,11 @@ skip:
         pop rcx
     endif
 
+    movzx r12d, byte ptr [rsi+rbx]	; rom, so no write but the flags still change
+    clc
+    inc r12b
+    write_flags_r15_preservecarry
+
     add r14, clock
     add r11w, pc			; add on PC
 
@@ -1797,6 +1802,11 @@ skip:
             pop rcx
         endif
     endif
+
+    movzx r12d, byte ptr [rsi+rbx]	; rom, so no write but the flags still change
+    clc
+    dec r12b
+    write_flags_r15_preservecarry
 
     add r14, clock
     add r11w, pc			; add on PC
@@ -1972,6 +1982,8 @@ asl_body macro checkreadonly, checkvera, clock, pc
         mov ecx, 1
 
         step_io_readwrite 1
+    else
+        check_bank_switch			; zero page, so $00 and $01
     endif
 
     add r11w, pc					; move PC on
@@ -2012,8 +2024,8 @@ x0E_asl_abs proc
 x0E_asl_abs endp
 
 x1E_asl_absx proc
-    read_absx_rbx 1
-    asl_body 1, 1, 7, 2
+    read_absx_rbx_pagepenalty		; 6 cycles, +1 crossing a page
+    asl_body 1, 1, 6, 2
 x1E_asl_absx endp
 
 x06_asl_zp proc
@@ -2046,6 +2058,8 @@ lsr_body macro checkreadonly, checkvera, clock, pc
         mov ecx, 1
 
         step_io_readwrite 1
+    else
+        check_bank_switch			; zero page, so $00 and $01
     endif
 
     add r14, clock				; Clock
@@ -2085,8 +2099,8 @@ x4E_lsr_abs proc
 x4E_lsr_abs endp
 
 x5E_lsr_absx proc
-    read_absx_rbx 0
-    lsr_body 1, 1, 7, 2
+    read_absx_rbx_pagepenalty		; 6 cycles, +1 crossing a page
+    lsr_body 1, 1, 6, 2
 x5E_lsr_absx endp
 
 x46_lsr_zp proc
@@ -2133,11 +2147,13 @@ rol_body macro checkreadonly, checkvera, clock, pc
         mov ecx, 1
 
         step_io_readwrite 1
+    else
+        check_bank_switch			; zero page, so $00 and $01
     endif
-    
+
     add r14, clock					; Clock
     add r11w, pc					; add on PC
-    jmp opcode_done	
+    jmp opcode_done
 
 if checkreadonly eq 1
 skip:
@@ -2148,8 +2164,13 @@ skip:
 
     movzx r12, byte ptr [rsi+rbx]
     sal r12b, 1						; shift
-    write_flags_r15
-    
+    write_flags_r15					; carry from the shift
+    or r12b, dil					; add carry on, then N and Z from the result
+    lahf
+    and eax, 1100000000000000b
+    and r15d, 0100h
+    or r15d, eax
+
     add r14, clock					; Clock
     add r11w, pc					; add on PC
     jmp opcode_done	
@@ -2183,8 +2204,8 @@ x2E_rol_abs proc
 x2E_rol_abs endp
 
 x3E_rol_absx proc	
-    read_absx_rbx 0
-    rol_body 1, 1, 7, 2
+    read_absx_rbx_pagepenalty		; 6 cycles, +1 crossing a page
+    rol_body 1, 1, 6, 2
 x3E_rol_absx endp
 
 x26_rol_zp proc
@@ -2234,11 +2255,13 @@ ror_body macro checkreadonly, checkvera, clock, pc
         mov ecx, 1
 
         step_io_readwrite 1
+    else
+        check_bank_switch			; zero page, so $00 and $01
     endif
-    
+
     add r14, clock					; Clock
     add r11w, pc					; add on PC
-    jmp opcode_done	
+    jmp opcode_done
 
 if checkreadonly eq 1
 skip:
@@ -2249,10 +2272,12 @@ skip:
 
     movzx r12, byte ptr [rsi+rbx]
     shr r12b, 1						; shift
-    write_flags_r15
-
-    rol rdi, 8						; change carry to negative
-    or r15, rdi						; add on to flags
+    write_flags_r15					; carry from the shift
+    or r12b, dil					; add carry on, then N and Z from the result
+    lahf
+    and eax, 1100000000000000b
+    and r15d, 0100h
+    or r15d, eax
 
     add r14, clock					; Clock
     add r11w, pc					; add on PC
@@ -2291,8 +2316,8 @@ x6E_ror_abs proc
 x6E_ror_abs endp
 
 x7E_ror_absx proc	
-    read_absx_rbx 0
-    ror_body 1, 1, 7, 2
+    read_absx_rbx_pagepenalty		; 6 cycles, +1 crossing a page
+    ror_body 1, 1, 6, 2
 x7E_ror_absx endp
 
 x66_ror_zp proc
@@ -2562,79 +2587,85 @@ adc_body_end macro checkvera, clock, pc, preservecarry
     jmp opcode_done	
 endm
 
+; loads the value for a decimal adc\sbc into edi
+decimal_load_edi macro checkvera, imm
+    if imm eq 1
+        movzx edi, byte ptr [rsi+r11]
+    elseif checkvera eq 1
+        movzx edi, byte ptr [rdx].state.vram_data
+    else
+        movzx edi, byte ptr [rsi+rbx]
+    endif
+endm
+
+; decimal adc\sbc take one more cycle on the 65c02
+decimal_end macro clock, pc
+    add r14, clock + 1
+    add r11w, pc
+    jmp opcode_done
+endm
+
+; sets r15 from r8b and the carry in r12d (0 or 1)
+decimal_set_flags macro
+    test r8b, r8b
+    lahf
+    and eax, 1100000000000000b		; N and Z
+    shl r12d, 8
+    or eax, r12d					; C
+    mov r15d, eax
+endm
+
+; 65c02 decimal adc, from Bruce Clark's decimal mode tutorial on 6502.org.
+; A, C, N and Z are from sequence 1, V is from sequence 2.
 decimal_add macro checkvera, imm
-    local no_decimal_overflow, no_total_overflow
+    local no_low_adjust, no_high_adjust
 
-    mov r12, r8         
-    if imm eq 0
-        if checkvera eq 0
-            movzx rcx, byte ptr [rsi+rbx]
-        endif
+    decimal_load_edi checkvera, imm
 
-        if checkvera eq 1
-            movzx rcx, byte ptr [rdx].state.vram_data
-        endif
-    endif
-    if imm eq 1
-        movzx rcx, byte ptr [rsi+r11] 
-    endif
+    ; AL = (A & $0f) + (B & $0f) + C
+    movzx ecx, r8b
+    and ecx, 0fh
+    mov r12d, edi
+    and r12d, 0fh
+    bt r15d, 8						; carry
+    adc ecx, r12d
 
-    ; flag set for C, ecx = Data, r12 = A, will total into ecx
+    ; if AL >= $0a then AL = ((AL + $06) & $0f) + $10
+    cmp ecx, 0ah
+    jb no_low_adjust
+    add ecx, 06h
+    and ecx, 0fh
+    add ecx, 10h
+no_low_adjust:
 
-    ; Add (A & 0x0f) + (Data & 0x0f) + C
-    and ecx, 00fh
-    and r12d, 00fh
+    ; V: signed (A & $f0) + (B & $f0) + AL is outside -128 to 127
+    movsx eax, r8b
+    and eax, -16
+    movsx r12d, dil
+    and r12d, -16
+    add eax, r12d
+    add eax, ecx
+    add eax, 128
+    cmp eax, 255
+    seta byte ptr [rdx].state.flags_overflow
 
-    ; set the flags, so set the Carry flag
-    read_flags_rax
-    adc rcx, r12    ; C + Data + A
-
-    cmp ecx, 00ah
-    jl no_decimal_overflow
-
-    add ecx, 006h
-    and ecx, 00fh
-    add ecx, 010h
-
-no_decimal_overflow:
-
-    mov r12, r8         
-    if imm eq 0
-        movzx rax, byte ptr [rsi+rbx]
-    endif
-    if imm eq 1
-        movzx rax, byte ptr [rsi+r11] 
-    endif   
-
+    ; A = (A & $f0) + (B & $f0) + AL, if A >= $a0 then A = A + $60
+    movzx eax, r8b
     and eax, 0f0h
-    and r12, 0f0h
-    
     add ecx, eax
-    add ecx, r12d
-
+    and edi, 0f0h
+    add ecx, edi
     cmp ecx, 0a0h
-    jl no_total_overflow
+    jb no_high_adjust
+    add ecx, 60h
+no_high_adjust:
 
-    add ecx, 060h
-
-no_total_overflow:
-
+    ; C if A >= $100
+    xor r12d, r12d
+    cmp ecx, 100h
+    setae r12b
     mov r8b, cl
-
-    ; Z set if CL is zero
-    ; N if bit 7 is set
-    ; V as normal?
-    ; C if rcx > 0x100
-    
-    ; so test ecx for >= 0x100, and set the carry (r15), the macro will pick the rest up after
-    and r15w, 0feffh				; mask carry	
-    xor eax, eax
-    cmp ecx, 0100h          
-    setge al                    ; set if above
-    shl rax, 8
-    or r15, rax                 ; or in
-
-    add r8b, 0                  ; sets flags
+    decimal_set_flags
 endm
 
 adc_body macro checkvera, clock, pc
@@ -2671,8 +2702,7 @@ adc_body macro checkvera, clock, pc
     mov [rdx].state.memory_read, ebx
 
     decimal_add checkvera, 0
-
-    adc_body_end checkvera, clock, pc, 1
+    decimal_end clock, pc
 endm
 
 x69_adc_imm proc
@@ -2688,7 +2718,7 @@ x69_adc_imm proc
     decimal:
 
     decimal_add 0, 1
-    adc_body_end 0, 2, 1, 1
+    decimal_end 2, 1
 x69_adc_imm endp
 
 x6D_adc_abs proc
@@ -2745,90 +2775,63 @@ sbc_body_end macro checkvera, clock, pc, preservecarry
 
     seto dil
     mov byte ptr [rdx].state.flags_overflow, dil
-    step_vera_read checkvera
 
     add r14, clock			; Clock
     add r11w, pc			; add on PC
     jmp opcode_done	
 endm
 
+; 65c02 decimal sbc, from Bruce Clark's decimal mode tutorial on 6502.org, sequence 3.
+; C and V are the same as binary.
 decimal_sub macro checkvera, imm
-    local no_decimal_overflow, no_total_overflow
+    local no_high_adjust, no_low_adjust
 
-    mov rcx, r8         
-    if imm eq 0
-        if checkvera eq 0
-            movzx r12, byte ptr [rsi+rbx]
-        endif
+    decimal_load_edi checkvera, imm
 
-        if checkvera eq 1
-            movzx r12, byte ptr [rdx].state.vram_data
-        endif
-    endif
-    if imm eq 1
-        movzx r12, byte ptr [rsi+r11] 
-    endif
+    ; borrow is 1 - C
+    xor r12d, r12d
+    bt r15d, 8
+    setnc r12b
 
-    ; flag set for C, ecx = A, r12 = Data, will total into ecx
+    ; A - B + C - 1
+    movzx ecx, r8b
+    sub ecx, edi
+    sub ecx, r12d
 
-    ; Add (A & 0x0f) + (Data & 0x0f) + C
-    and ecx, 00fh
-    and r12d, 00fh
+    ; AL = (A & $0f) - (B & $0f) + C - 1
+    movzx eax, r8b
+    and eax, 0fh
+    sub eax, r12d
+    mov r12d, edi
+    and r12d, 0fh
+    sub eax, r12d
 
-    ; set the flags, so set the Carry flag
-    read_flags_rax
+    ; V as binary, the sign of the result is wrong for the inputs
+    movzx r12d, r8b
+    xor edi, r12d					; A ^ B
+    xor r12d, ecx					; A ^ result
+    and r12d, edi
+    bt r12d, 7
+    setc byte ptr [rdx].state.flags_overflow
 
-    cmc
-    sbb rcx, r12    ; Data - A + (C-1), this is the only point C is used
+    ; C as binary, no borrow
+    xor r12d, r12d
+    test ecx, ecx
+    setns r12b
 
-    cmp ecx, 00h
-    jge no_decimal_overflow
+    ; if A < 0 then A = A - $60
+    jns no_high_adjust
+    sub ecx, 60h
+no_high_adjust:
 
-    sub ecx, 006h
-    and ecx, 00fh
-    sub ecx, 010h
-
-no_decimal_overflow:
-
-    mov r12, r8         
-    if imm eq 0
-        movzx rax, byte ptr [rsi+rbx]
-    endif
-    if imm eq 1
-        movzx rax, byte ptr [rsi+r11] 
-    endif
-
-    and eax, 0f0h
-    and r12d, 0f0h
-    
-    sub r12d, eax
-
-    add ecx, r12d ; this is a or...?
-;    sub ecx, r12d
-
-    cmp ecx, 0h
-    jge no_total_overflow
-
-    sub ecx, 060h
-
-no_total_overflow:
+    ; if AL < 0 then A = A - $06
+    test eax, eax
+    jns no_low_adjust
+    sub ecx, 06h
+no_low_adjust:
 
     mov r8b, cl
-
-    ; Z set if CL is zero
-    ; N if bit 7 is set
-    ; V as normal?
-    ; C if rcx > 0x100
-    
-    ; so test ecx for >= 0x100, and set the carry (r15), the macro will pick the rest up after
-    and r15w, 0feffh				; mask carry	
-    xor eax, eax
-    cmp ecx, 0000h          
-    setge al                    ; set if above
-    shl rax, 8
-    or r15, rax                 ; or in
-
-    add r8b, 0                  ; sets flags
+    decimal_set_flags
 endm
 
 sbc_body macro checkvera, clock, pc
@@ -2867,8 +2870,10 @@ sbc_body macro checkvera, clock, pc
 
     decimal:
 
+    mov [rdx].state.memory_read, ebx
+
     decimal_sub checkvera, 0
-    sbc_body_end checkvera, clock, pc, 1
+    decimal_end clock, pc
 endm
 
 xE9_sbc_imm proc
@@ -2886,7 +2891,7 @@ xE9_sbc_imm proc
     decimal:
 
     decimal_sub 0, 1
-    sbc_body_end 0, 2, 1, 1
+    decimal_end 2, 1
 xE9_sbc_imm endp
 
 xED_sbc_abs proc
@@ -2936,17 +2941,32 @@ xF1_sbc_indy endp
 cmp_body_end macro checkvera, clock, pc
     cmc
     write_flags_r15
-    step_vera_read checkvera
 
     add r14, clock			; Clock
     add r11w, pc			; add on PC
-    jmp opcode_done	
+    jmp opcode_done
+endm
+
+; compares against vram_data for io, as a read can change the value (eg the scanline)
+cmp_reg_body macro register, checkvera, clock, pc
+    mov [rdx].state.memory_read, ebx
+
+    if checkvera eq 1
+        movzx eax, byte ptr [rsi+rbx]
+        mov dword ptr [rdx].state.vram_data, eax
+
+        step_vera_read checkvera
+
+        cmp register, byte ptr [rdx].state.vram_data
+    else
+        cmp register, [rsi+rbx]
+    endif
+
+    cmp_body_end checkvera, clock, pc
 endm
 
 cmp_body macro checkvera, clock, pc
-    mov [rdx].state.memory_read, ebx
-    cmp r8b, [rsi+rbx]
-    cmp_body_end checkvera, clock, pc
+    cmp_reg_body r8b, checkvera, clock, pc
 endm
 
 xC9_cmp_imm proc
@@ -2999,9 +3019,7 @@ xD1_cmp_indy endp
 ;
 
 cmpx_body macro checkvera, clock, pc
-    mov [rdx].state.memory_read, ebx
-    cmp r9b, [rsi+rbx]
-    cmp_body_end checkvera, clock, pc
+    cmp_reg_body r9b, checkvera, clock, pc
 endm
 
 xE0_cmpx_imm proc
@@ -3024,9 +3042,7 @@ xE4_cmpx_zp endp
 ;
 
 cmpy_body macro checkvera, clock, pc
-    mov [rdx].state.memory_read, ebx
-    cmp r10b, [rsi+rbx]
-    cmp_body_end checkvera, clock, pc
+    cmp_reg_body r10b, checkvera, clock, pc
 endm
 
 xC0_cmpy_imm proc
@@ -3353,12 +3369,20 @@ x4C_jmp_abs proc
 
 x4C_jmp_abs endp
 
+; reads each byte on its own so ($ffff) wraps to $0000
+jmp_read_pc macro
+    mov al, byte ptr [rsi+rbx]
+    add bx, 1
+    mov ah, byte ptr [rsi+rbx]
+    mov r11w, ax
+endm
+
 x6C_jmp_ind proc
     read_abs_rbx 0	; get address to bx
 
-    mov r11w, word ptr [rsi+rbx] ; Set to PC
+    jmp_read_pc
 
-    add r14, 5
+    add r14, 6
     jmp opcode_done
 x6C_jmp_ind endp
 
@@ -3366,7 +3390,7 @@ x7C_jmp_indx proc
     read_abs_rbx 0	; get address to bx
     add bx, r9w		; Add x
 
-    mov r11w, word ptr [rsi+rbx] ; Set to PC
+    jmp_read_pc
 
     add r14, 6
     jmp opcode_done
@@ -3759,6 +3783,7 @@ handle_nmi proc
     dec bl								; Move stack pointer on (done twice for wrapping)
 
     mov byte ptr [rdx].state.stackpointer, bl	; Store stack pointer
+    mov byte ptr [rdx].state.flags_decimal, 0	; the 65c02 clears decimal on nmi too
     mov byte ptr [rdx].state.flags_interruptDisable, 1 ; set interrupt Disable to true, gets reverted at the rti
 
     ;
@@ -3795,6 +3820,7 @@ x40_rti endp
 
 x08_php proc
     set_status_register_al
+    or al, 00010000b								; php always pushes B set
 
     movzx rbx, word ptr [rdx].state.stackpointer	; Get stack pointer
     sub byte ptr [rdx].state.stackpointer, 1		; Increment stack pointer
@@ -3892,7 +3918,7 @@ endm
 
 x89_bit_imm proc
     movzx rdi, byte ptr [rsi+r11]
-    bit_body_end_nochangetovn 3, 1
+    bit_body_end_nochangetovn 2, 1
 x89_bit_imm endp
 
 x2C_bit_abs proc
@@ -3901,7 +3927,7 @@ x2C_bit_abs proc
 x2C_bit_abs endp
 
 x3C_bit_absx proc
-    read_absx_rbx 0
+    read_absx_rbx_pagepenalty
     bit_body 1, 4, 2
 x3C_bit_absx endp
 
@@ -3912,22 +3938,33 @@ x24_bit_zp endp
 
 x34_bit_zpx proc
     read_zpx_rbx
-    bit_body 0, 3, 1
+    bit_body 0, 4, 1
 x34_bit_zpx endp
 
 ;
-; TRB
+; TRB \ TSB
 ;
 
-x1C_trb_abs proc
+; Z is set from A AND the value before it's changed, N V and C are unchanged
+tsb_trb_set_zero macro
+    test byte ptr [rsi+rbx], r8b
+    lahf
+    and eax, 0100000000000000b		; isolate zero
+    and r15w, 1011111111111111b		; remove zero
+    or r15d, eax
+endm
+
+; the abs versions are read, read, write, so a data port steps twice before the write
+tsb_trb_abs macro operation
     read_abs_rbx 0
     pre_write_check 1
 
-    mov rax, r8
-    not al
-    and byte ptr [rsi+rbx], al
-    jz set_zero
-    
+    tsb_trb_set_zero
+    operation
+
+    mov [rdx].state.memory_read, ebx
+    mov [rdx].state.memory_write, ebx
+
     mov ecx, 1
     step_io_readwrite 1
 
@@ -3936,108 +3973,52 @@ x1C_trb_abs proc
     jmp opcode_done
 
 skip:
+    tsb_trb_set_zero				; rom, so no write
 
+    add r14, 6
+    add r11w, 2
+    jmp opcode_done
+endm
+
+tsb_trb_zp macro operation
+    read_zp_rbx
+
+    tsb_trb_set_zero
+    operation
+
+    mov [rdx].state.memory_read, ebx
+    mov [rdx].state.memory_write, ebx
+    check_bank_switch
+
+    add r14, 5
+    add r11w, 1
+    jmp opcode_done
+endm
+
+trb_operation macro
     mov rax, r8
     not al
-    and al, byte ptr [rsi+rbx]
-    jz set_zero
-    
-    step_io_readwrite 1
-    add r14, 6
-    add r11w, 2
-    jmp opcode_done
-    
-set_zero:
-    ;        NZ A P C
-    or r15w, 0100000000000000b
+    and byte ptr [rsi+rbx], al
+endm
 
-    mov ecx, 1
-    step_io_readwrite 1    
+tsb_operation macro
+    or byte ptr [rsi+rbx], r8b
+endm
 
-    add r14, 6
-    add r11w, 2
-    jmp opcode_done
+x1C_trb_abs proc
+    tsb_trb_abs trb_operation
 x1C_trb_abs endp
 
 x14_trb_zp proc
-    read_zp_rbx
-
-    mov rax, r8
-    not al
-    and byte ptr [rsi+rbx], al
-    jz set_zero
-    
-    add r14, 5
-    add r11w, 1			
-    jmp opcode_done
-
-set_zero:
-    ;        NZ A P C
-    or r15w, 0100000000000000b
-    
-    add r14, 5
-    add r11w, 1			
-    jmp opcode_done
+    tsb_trb_zp trb_operation
 x14_trb_zp endp
 
-;
-; TSB
-;
-
 x0C_tsb_abs proc
-    read_abs_rbx 0
-    pre_write_check 1
-
-    or byte ptr [rsi+rbx], r8b
-    jz set_zero
-    
-    mov ecx, 1
-    step_io_readwrite 1
-
-    add r14, 6
-    add r11w, 2
-    jmp opcode_done
-    
-skip:
-    mov rax, r8
-    or al, byte ptr [rsi+rbx]
-    jz set_zero
-    
-    step_io_readwrite 1
-    add r14, 5
-    add r11w, 1
-    jmp opcode_done
-
-set_zero:
-    ;        NZ A P C
-    or r15w, 0100000000000000b
-
-    mov ecx, 1
-    step_io_readwrite 1
-
-    add r14, 6
-    add r11w, 2
-    jmp opcode_done
+    tsb_trb_abs tsb_operation
 x0C_tsb_abs endp
 
 x04_tsb_zp proc
-    read_zp_rbx
-
-    or byte ptr [rsi+rbx], r8b
-
-    jz set_zero
-    
-    add r14, 5
-    add r11w, 1
-    jmp opcode_done
-
-set_zero:
-    ;        NZ A P C
-    or r15w, 0100000000000000b
-    
-    add r14, 5
-    add r11w, 1
-    jmp opcode_done
+    tsb_trb_zp tsb_operation
 x04_tsb_zp endp
 
 ;
@@ -4048,7 +4029,11 @@ rmb_body macro mask
     read_zp_rbx
 
     and byte ptr [rsi+rbx], mask
-    
+
+    mov [rdx].state.memory_read, ebx
+    mov [rdx].state.memory_write, ebx
+    check_bank_switch
+
     add r14, 5
     add r11w, 1
     jmp opcode_done
@@ -4094,7 +4079,11 @@ smb_body macro mask
     read_zp_rbx
 
     or byte ptr [rsi+rbx], mask
-    
+
+    mov [rdx].state.memory_read, ebx
+    mov [rdx].state.memory_write, ebx
+    check_bank_switch
+
     add r14, 5
     add r11w, 1
     jmp opcode_done
@@ -4164,7 +4153,7 @@ x00_brk proc
     or rcx, rax
     mov rdi, qword ptr [rdx].state.stackinfo_ptr
 
-    inc r11
+    add r11w, 1
     mov rax, r11						; Get PC as the return address (to put address on the stack -- different to JSR)
 
     movzx rbx, word ptr [rdx].state.stackpointer	; Get stack pointer
@@ -4289,31 +4278,31 @@ noinstruction_nop_4_3 proc
     step_vera_read 1
 
     add r14, 4	; Clock	
-    add r11, 2
+    add r11w, 2
     jmp opcode_done
 noinstruction_nop_4_3 endp
 
 noinstruction_nop_8_3 proc
     add r14, 8	; Clock	
-    add r11, 2
+    add r11w, 2
     jmp opcode_done
 noinstruction_nop_8_3 endp
 
 noinstruction_nop_2_2 proc
     add r14, 2	; Clock	
-    inc r11
+    add r11w, 1
     jmp opcode_done
 noinstruction_nop_2_2 endp
 
 noinstruction_nop_3_2 proc
     add r14, 3	; Clock	
-    inc r11
+    add r11w, 1
     jmp opcode_done
 noinstruction_nop_3_2 endp
 
 noinstruction_nop_4_2 proc
     add r14, 4	; Clock	
-    inc r11
+    add r11w, 1
     jmp opcode_done
 noinstruction_nop_4_2 endp
 

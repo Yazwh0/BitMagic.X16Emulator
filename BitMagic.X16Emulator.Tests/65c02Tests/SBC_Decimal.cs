@@ -26,7 +26,7 @@ public class SBC_Decimal
         Assert.AreEqual(0x02, emulator.Memory[0x811]);
 
         // emulation
-        emulator.AssertState(0x01, 0x00, 0x00, 0x813, 2);
+        emulator.AssertState(0x01, 0x00, 0x00, 0x813, 3);
         emulator.AssertFlags(false, false, false, true, false, true);
     }
 
@@ -51,7 +51,7 @@ public class SBC_Decimal
         Assert.AreEqual(0x03, emulator.Memory[0x811]);
 
         // emulation
-        emulator.AssertState(0x00, 0x00, 0x00, 0x813, 2);
+        emulator.AssertState(0x00, 0x00, 0x00, 0x813, 3);
         emulator.AssertFlags(true, false, false, true, false, true);
     }
 
@@ -76,7 +76,7 @@ public class SBC_Decimal
         Assert.AreEqual(0x04, emulator.Memory[0x811]);
 
         // emulation
-        emulator.AssertState(0x99, 0x00, 0x00, 0x813, 2);
+        emulator.AssertState(0x99, 0x00, 0x00, 0x813, 3);
         emulator.AssertFlags(false, true, false, false, false, true);
     }
 }

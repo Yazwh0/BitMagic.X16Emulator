@@ -257,7 +257,7 @@ public class ROR
 
         // emulation
         Assert.AreEqual(0b00000001, emulator.Memory[0x1234]);
-        emulator.AssertState(0x00, 0x34, 0x00, 0x814, 7);
+        emulator.AssertState(0x00, 0x34, 0x00, 0x814, 6);
         emulator.AssertFlags(false, false, false, false);
     }
 
@@ -306,7 +306,7 @@ public class ROR
 
         // emulation
         Assert.AreEqual(0b11000000, emulator.Memory[0x1234]);
-        emulator.AssertState(0x00, 0x34, 0x00, 0x814, 7);
+        emulator.AssertState(0x00, 0x34, 0x00, 0x814, 6);
         emulator.AssertFlags(false, true, false, true);
     }
 
@@ -331,7 +331,7 @@ public class ROR
 
         // emulation
         Assert.AreEqual(0b01000000, emulator.Memory[0x1234]);
-        emulator.AssertState(0x00, 0x34, 0x00, 0x814, 7);
+        emulator.AssertState(0x00, 0x34, 0x00, 0x814, 6);
         emulator.AssertFlags(false, false, false, true);
     }
 

@@ -25,7 +25,7 @@ public class ADC_Decimal
         Assert.AreEqual(0x03, emulator.Memory[0x811]);
 
         // emulation
-        emulator.AssertState(0x05, 0x00, 0x00, 0x813, 2);
+        emulator.AssertState(0x05, 0x00, 0x00, 0x813, 3);
         emulator.AssertFlags(false, false, false, false, false, true);
     }
 
@@ -49,7 +49,7 @@ public class ADC_Decimal
         Assert.AreEqual(0x03, emulator.Memory[0x811]);
 
         // emulation
-        emulator.AssertState(0x00, 0x00, 0x00, 0x813, 2);
+        emulator.AssertState(0x00, 0x00, 0x00, 0x813, 3);
         emulator.AssertFlags(true, false, false, true, false, true);
     }
 
@@ -73,7 +73,7 @@ public class ADC_Decimal
         Assert.AreEqual(0x03, emulator.Memory[0x811]);
 
         // emulation
-        emulator.AssertState(0x01, 0x00, 0x00, 0x813, 2);
+        emulator.AssertState(0x01, 0x00, 0x00, 0x813, 3);
         emulator.AssertFlags(false, false, false, true, false, true);
     }
 

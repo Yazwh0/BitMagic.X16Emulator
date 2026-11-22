@@ -177,11 +177,11 @@ public class Nibble
     }
 
     // Line draw on a 4bpp bitmap, 160 bytes a row. Draws pixels of colour $f from (x, y) with an X increment of 3/8.
-    private static async Task<Emulator> DrawLine(int x, int y, int addr1H, int addr0H, int pixels, bool fixedLineDraw = false)
+    private static async Task<Emulator> DrawLine(int x, int y, int addr1H, int addr0H, int pixels, bool fxFixed = false)
     {
         var emulator = new Emulator();
         emulator.Vera.Vram.Slice(0, 0x10000).Clear();
-        emulator.FixedFxLineDraw = fixedLineDraw;
+        emulator.FxFixed = fxFixed;
 
         var address = y * 160 + x / 2;
         addr1H |= (x & 1) << 1;
@@ -239,7 +239,7 @@ public class Nibble
                 Assert.Fail($"VRAM ${i:X5} is ${actual[i]:X2}, expected ${expected[i]:X2} (x {(i % 160) * 2}, y {i / 160}).");
     }
 
-    // fixedFxLineDraw only changes steep lines
+    // fxFixed only changes steep lines
     [TestMethod]
     [DataRow(1, 1, false)]
     [DataRow(-1, 1, false)]
@@ -249,13 +249,13 @@ public class Nibble
     [DataRow(-1, 1, true)]
     [DataRow(1, -1, true)]
     [DataRow(-1, -1, true)]
-    public async Task LineDraw_4bpp_Shallow(int sx, int sy, bool fixedLineDraw)
+    public async Task LineDraw_4bpp_Shallow(int sx, int sy, bool fxFixed)
     {
         const int pixels = 40;
         var addr1H = sx > 0 ? 0b0000_0100 : 0b0000_1100;  // half a byte
         var addr0H = sy > 0 ? 0b1101_0000 : 0b1101_1000;  // 160 bytes, a row
 
-        using var emulator = await DrawLine(81, 60, addr1H, addr0H, pixels, fixedLineDraw);
+        using var emulator = await DrawLine(81, 60, addr1H, addr0H, pixels, fxFixed);
 
         AssertPixels(emulator, Enumerable.Range(0, pixels).Select(k => (81 + sx * k, 60 + sy * MinorAt(k))));
         // ADDR1 is left on the next pixel
@@ -290,7 +290,7 @@ public class Nibble
         AssertPixels(emulator, Enumerable.Range(0, pixels).Select(k => (80 - 2 * MinorAt(k), 60 + k)));
     }
 
-    // With fixedFxLineDraw, ADDR1's nibble steps in ADDR0's direction so steep lines draw properly, from either nibble
+    // With fxFixed, ADDR1's nibble steps in ADDR0's direction so steep lines draw properly, from either nibble
     [TestMethod]
     [DataRow(1, 1, 80)]
     [DataRow(-1, 1, 80)]
@@ -304,20 +304,20 @@ public class Nibble
         var addr1H = sy > 0 ? 0b1101_0000 : 0b1101_1000;  // 160 bytes, a row
         var addr0H = sx > 0 ? 0b0000_0100 : 0b0000_1100;  // half a byte
 
-        using var emulator = await DrawLine(x, 60, addr1H, addr0H, pixels, fixedLineDraw: true);
+        using var emulator = await DrawLine(x, 60, addr1H, addr0H, pixels, fxFixed: true);
 
         AssertPixels(emulator, Enumerable.Range(0, pixels).Select(k => (x + sx * MinorAt(k), 60 + sy * k)));
     }
 
     [TestMethod]
-    public void FixedFxLineDraw_KeptOverRestore()
+    public void FxFixed_KeptOverRestore()
     {
         using var emulator = new Emulator();
 
         var saved = emulator.SaveState();
-        emulator.FixedFxLineDraw = true;
+        emulator.FxFixed = true;
         emulator.RestoreState(saved);
 
-        Assert.IsTrue(emulator.FixedFxLineDraw, "It's config, not machine state.");
+        Assert.IsTrue(emulator.FxFixed, "It's config, not machine state.");
     }
 }

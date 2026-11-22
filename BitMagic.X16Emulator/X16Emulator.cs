@@ -1,4 +1,4 @@
-﻿using System.Reflection.Emit;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using BitMagic.Common;
 
@@ -134,12 +134,15 @@ public class Emulator : IDisposable
         public int Data0_NibbleIncrement { get => _emulator._state.Data0_NibbleIncr; set { _emulator._state.Data0_NibbleIncr = Math.Sign(value); UpdateNibbleSteps(); } }
         public int Data1_NibbleIncrement { get => _emulator._state.Data1_NibbleIncr; set { _emulator._state.Data1_NibbleIncr = Math.Sign(value); UpdateNibbleSteps(); } }
 
-        // mirrors vera_update_nibble_step in Vera.asm, the core only works it out when ADDRx_H or FX_CTRL is written
+        // mirrors vera_update_nibble_step and vera_update_fx_flags in Vera.asm, the core only works these out when
+        // ADDRx_H or FX_CTRL is written
         internal void UpdateNibbleSteps()
         {
             ref var s = ref _emulator._state;
             s.Data0_NibbleStep = s.Fx4BitMode != 0 && s.Data0_Step == 0 ? s.Data0_NibbleIncr : 0;
             s.Data1_NibbleStep = s.Fx4BitMode != 0 && s.Data1_Step == 0 ? s.Data1_NibbleIncr : 0;
+            s.FxWriteSpecial = s.FxOneByteCycling | s.FxTransparancy | s.Fx4BitMode;
+            s.FxHopActive = s.Fx16BitHop != 0 && (s.Data1_Step == 4 || s.Data1_Step == 320) ? 1u : 0u;
         }
         public bool AddrSel { get => _emulator._state.AddrSel != 0; set => _emulator._state.AddrSel = (value ? (byte)1 : (byte)0); }
         public byte DcSel { get => _emulator._state.DcSel; set => _emulator._state.DcSel = value; }
@@ -264,8 +267,10 @@ public class Emulator : IDisposable
         public bool Fx4BitMode { get => _emulator._state.Fx4BitMode != 0; set { _emulator._state.Fx4BitMode = value ? 1u : 0u; _emulator.Vera.UpdateNibbleSteps(); } }
         public bool CacheWrite { get => _emulator._state.FxCacheWrite != 0; set => _emulator._state.FxCacheWrite = value ? 1u : 0u; }
         public bool Cachefill { get => _emulator._state.FxCacheFill != 0; set => _emulator._state.FxCacheFill = value ? 1u : 0u; }
-        public bool TransparantWrites { get => _emulator._state.FxTransparancy != 0; set => _emulator._state.FxTransparancy = value ? 1u : 0u; }
-        public bool OneByteCycling { get => _emulator._state.FxOneByteCycling != 0; set => _emulator._state.FxOneByteCycling = value ? 1u : 0u; }
+        public bool TransparantWrites { get => _emulator._state.FxTransparancy != 0; set { _emulator._state.FxTransparancy = value ? 1u : 0u; _emulator.Vera.UpdateNibbleSteps(); } }
+        public bool OneByteCycling { get => _emulator._state.FxOneByteCycling != 0; set { _emulator._state.FxOneByteCycling = value ? 1u : 0u; _emulator.Vera.UpdateNibbleSteps(); } }
+        public bool SixteenBitHop { get => _emulator._state.Fx16BitHop != 0; set { _emulator._state.Fx16BitHop = value ? 1u : 0u; _emulator.Vera.UpdateNibbleSteps(); } }
+        public int HopStart { get => (int)_emulator._state.FxHopStart; set => _emulator._state.FxHopStart = (uint)value & 3; }
         public bool TwoByteCacheIncr { get => _emulator._state.Fx2ByteCacheIncr != 0; set => _emulator._state.Fx2ByteCacheIncr = value ? 1u : 0u; }
         public uint Cache { get => _emulator._state.FxCache; set => _emulator._state.FxCache = value; }
 
@@ -274,9 +279,10 @@ public class Emulator : IDisposable
             get => (byte)_emulator._state.FxCacheIndex;
             set
             {
+                // byte index (2:1) and nibble index (0), the shift matches vera_fx_cache_shift
                 var v = (byte)(value & 0b111);
                 _emulator._state.FxCacheIndex = v;
-                _emulator._state.FxCacheFillShift = (uint)(v >> 1) << 3;
+                _emulator._state.FxCacheFillShift = (_emulator._state.Fx4BitMode != 0 ? v : (uint)(v & 0b110)) << 2;
             }
         }
         public int CacheShift { get => (int)_emulator._state.FxCacheFillShift; set => _emulator._state.FxCacheFillShift = (uint)value; }
@@ -286,9 +292,23 @@ public class Emulator : IDisposable
         public uint Accumulator { get => _emulator._state.FxAccumulator; set => _emulator._state.FxAccumulator = value; }
         public uint AccumulateDirection { get => _emulator._state.FxAccumulateDirection; set => _emulator._state.FxAccumulateDirection = value; }
 
+        // increments are 16.16 with x32 applied, positions are 16.16 with an 11 bit integer
         public uint IncrementX { get => _emulator._state.FxXIncrement; set => _emulator._state.FxXIncrement = value; }
         public uint PositionX { get => _emulator._state.FxXPosition; set => _emulator._state.FxXPosition = value; }
-        public bool Mult32X { get => _emulator._state.FxXMult32 != 0; set => _emulator._state.FxXPosition = value ? 1u : 0u; }
+        public bool Mult32X { get => _emulator._state.FxXMult32 != 0; set => _emulator._state.FxXMult32 = value ? 1u : 0u; }
+        public uint IncrementY { get => _emulator._state.FxYIncrement; set => _emulator._state.FxYIncrement = value; }
+        public uint PositionY { get => _emulator._state.FxYPosition; set => _emulator._state.FxYPosition = value; }
+        public bool Mult32Y { get => _emulator._state.FxYMult32 != 0; set => _emulator._state.FxYMult32 = value ? 1u : 0u; }
+
+        // affine helper
+        public uint TileBase { get => _emulator._state.FxTileBase; set => _emulator._state.FxTileBase = value; }
+        public uint MapBase { get => _emulator._state.FxMapBase; set => _emulator._state.FxMapBase = value; }
+        public int MapSize { get => 1 << (int)_emulator._state.FxMapShift; }
+        public bool AffineClip { get => _emulator._state.FxAffineClip != 0; set => _emulator._state.FxAffineClip = value ? 1u : 0u; }
+
+        // polygon filler
+        public bool TwoBitPolygon { get => _emulator._state.Fx2BitPolygon != 0; set => _emulator._state.Fx2BitPolygon = value ? 1u : 0u; }
+        public bool TwoBitPoke { get => _emulator._state.Fx2BitPoke != 0; set => _emulator._state.Fx2BitPoke = value ? 1u : 0u; }
     }
 
     public class ViaState
@@ -757,9 +777,9 @@ public class Emulator : IDisposable
         public uint FxAccumulator = 0;
         public uint FxAccumulateDirection = 0;
         public uint FxXIncrement = 0;
-        public uint FxXPosition = 0;
+        public uint FxXPosition = 0x8000; // half a pixel, as the hardware resets to
         public uint FxYIncrement = 0;
-        public uint FxYPosition = 0;
+        public uint FxYPosition = 0x8000;
         public uint FxXMult32 = 0;
         public uint FxYMult32 = 0;
         //public uint FxSpacer = 0;
@@ -771,7 +791,21 @@ public class Emulator : IDisposable
         public int Data1_NibbleIncr = 0;
         public int Data0_NibbleStep = 0;
         public int Data1_NibbleStep = 0;
-        public uint FxLineFixed = 0; // config, see Emulator.FixedFxLineDraw
+        public uint FxFixed = 0; // config, see Emulator.FxFixed
+
+        // more VERA FX, see State.asm
+        public uint FxXIncrRaw = 0;
+        public uint FxYIncrRaw = 0;
+        public uint FxTileBase = 0;
+        public uint FxMapBase = 0;
+        public uint FxMapShift = 1;
+        public uint FxAffineClip = 0;
+        public uint Fx2BitPolygon = 0;
+        public uint Fx2BitPoke = 0;
+        public uint Fx16BitHop = 0;
+        public uint FxHopStart = 0;
+        public uint FxHopActive = 0;
+        public uint FxWriteSpecial = 0;
 
         // End FX
 
@@ -1027,11 +1061,14 @@ public class Emulator : IDisposable
     public bool EnableWifi { get => _state.EnableWifi != 0; set => _state.EnableWifi = value ? 1u : 0u; }
 
     /// <summary>
-    /// Draw steep 4bpp lines with the FX line helper properly. On hardware (the VERA Verilog) ADDR0's nibble increment
-    /// doesn't move ADDR1's nibble, so they come out wrong. With this on, ADDR1's nibble steps in ADDR0's direction, as
-    /// the official emulator does.
+    /// Make VERA FX behave like the official emulator where it differs from the hardware (the VERA Verilog):
+    /// <list type="bullet">
+    /// <item>Line draw: ADDR0's nibble increment steps ADDR1's nibble, so steep 4bpp lines draw properly.</item>
+    /// <item>Accumulating with the multiplier off adds the product, rather than loading the cache.</item>
+    /// <item>Polygon DATA0 reads with one-byte cycling move the cache on a byte, ignoring two-byte mode.</item>
+    /// </list>
     /// </summary>
-    public bool FixedFxLineDraw { get => _state.FxLineFixed != 0; set => _state.FxLineFixed = value ? 1u : 0u; }
+    public bool FxFixed { get => _state.FxFixed != 0; set => _state.FxFixed = value ? 1u : 0u; }
 
     public byte A { get => _state.A; set => _state.A = value; }
     public byte X { get => _state.X; set => _state.X = value; }
@@ -1787,7 +1824,7 @@ public class Emulator : IDisposable
         state.Brk_Causes_stop = current.Brk_Causes_stop;
         state.Headless = current.Headless;
         state.EnableWifi = current.EnableWifi;
-        state.FxLineFixed = current.FxLineFixed;
+        state.FxFixed = current.FxFixed;
         state.DebugSprites = current.DebugSprites;
         state.HistoryLogMask = current.HistoryLogMask;
         state.InitialStartup = current.InitialStartup;

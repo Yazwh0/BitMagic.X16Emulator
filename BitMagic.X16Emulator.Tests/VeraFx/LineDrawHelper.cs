@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using BitMagic.X16Emulator.Snapshot;
 
 namespace BitMagic.X16Emulator.Tests.Vera.Fx;
@@ -56,7 +56,7 @@ public class LineDrawHelper
             .IgnoreVera()
             .AssertNoOtherChanges();
 
-        Assert.AreEqual(0x003f8000u, emulator.VeraFx.IncrementX); // 6.9 fixed point, stored as 16.16
+        Assert.AreEqual(0xffff8000u, emulator.VeraFx.IncrementX); // $7f00 is -$100 (6.9 signed), stored as 16.16
         Assert.AreEqual(0x00008000u, emulator.VeraFx.PositionX);
         Assert.IsFalse(emulator.VeraFx.Mult32X);
     }
@@ -85,7 +85,7 @@ public class LineDrawHelper
             .IgnoreVera()
             .AssertNoOtherChanges();
 
-        Assert.AreEqual(0x003f8000u, emulator.VeraFx.IncrementX); // 6.9 fixed point, stored as 16.16
+        Assert.AreEqual(0xfff00000u, emulator.VeraFx.IncrementX); // -$100 (6.9 signed) x32, stored as 16.16
         Assert.AreEqual(0x00008000u, emulator.VeraFx.PositionX);
         Assert.IsTrue(emulator.VeraFx.Mult32X);
     }
@@ -114,8 +114,8 @@ public class LineDrawHelper
             .IgnoreVera()
             .AssertNoOtherChanges();
 
-        Assert.AreEqual(0x003f8000u, emulator.VeraFx.IncrementX); // 6.9 fixed point, stored as 16.16
-        Assert.AreEqual(0x00000000u, emulator.VeraFx.PositionX);
+        Assert.AreEqual(0xffff8000u, emulator.VeraFx.IncrementX); // $7f00 is -$100 (6.9 signed), stored as 16.16
+        Assert.AreEqual(0x00008000u, emulator.VeraFx.PositionX); // unchanged, it starts at half a pixel
         Assert.IsFalse(emulator.VeraFx.Mult32X);
     }
 }

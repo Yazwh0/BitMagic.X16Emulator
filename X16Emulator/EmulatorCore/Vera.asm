@@ -101,12 +101,37 @@ done:
 endm
 
 ; Steps rdi by the port's own increment. With a nibble increment the nibble steps instead. Updates the port's nibble.
+; ADDR1 with 16-bit hop steps +1 from its start alignment, then +3 (or +319), so it reads 16-bit values. Uses r13.
 vera_port_step macro port
+    local hop, hop_start, done
     vera_port_fields port
 
     add rdi, port_step
     and rdi, 1ffffh
+    if port eq 1
+        cmp dword ptr [rdx].state.fx_hop_active, 0
+        jne hop
+    endif
     vera_nibble_step port_nibble, port_nibble_step
+
+    if port eq 1
+        jmp done
+
+    hop:
+        mov r13, rdi
+        sub r13, port_step						; where it was
+        and r13d, 3
+        cmp r13d, [rdx].state.fx_hop_start
+        je hop_start
+        dec rdi									; +3 or +319
+        and rdi, 1ffffh
+        jmp done
+    hop_start:
+        sub rdi, port_step						; +1
+        inc rdi
+        and rdi, 1ffffh
+    done:
+    endif
 endm
 
 ; The line helper adds ADDR0's increment to rdi (ADDR1) when x passes a whole pixel.
@@ -115,7 +140,7 @@ endm
 ; ADDR0 would step by: 1 forwards from nibble 1, -1 backwards from nibble 0, otherwise nothing. So steep 4bpp lines
 ; don't draw properly.
 ;
-; Fixed (fx_line_fixed, as the official emulator does): in 4 bit mode with a nibble increment on ADDR0, ADDR1's nibble
+; Fixed (fx_fixed, as the official emulator does): in 4 bit mode with a nibble increment on ADDR0, ADDR1's nibble
 ; steps in ADDR0's direction.
 ; Uses r13.
 vera_line_step_addr0 macro
@@ -123,7 +148,7 @@ vera_line_step_addr0 macro
 
     add rdi, [rdx].state.data0_step
 
-    cmp dword ptr [rdx].state.fx_line_fixed, 0
+    cmp dword ptr [rdx].state.fx_fixed, 0
     je hardware
     test dword ptr [rdx].state.fx_4bit_mode, 1
     jz done
@@ -146,6 +171,345 @@ backwards:
     add rdi, r13
 done:
     and rdi, 1ffffh
+endm
+
+; Works out the flags that keep the usual data port path quick. Called when FX_CTRL or ADDR1_H is written. Uses eax, ecx.
+vera_update_fx_flags macro
+    local no_hop
+
+    ; plain writes need the slow path for one-byte cycling, transparent writes or 4-bit mode
+    mov eax, [rdx].state.fx_one_byte_cycling
+    or eax, [rdx].state.fx_transparancy
+    or eax, [rdx].state.fx_4bit_mode
+    mov [rdx].state.fx_write_special, eax
+
+    ; 16-bit hop only changes ADDR1 increments of 4 and 320
+    xor eax, eax
+    cmp dword ptr [rdx].state.fx_16bit_hop, 0
+    je no_hop
+    mov rcx, [rdx].state.data1_step
+    cmp rcx, 4
+    sete al
+    cmp rcx, 320
+    sete cl
+    or al, cl
+no_hop:
+    mov [rdx].state.fx_hop_active, eax
+endm
+
+; Turns an increment as written (6.9 signed in bits 14:0, x32 in bit 15) into 16.16. Uses eax, ecx.
+vera_fx_increment macro raw, increment
+    local no_x32
+
+    mov eax, raw
+    mov ecx, eax
+    shl eax, 17
+    sar eax, 10								; sign extended, and moved up 7 bits to 16.16
+    test ecx, 8000h
+    jz no_x32
+    shl eax, 5
+no_x32:
+    mov increment, eax
+endm
+
+; Steps the X and Y/X2 positions by their increments. The hardware's positions are 11.9, so they wrap at 11 bits.
+; Uses eax.
+vera_fx_step_positions macro
+    mov eax, [rdx].state.fx_x_increment
+    add eax, [rdx].state.fx_x_position
+    and eax, 07ffffffh
+    mov [rdx].state.fx_x_position, eax
+
+    mov eax, [rdx].state.fx_y_increment
+    add eax, [rdx].state.fx_y_position
+    and eax, 07ffffffh
+    mov [rdx].state.fx_y_position, eax
+endm
+
+; Polygon filler: ADDR1 = ADDR0 + X1 (signed). In 4-bit mode that's X1 / 2, and the nibble is X1's bit 0. Sets rdi
+; and data1_nibble. Uses eax, ecx, changes rax.
+vera_fx_poly_addr1 macro
+    local eight_bit
+
+    mov eax, [rdx].state.fx_x_position
+    shl eax, 5
+    sar eax, 21								; X1's 11 bit integer, signed
+    xor ecx, ecx
+    test dword ptr [rdx].state.fx_4bit_mode, 1
+    jz eight_bit
+    mov ecx, eax
+    and ecx, 1
+    sar eax, 1
+eight_bit:
+    mov [rdx].state.data1_nibble, ecx
+    movsxd rax, eax
+    mov rdi, [rdx].state.data0_address
+    add rdi, rax
+    and rdi, 1ffffh
+endm
+
+; Affine helper: the address of the pixel at the X/Y position, looked up through the map (one byte per tile) into the
+; 8x8 tile data. Outside the map it wraps, or uses tile 0 with clip on. Sets rdi and data1_nibble. Uses eax, ecx,
+; r12, r13, changes rax.
+vera_fx_affine_addr1 macro
+    local inside, eight_bit, done
+
+    mov r12d, [rdx].state.fx_x_position
+    shr r12d, 16
+    and r12d, 7ffh							; X
+    mov r13d, [rdx].state.fx_y_position
+    shr r13d, 16
+    and r13d, 7ffh							; Y
+
+    ; map address, wrapping to the map size
+    mov ecx, [rdx].state.fx_map_shift
+    mov eax, r13d
+    shr eax, 3
+    bzhi eax, eax, ecx
+    shlx eax, eax, ecx						; tile y * map width
+    mov edi, r12d
+    shr edi, 3
+    bzhi edi, edi, ecx
+    add eax, edi							; + tile x
+    add eax, [rdx].state.fx_map_base
+    and eax, 1ffffh
+    mov rdi, [rdx].state.vram_ptr
+    movzx eax, byte ptr [rdi + rax]			; tile index
+
+    ; with clip on, outside the map is tile 0
+    add ecx, 3
+    mov edi, r12d
+    or edi, r13d
+    shrx edi, edi, ecx
+    test edi, edi
+    jz inside
+    cmp dword ptr [rdx].state.fx_affine_clip, 0
+    je inside
+    xor eax, eax
+inside:
+
+    and r12d, 7								; x in the tile
+    and r13d, 7								; y in the tile
+    test dword ptr [rdx].state.fx_4bit_mode, 1
+    jz eight_bit
+
+    shl eax, 5								; 32 bytes a tile
+    lea eax, [rax + r13 * 4]
+    mov ecx, r12d
+    shr ecx, 1
+    add eax, ecx
+    and r12d, 1
+    mov [rdx].state.data1_nibble, r12d
+    jmp done
+
+eight_bit:
+    shl eax, 6								; 64 bytes a tile
+    lea eax, [rax + r13 * 8]
+    add eax, r12d
+    mov dword ptr [rdx].state.data1_nibble, 0
+
+done:
+    add eax, [rdx].state.fx_tile_base
+    and eax, 1ffffh
+    mov edi, eax
+endm
+
+; FX_POLY_FILL_L and FX_POLY_FILL_H (DCSEL 5, read only), written to $9F2B and $9F2C for reading. Follows top.v and
+; addr_data.v: the fill length is Y/X2 - X1 in 10 bits, both 9:8 set means it's negative. Uses eax, ecx, r13.
+vera_fx_fill_length macro
+    local four_bit, four_bit_not_2bit, four_bit_pos, low_bits, overflow, store, eight_short
+
+    mov ecx, [rdx].state.fx_y_position
+    shr ecx, 16
+    mov eax, [rdx].state.fx_x_position
+    shr eax, 16
+    sub ecx, eax
+    and ecx, 3ffh							; fill length
+
+    mov r13d, ecx							; FX_POLY_FILL_H, fill length 9:3 in 7:1
+    shr r13d, 2
+    and r13d, 0feh
+    mov byte ptr [rsi + 9f2ch], r13b
+
+    xor r13d, r13d
+    test dword ptr [rdx].state.fx_4bit_mode, 1
+    jnz four_bit
+
+    cmp ecx, 16								; 8-bit: bit 7 is 16 or more, bit 4 is fill length 3
+    jb eight_short
+    or r13d, 80h
+eight_short:
+    mov eax, ecx
+    and eax, 8
+    shl eax, 1
+    or r13d, eax
+    jmp low_bits
+
+four_bit:
+    cmp dword ptr [rdx].state.fx_addr_mode, 2
+    jne four_bit_not_2bit
+    cmp dword ptr [rdx].state.fx_2bit_polygon, 0
+    je four_bit_not_2bit
+
+    mov eax, [rdx].state.fx_y_position		; 2-bit polygon: bit 7 is Y/X2's half pixel, bit 0 is X1's
+    shr eax, 8
+    and eax, 80h
+    or r13d, eax
+    mov eax, [rdx].state.fx_x_position
+    shr eax, 15
+    and eax, 1
+    or r13d, eax
+    jmp four_bit_pos
+
+four_bit_not_2bit:
+    cmp ecx, 8								; 4-bit: bit 7 is 8 or more
+    jb four_bit_pos
+    or r13d, 80h
+
+four_bit_pos:
+    mov eax, [rdx].state.fx_x_position		; bit 4 is X1's bit 2
+    shr eax, 14
+    and eax, 10h
+    or r13d, eax
+
+low_bits:
+    mov eax, ecx
+    shr eax, 8
+    cmp eax, 3
+    je overflow
+
+    mov eax, ecx							; fill length 2:0 in 3:1
+    and eax, 7
+    shl eax, 1
+    or r13d, eax
+    mov eax, [rdx].state.fx_x_position		; X1's 1:0 in 6:5
+    shr eax, 11
+    and eax, 60h
+    or r13d, eax
+    jmp store
+
+overflow:
+    and r13d, 81h							; negative, only bits 7 and 0 are left
+store:
+    mov byte ptr [rsi + 9f2bh], r13b
+endm
+
+; The cache fill shift for the cache index in eax: a byte in 8-bit mode, a nibble in 4-bit mode. Uses ecx.
+vera_fx_cache_shift macro
+    mov ecx, [rdx].state.fx_4bit_mode
+    xor ecx, 0fffffffeh						; 8-bit mode ignores the nibble index
+    and eax, ecx
+    shl eax, 2
+    mov [rdx].state.fx_cache_fill_shift, eax
+endm
+
+; Moves the cache on a byte, or between two bytes in two-byte mode. The nibble index stays. Uses eax, ecx.
+vera_fx_cache_next_byte macro
+    local two_byte, done
+
+    mov eax, [rdx].state.fx_cache_index
+    test dword ptr [rdx].state.fx_2byte_cache_incr, 1
+    jnz two_byte
+    add eax, 2
+    and eax, 0111b
+    jmp done
+two_byte:
+    xor eax, 2
+done:
+    mov [rdx].state.fx_cache_index, eax
+    vera_fx_cache_shift
+endm
+
+; Accumulate, from FX_MULT bit 6 or reading FX_ACCUM. With the multiplier on it adds or subtracts the product, with it
+; off the accumulator loads the cache (mult_accum.v uses OLOAD to pass the cache through). fx_fixed always uses the
+; product, as the official emulator does. Uses eax, ecx.
+vera_fx_accumulate macro
+    local multiply, subtract, done
+
+    mov ecx, [rdx].state.fx_cache
+    cmp dword ptr [rdx].state.fx_multiplier_enable, 0
+    jne multiply
+    cmp dword ptr [rdx].state.fx_fixed, 0
+    jne multiply
+    mov [rdx].state.fx_accumulator, ecx
+    jmp done
+
+multiply:
+    movsx eax, cx
+    sar ecx, 16
+    imul eax, ecx
+    test dword ptr [rdx].state.fx_accumulate_direction, 1
+    jnz subtract
+    add [rdx].state.fx_accumulator, eax
+    jmp done
+subtract:
+    sub [rdx].state.fx_accumulator, eax
+done:
+endm
+
+; Polygon filler, reading DATA0 or DATA1 steps X1 and X2. Reading DATA1 also sets ADDR1 = ADDR0 + X1 (rdi), except
+; in 2-bit poke mode where reads don't step. Reading DATA0 with one-byte cycling and cache fill off moves the cache on,
+; respecting two-byte mode, or with fx_fixed always a byte, as the official emulator does.
+; Uses eax, ecx, r13, reloads rax.
+vera_fx_poly_read macro port
+    local no_cycle, no_fill_regs, done, fixed_cycle
+
+    if port eq 1
+        cmp dword ptr [rdx].state.fx_2bit_poke, 0
+        jne done
+    endif
+
+    vera_fx_step_positions
+
+    if port eq 1
+        vera_fx_poly_addr1
+    else
+        cmp dword ptr [rdx].state.fx_one_byte_cycling, 0
+        je no_cycle
+        cmp dword ptr [rdx].state.fx_cache_fill, 0
+        jne no_cycle
+        cmp dword ptr [rdx].state.fx_fixed, 0
+        jne fixed_cycle
+        vera_fx_cache_next_byte
+        jmp no_cycle
+    fixed_cycle:
+        mov eax, [rdx].state.fx_cache_index
+        add eax, 2								; next byte, the nibble index stays
+        and eax, 0111b
+        mov [rdx].state.fx_cache_index, eax
+        vera_fx_cache_shift
+    no_cycle:
+    endif
+
+    cmp byte ptr [rdx].state.dcsel, 5			; keep FX_POLY_FILL_L/H up to date if they can be read
+    jne no_fill_regs
+    vera_fx_fill_length
+no_fill_regs:
+done:
+    mov rax, [rdx].state.vram_ptr
+endm
+
+; After a DCSEL 4 position write: in polygon mode ADDR1 = ADDR0 + X1, in affine mode ADDR1 is the pixel's address.
+; Uses eax, ecx, r12, r13, rdi, and rbx, rsi when ADDRSEL is 1.
+vera_fx_position_written macro
+    local affine, set_addr1, done
+
+    mov eax, [rdx].state.fx_addr_mode
+    cmp eax, 2
+    jb done
+    ja affine
+    vera_fx_poly_addr1
+    jmp set_addr1
+affine:
+    vera_fx_affine_addr1
+set_addr1:
+    mov [rdx].state.data1_address, rdi
+    mov rsi, [rdx].state.memory_ptr
+    vera_update_data1
+    cmp byte ptr [rdx].state.addrsel, 1
+    jne done
+    vera_setaddress 1
+done:
 endm
 
 ; Sets ADDRx_L/M/H for a port, eg when ADDRSEL changes.
@@ -876,7 +1240,7 @@ skip:
 endm
 
 vera_write_dataport macro port
-local cannot_cache_write, cache_write, fx_4bit_pixels, no_transparancy, done, no_multiplication, store
+local cannot_cache_write, cache_write, fx_4bit_pixels, no_transparancy, done, no_multiplication, store, no_cycling, nibble_write, nibble_store, cache_not_cycling
     vera_port_fields port
 
     cmp rdi, 01f9c0h
@@ -886,13 +1250,41 @@ local cannot_cache_write, cache_write, fx_4bit_pixels, no_transparancy, done, no
     jnz cache_write
 cannot_cache_write:
     movzx r13, byte ptr [rsi+rbx]			; get value that has been written
-    test dword ptr [rdx].state.fx_4bit_mode, 1
-    jz store
+    cmp dword ptr [rdx].state.fx_write_special, 0
+    je store								; the usual case
+    cmp rdi, 01f9c0h						; FX only changes writes to main VRAM, not the PSG, palette or sprites
+    jae store
 
+    ; one-byte cycling writes the cache byte at the cache index instead
+    test dword ptr [rdx].state.fx_one_byte_cycling, 1
+    jz no_cycling
+    mov ecx, [rdx].state.fx_cache_index
+    shr ecx, 1
+    shl ecx, 3
+    mov r13d, [rdx].state.fx_cache
+    shrx r13d, r13d, ecx
+    and r13d, 0ffh
+no_cycling:
+
+    test dword ptr [rdx].state.fx_4bit_mode, 1
+    jnz nibble_write
+
+    test dword ptr [rdx].state.fx_transparancy, 1
+    jz store
+    test r13d, r13d
+    jz done									; transparent, 0 isn't written
+    jmp store
+
+nibble_write:
     ; 4 bit mode only writes the addressed nibble, taken from the same nibble of the value
     mov ecx, port_nibble
     neg ecx									; 0 or -1
     xor ecx, 0f0h							; $f0 for nibble 0, $..0f for nibble 1
+    test dword ptr [rdx].state.fx_transparancy, 1
+    jz nibble_store
+    test r13d, ecx
+    jz done									; transparent, a 0 nibble isn't written
+nibble_store:
     and r13d, ecx
     not ecx
     and cl, byte ptr [rax + rdi]			; the other nibble from vram
@@ -903,7 +1295,19 @@ store:
     jmp done
 
 cache_write:
+    ; one-byte cycling with cache write writes the cache byte at the cache index to all four bytes
+    test dword ptr [rdx].state.fx_one_byte_cycling, 1
+    jz cache_not_cycling
+    mov ecx, [rdx].state.fx_cache_index
+    shr ecx, 1
+    shl ecx, 3
+    mov r12d, [rdx].state.fx_cache
+    shrx r12d, r12d, ecx
+    and r12d, 0ffh
+    imul r12d, r12d, 01010101h
+    jmp no_multiplication
 
+cache_not_cycling:
     mov r12d, [rdx].state.fx_cache			; get the cache value
 
     ; check if multiplication is set
@@ -1180,6 +1584,7 @@ endm
 ; rsi			pushed by the caller, popped here
 vera_port_access macro port, doublestep, write_value
     local no_read_breakpoint, no_write_breakpoint, breakpoint_step_loop, read_loop, read_loop_done, no_fx_step, not_fx, set_address
+    local poke_check, poke_done, line_draw, affine, not_poly, store_port
 
     vera_port_fields port
 
@@ -1214,11 +1619,13 @@ vera_port_access macro port, doublestep, write_value
             ; a read-modify-write writes after its ecx + 1 reads, each of which steps. Stepping changes the nibble, so
             ; it's put back afterwards.
             mov r13d, port_nibble
+            push r13								; the step uses r13 for 16-bit hop
             lea eax, [ecx + 1]
             breakpoint_step_loop:
             vera_port_step port
             dec eax
             jnz breakpoint_step_loop
+            pop r13
             mov port_nibble, r13d
         endif
 
@@ -1240,6 +1647,13 @@ vera_port_access macro port, doublestep, write_value
     endif
 
     mov rax, [rdx].state.vram_ptr				; get value from vram
+
+    if port eq 1 and write_value eq 1 and doublestep eq 0
+        ; 2-bit polygon poke, after ADDR1_L was written
+        cmp dword ptr [rdx].state.fx_2bit_poke, 0
+        jne poke_check
+        poke_done:
+    endif
 
     if write_value eq 1 and doublestep eq 0
         vera_write_dataport port
@@ -1267,11 +1681,29 @@ vera_port_access macro port, doublestep, write_value
     vera_port_step port
 
     if port eq 1
-        ; FX line helper, ADDR1 steps on by ADDR0's step each time x passes a whole pixel. Polyfill and affine are
-        ; handled elsewhere.
-        cmp dword ptr [rdx].state.fx_addr_mode, 1
-        jne not_fx
+        ; FX addr1 modes
+        mov r13d, [rdx].state.fx_addr_mode
+        test r13d, r13d
+        jz not_fx								; the usual case
+        cmp r13d, 2
+        jb line_draw
+        ja affine
 
+        ; polygon filler: reading DATA1 steps X1 and X2 and sets ADDR1 = ADDR0 + X1, writing uses ADDR1's increment
+        if write_value eq 0 and doublestep eq 0
+            vera_fx_poly_read 1
+        endif
+        jmp not_fx
+
+    affine:
+        ; affine helper: reading or writing DATA1 steps X and Y, then ADDR1 is the pixel's address
+        vera_fx_step_positions
+        vera_fx_affine_addr1
+        mov rax, [rdx].state.vram_ptr
+        jmp not_fx
+
+    line_draw:
+        ; line helper, ADDR1 steps on by ADDR0's step each time x passes a whole pixel
         mov r13d, [rdx].state.fx_x_position
         add r13d, [rdx].state.fx_x_increment
 
@@ -1291,6 +1723,14 @@ vera_port_access macro port, doublestep, write_value
         not_fx:
     endif
 
+    if port eq 0 and write_value eq 0 and doublestep eq 0
+        ; polygon filler: reading DATA0 steps X1 and X2
+        cmp dword ptr [rdx].state.fx_addr_mode, 2
+        jne not_poly
+        vera_fx_poly_read 0
+        not_poly:
+    endif
+
     if doublestep eq 1
         if write_value eq 1
             vera_write_dataport port
@@ -1299,6 +1739,7 @@ vera_port_access macro port, doublestep, write_value
         vera_port_step port						; perform second step
     endif
 
+    store_port:
     mov port_address, rdi
 
     mov r13b, byte ptr [rax+rdi]
@@ -1326,6 +1767,34 @@ set_address:
     xor r13, r13								; clear r13b, as we use this to detect if we need to call vera
     pop rsi
     ret
+
+    if port eq 1 and write_value eq 1 and doublestep eq 0
+    poke_check:
+        cmp dword ptr [rdx].state.fx_addr_mode, 2	; only in polygon mode
+        jne poke_done
+
+        ; write the value's bits 7:6 pick which 2 bits of the byte at ADDR1 get the cache byte's 2 bits. ADDR1 doesn't
+        ; move, and nibbles, transparency and cache writes don't apply.
+        mov dword ptr [rdx].state.fx_2bit_poke, 0
+        movzx ecx, byte ptr [rsi+rbx]
+        shr ecx, 6
+        add ecx, ecx
+        mov r13d, 0c0h
+        shrx r13d, r13d, ecx					; the 2 bits
+        mov eax, [rdx].state.fx_cache_index
+        shr eax, 1
+        shl eax, 3
+        mov ecx, [rdx].state.fx_cache
+        shrx ecx, ecx, eax						; cache byte
+        and ecx, r13d
+        not r13d
+        mov rax, [rdx].state.vram_ptr
+        and r13b, byte ptr [rax + rdi]
+        or r13b, cl
+        mov byte ptr [rax + rdi], r13b
+        vera_dataupdate_stuctures
+        jmp store_port
+    endif
 endm
 
 ; rbx			address
@@ -1407,24 +1876,7 @@ vera_afterread_9f2a proc
     cmp r13d, 6
     jne done
 
-    ; this latches the output of the multiplication and copies it to the accumulator
-    mov r12d, [rdx].state.fx_cache			; get the cache value
-
-    mov ecx, r12d
-    shr ecx, 16
-    movsx r12d, r12w
-    movsx ecx, cx
-    imul r12d, ecx
-
-    mov ecx, [rdx].state.fx_accumulator
-    lea r13, [r12 + rcx]					; addition
-    sub ecx, r12d							; sub
-    mov r12d, ecx
-
-    test [rdx].state.fx_accumulate_direction, 1
-    cmovz r12d, r13d						; is sub	
-
-    mov [rdx].state.fx_accumulator, r12d
+    vera_fx_accumulate
 
 done:
     ret
@@ -1489,8 +1941,8 @@ vera_update_data1 macro
     mov byte ptr [rsi+9f24h], r13b
 endm
 
-vera_update_addrl proc	
-    mov r13b, byte ptr [rsi+rbx]
+vera_update_addrl proc
+    movzx r13d, byte ptr [rsi+rbx]
     cmp byte ptr [rdx].state.addrsel, 0
 
     jnz write_data1
@@ -1498,6 +1950,29 @@ vera_update_addrl proc
     vera_update_data0
     ret
 write_data1:
+    ; 16-bit hop remembers where ADDR1 starts
+    cmp dword ptr [rdx].state.fx_16bit_hop, 0
+    je no_hop
+    mov eax, r13d
+    and eax, 3
+    mov [rdx].state.fx_hop_start, eax
+no_hop:
+
+    ; 2-bit polygon mode only sets the low 2 bits, and the next DATA1 write pokes
+    cmp dword ptr [rdx].state.fx_addr_mode, 2
+    jne not_poke
+    test dword ptr [rdx].state.fx_4bit_mode, 1
+    jz not_poke
+    cmp dword ptr [rdx].state.fx_2bit_polygon, 0
+    je not_poke
+    mov dword ptr [rdx].state.fx_2bit_poke, 1
+    mov al, byte ptr [rdx].state.data1_address
+    and al, 0fch
+    and r13b, 3
+    or r13b, al
+    mov byte ptr [rsi+rbx], r13b					; reads back as the address it's set to
+not_poke:
+
     mov byte ptr [rdx].state.data1_address, r13b
     vera_update_data1
     ret
@@ -1549,6 +2024,10 @@ no_decr:
     mov qword ptr port_step, r12
     mov port_nibble_incr, eax
     vera_update_nibble_step port
+
+    if port eq 1
+        vera_update_fx_flags					; 16-bit hop depends on ADDR1's increment
+    endif
 
     if port eq 0
         vera_update_data0
@@ -1658,7 +2137,11 @@ dc_sel2:
     mov ebx, [rdx].state.fx_4bit_mode
     shl ebx, 2
     or eax, ebx
-    
+
+    mov ebx, [rdx].state.fx_16bit_hop
+    shl ebx, 3
+    or eax, ebx
+
     mov ebx, [rdx].state.fx_one_byte_cycling
     shl ebx, 4
     or eax, ebx
@@ -1684,6 +2167,13 @@ dc_sel2:
 
     ret
 
+dc_sel5:
+    ; FX_POLY_FILL_L/H read at $9F2B/$9F2C, the rest is the version
+    mov byte ptr [rsi+DC_VER0], 056h
+    mov byte ptr [rsi+DC_VER1], VERA_VERSION_L
+    vera_fx_fill_length
+    ret
+
 version:
 not_supported:
     ; default is the version
@@ -1701,7 +2191,7 @@ dc_sel_table:
     qword dc_sel2 - dc_sel_table
     qword not_supported - dc_sel_table
     qword not_supported - dc_sel_table
-    qword not_supported - dc_sel_table
+    qword dc_sel5 - dc_sel_table
     qword not_supported - dc_sel_table
     qword not_supported - dc_sel_table
 
@@ -1909,9 +2399,15 @@ dc_sel2:
     shr eax, 2
     mov [rdx].state.fx_4bit_mode, eax
 
+    mov eax, r13d
+    and eax, 01000b
+    shr eax, 3
+    mov [rdx].state.fx_16bit_hop, eax
+
     ; the nibble increments only apply in 4 bit mode
     vera_update_nibble_step 0
     vera_update_nibble_step 1
+    vera_update_fx_flags
     mov eax, [rdx].state.fx_4bit_mode
 
     ; set cache index if based on 4bit mode
@@ -1934,15 +2430,27 @@ dc_sel2_4bit:
     ret
 
 dc_sel3:
-    mov r13b, byte ptr [rsi+rbx]
-    ; r13 is the bottom 8 bits of a 6.9 fixed point number, convert to 16.16
-    shl r13d, 7
-    mov ecx, [rdx].state.fx_x_increment
-    and ecx, 0ffff8000h
-    or ecx, r13d
-    mov [rdx].state.fx_x_increment, ecx
+    ; FX_X_INCR_L: the increment's bits 7:0
+    movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
+    mov byte ptr [rdx].state.fx_x_incr_raw, r13b
+    vera_fx_increment [rdx].state.fx_x_incr_raw, [rdx].state.fx_x_increment
+    ret
 
-    mov byte ptr [rsi+rbx], r12b
+dc_sel4:
+    ; FX_X_POS_L: X's bits 7:0
+    movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
+    mov byte ptr [rdx].state.fx_x_position + 2, r13b
+    vera_fx_position_written
+    ret
+
+dc_sel5:
+    ; X's sub pixel bits -1 to -8
+    movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
+    mov byte ptr [rdx].state.fx_x_position + 1, r13b
+    vera_fx_fill_length
     ret
 
 dc_sel6:
@@ -1951,7 +2459,7 @@ dc_sel6:
     and eax, 0ffffff00h
     or eax, r13d
     mov [rdx].state.fx_cache, eax
-        
+
     mov byte ptr [rsi+rbx], r12b
     ret
 
@@ -1964,8 +2472,8 @@ dc_sel_table:
     qword dc_sel1 - dc_sel_table
     qword dc_sel2 - dc_sel_table
     qword dc_sel3 - dc_sel_table
-    qword dc_notsupported - dc_sel_table
-    qword dc_notsupported - dc_sel_table
+    qword dc_sel4 - dc_sel_table
+    qword dc_sel5 - dc_sel_table
     qword dc_sel6 - dc_sel_table
     qword dc_notsupported - dc_sel_table
 
@@ -2057,28 +2565,36 @@ dc_sel1:
     ret
 
 dc_sel2:
+    ; FX_TILEBASE: tile base (16:11), affine clip, 2-bit polygon
     movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
     mov eax, r13d
-    and r13b, 01111111b
-    ; r13 is the top 7 bits of a 6.9 fixed point number, convert to 16.16
-    shl r13d, 7+8
-    mov ecx, [rdx].state.fx_x_increment
-    and ecx, 000007fffh
-    or ecx, r13d
-    mov [rdx].state.fx_x_increment, ecx
+    and eax, 0fch
+    shl eax, 9
+    mov [rdx].state.fx_tile_base, eax
+    mov eax, r13d
+    shr eax, 1
+    and eax, 1
+    mov [rdx].state.fx_affine_clip, eax
+    and r13d, 1
+    mov [rdx].state.fx_2bit_polygon, r13d
+    ret
 
+dc_sel3:
+    ; FX_X_INCR_H: x32, then the increment's bits 14:8
+    movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
+    mov byte ptr [rdx].state.fx_x_incr_raw + 1, r13b
+    mov eax, r13d
     shr eax, 7
     mov [rdx].state.fx_x_mult_32, eax
+    vera_fx_increment [rdx].state.fx_x_incr_raw, [rdx].state.fx_x_increment
 
     mov eax, [rdx].state.fx_addr_mode
-    test eax, eax
-    jz dc_sel2_done
-
-    cmp [rdx].state.fx_addr_mode, 2
-    jl dc_sel_line_mode
+    cmp eax, 1
+    je dc_sel_line_mode
+    cmp eax, 2
     je dc_sel_poly_fill
-
-    ; affine helper
     ret
 
 dc_sel_line_mode:
@@ -2089,12 +2605,34 @@ dc_sel_line_mode:
     ret
 
 dc_sel_poly_fill:
-    mov eax, [rdx].state.fx_x_position
+    mov eax, [rdx].state.fx_x_position		; X1's sub pixel is half a pixel
     and eax, 0ffff0000h
     or eax, 00008000h
     mov [rdx].state.fx_x_position, eax
-    
-dc_sel2_done:
+    ret
+
+dc_sel4:
+    ; FX_X_POS_H: the -9 bit in bit 7, X's bits 10:8 in 2:0
+    movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
+    mov eax, [rdx].state.fx_x_position
+    and eax, 00ffff00h
+    mov ecx, r13d
+    and ecx, 7
+    shl ecx, 24
+    or eax, ecx
+    and r13d, 80h
+    or eax, r13d
+    mov [rdx].state.fx_x_position, eax
+    vera_fx_position_written
+    ret
+
+dc_sel5:
+    ; Y/X2's sub pixel bits -1 to -8
+    movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
+    mov byte ptr [rdx].state.fx_y_position + 1, r13b
+    vera_fx_fill_length
     ret
 
 dc_sel6:
@@ -2115,10 +2653,10 @@ dc_notsupported:
 dc_sel_table:
     qword dc_sel0 - dc_sel_table
     qword dc_sel1 - dc_sel_table
-    qword dc_notsupported - dc_sel_table
     qword dc_sel2 - dc_sel_table
-    qword dc_notsupported - dc_sel_table
-    qword dc_notsupported - dc_sel_table
+    qword dc_sel3 - dc_sel_table
+    qword dc_sel4 - dc_sel_table
+    qword dc_sel5 - dc_sel_table
     qword dc_sel6 - dc_sel_table
     qword dc_notsupported - dc_sel_table
 
@@ -2208,6 +2746,35 @@ dc_sel1:
     mov word ptr [rdx].state.dc_vstart, r13w
     ret
 
+dc_sel2:
+    ; FX_MAPBASE: map base (16:11), map size 2, 8, 32 or 128 tiles
+    movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
+    mov eax, r13d
+    and eax, 0fch
+    shl eax, 9
+    mov [rdx].state.fx_map_base, eax
+    and r13d, 3
+    lea eax, [r13 * 2 + 1]
+    mov [rdx].state.fx_map_shift, eax
+    ret
+
+dc_sel3:
+    ; FX_Y_INCR_L: the increment's bits 7:0
+    movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
+    mov byte ptr [rdx].state.fx_y_incr_raw, r13b
+    vera_fx_increment [rdx].state.fx_y_incr_raw, [rdx].state.fx_y_increment
+    ret
+
+dc_sel4:
+    ; FX_Y_POS_L: Y's bits 7:0
+    movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
+    mov byte ptr [rdx].state.fx_y_position + 2, r13b
+    vera_fx_position_written
+    ret
+
 dc_sel6:
     movzx r13, byte ptr [rsi+rbx]
     mov eax, [rdx].state.fx_cache
@@ -2226,9 +2793,9 @@ dc_notsupported:
 dc_sel_table:
     qword dc_sel0 - dc_sel_table
     qword dc_sel1 - dc_sel_table
-    qword dc_notsupported - dc_sel_table
-    qword dc_notsupported - dc_sel_table
-    qword dc_notsupported - dc_sel_table
+    qword dc_sel2 - dc_sel_table
+    qword dc_sel3 - dc_sel_table
+    qword dc_sel4 - dc_sel_table
     qword dc_notsupported - dc_sel_table
     qword dc_sel6 - dc_sel_table
     qword dc_notsupported - dc_sel_table
@@ -2333,18 +2900,13 @@ dc_sel2:
     shr eax, 4
     mov [rdx].state.fx_multiplier_enable, eax
 
+    ; cache byte index (3:2) and nibble index (1), kept together as one 3 bit index. 8-bit mode ignores the nibble.
     mov eax, r13d
     shr eax, 1
     and eax, 0111b
     mov [rdx].state.fx_cache_index, eax
+    vera_fx_cache_shift
 
-    ; THIS IS BROKEN. We do not handle 4bit index movement properly AT ALL here
-    mov ecx, [rdx].state.fx_4bit_mode	; 1 for 4bit mode
-    xor ecx, 0fffffffeh					; invert, so we can and the new index to set the shift
-    and eax, ecx
-    shl eax, 2
-    mov [rdx].state.fx_cache_fill_shift, eax
-            
     mov eax, r13d
     and eax, 00100000b
     shr eax, 5
@@ -2352,27 +2914,7 @@ dc_sel2:
 
     test r13d, 01000000b
     jz no_latch
-
-    push r13
-    ; this latches the output of the multiplication and copies it to the accumulator
-    mov r12d, [rdx].state.fx_cache			; get the cache value
-
-    mov ecx, r12d
-    shr ecx, 16
-    movsx r12d, r12w
-    movsx ecx, cx
-    imul r12d, ecx
-
-    mov ecx, [rdx].state.fx_accumulator
-    lea r13, [r12 + rcx]					; addition
-    sub ecx, r12d							; sub
-    mov r12d, ecx
-
-    test [rdx].state.fx_accumulate_direction, 1
-    cmovz r12d, r13d						; is sub	
-
-    mov [rdx].state.fx_accumulator, r12d
-    pop r13
+    vera_fx_accumulate
 
 no_latch:
 ;	shr eax, 6
@@ -2404,6 +2946,44 @@ no_latch:
 
 ;	ret
 
+dc_sel3:
+    ; FX_Y_INCR_H: x32, then the increment's bits 14:8
+    movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
+    mov byte ptr [rdx].state.fx_y_incr_raw + 1, r13b
+    mov eax, r13d
+    shr eax, 7
+    mov [rdx].state.fx_y_mult_32, eax
+    vera_fx_increment [rdx].state.fx_y_incr_raw, [rdx].state.fx_y_increment
+
+    ; in line draw and polygon mode Y/X2's sub pixel is half a pixel
+    mov eax, [rdx].state.fx_addr_mode
+    dec eax
+    cmp eax, 1
+    ja y_incr_done
+    mov eax, [rdx].state.fx_y_position
+    and eax, 0ffff0000h
+    or eax, 00008000h
+    mov [rdx].state.fx_y_position, eax
+y_incr_done:
+    ret
+
+dc_sel4:
+    ; FX_Y_POS_H: the -9 bit in bit 7, Y's bits 10:8 in 2:0
+    movzx r13, byte ptr [rsi+rbx]
+    mov byte ptr [rsi+rbx], r12b			; write only
+    mov eax, [rdx].state.fx_y_position
+    and eax, 00ffff00h
+    mov ecx, r13d
+    and ecx, 7
+    shl ecx, 24
+    or eax, ecx
+    and r13d, 80h
+    or eax, r13d
+    mov [rdx].state.fx_y_position, eax
+    vera_fx_position_written
+    ret
+
 dc_sel6:
     movzx r13, byte ptr [rsi+rbx]
     mov byte ptr [rsi+rbx], r12b	; write only
@@ -2424,8 +3004,8 @@ dc_sel_table:
     qword dc_sel0 - dc_sel_table
     qword dc_sel1 - dc_sel_table
     qword dc_sel2 - dc_sel_table
-    qword dc_notsupported - dc_sel_table
-    qword dc_notsupported - dc_sel_table
+    qword dc_sel3 - dc_sel_table
+    qword dc_sel4 - dc_sel_table
     qword dc_notsupported - dc_sel_table
     qword dc_sel6 - dc_sel_table
     qword dc_notsupported - dc_sel_table

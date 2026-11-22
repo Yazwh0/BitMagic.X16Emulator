@@ -27,7 +27,7 @@ public class TSB
         // emulation
         Assert.AreEqual(0x03, emulator.Memory[0x10]);
         emulator.AssertState(0x02, 0x00, 0x00, 0x813, 5);
-        emulator.AssertFlags(false, false, false, false);
+        emulator.AssertFlags(true, false, false, false);
     }
 
     [TestMethod]
@@ -51,7 +51,7 @@ public class TSB
                 stp",
                 emulator);
 
-        emulator.AssertFlags(false, true, true, true, true, true);
+        emulator.AssertFlags(true, true, true, true, true, true);
     }
 
     [TestMethod]
@@ -97,7 +97,7 @@ public class TSB
         // emulation
         Assert.AreEqual(0x03, emulator.Memory[0x1234]);
         emulator.AssertState(0x02, 0x00, 0x00, 0x814, 6);
-        emulator.AssertFlags(false, false, false, false);
+        emulator.AssertFlags(true, false, false, false);
     }
 
     [TestMethod]
@@ -111,14 +111,14 @@ public class TSB
         await X16TestHelper.Emulate(@"
                 .machine CommanderX16R40
                 .org $810
-                tsb $a000
+                tsb $c000
                 stp",
                 emulator);
 
         // emulation
         Assert.AreEqual(0x01, emulator.RomBank[0x0000]);
         emulator.AssertState(0x02, 0x00, 0x00, 0x814, 6);
-        emulator.AssertFlags(false, false, false, false);
+        emulator.AssertFlags(true, false, false, false);
     }
 
     [TestMethod]

@@ -71,7 +71,7 @@ public class TRB
 
         // emulation
         Assert.AreEqual(0x00, emulator.Memory[0x10]);
-        emulator.AssertFlags(true, false, false, false);
+        emulator.AssertFlags(false, false, false, false);
     }
 
     [TestMethod]
@@ -162,6 +162,6 @@ public class TRB
 
         // emulation
         Assert.AreEqual(0x00, emulator.Memory[0x1234]);
-        emulator.AssertFlags(true, false, false, false);
+        emulator.AssertFlags(false, false, false, false);
     }
 }

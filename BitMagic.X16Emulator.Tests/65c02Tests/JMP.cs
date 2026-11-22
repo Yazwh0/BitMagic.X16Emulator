@@ -96,7 +96,7 @@ public class JMP
         Assert.AreEqual(0x0a, emulator.Memory[0x812]);
 
         // emulation
-        emulator.AssertState(0x01, 0x00, 0x00, 0x903, 7); // 5 for JMP, +2 for lda
+        emulator.AssertState(0x01, 0x00, 0x00, 0x903, 8); // 6 for JMP, +2 for lda
         emulator.AssertFlags(false, false, false, false);
     }
 

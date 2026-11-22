@@ -49,7 +49,7 @@ public class TRB_Data0
                 stp",
                 emulator);
 
-        emulator.AssertFlags(Zero: true);
+        emulator.AssertFlags(Zero: false);
         Assert.AreEqual(0x00000, emulator.Vera.Data0_Address);
         Assert.AreEqual(0x00, emulator.Vera.Vram[0x0000]);
         Assert.AreEqual(0x00, emulator.Vera.Vram[0x0001]);
@@ -108,7 +108,7 @@ public class TRB_Data0
                 stp",
                 emulator);
 
-        emulator.AssertFlags(Zero: true);
+        emulator.AssertFlags(Zero: false);
         Assert.AreEqual(0x00003, emulator.Vera.Data0_Address);
         Assert.AreEqual(0x01, emulator.Vera.Vram[0x0000]);
         Assert.AreEqual(0x00, emulator.Vera.Vram[0x0001]);

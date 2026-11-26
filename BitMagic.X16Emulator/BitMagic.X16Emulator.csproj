@@ -62,6 +62,22 @@
     </Content>
   </ItemGroup>
 
+  <!-- zimodem_host contains Apache-2.0 zimodem / Mbed TLS and BSD-3 libssh2 code, whose
+       licences require their notices to go with the binaries. Copied to the output (so they
+       reach X16D/X16E/X16M and their zips and tool packages) and packed with this package. -->
+  <ItemGroup>
+    <Content Include="..\..\External\BitMagic.ZiModem\THIRD-PARTY-NOTICES.txt" Link="licenses\zimodem\THIRD-PARTY-NOTICES.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>licenses\zimodem\</PackagePath>
+    </Content>
+    <Content Include="..\..\External\BitMagic.ZiModem\licenses\Apache-2.0.txt" Link="licenses\zimodem\Apache-2.0.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>licenses\zimodem\</PackagePath>
+    </Content>
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\BitMagic.Libraries\BitMagic.Common\BitMagic.Common.csproj" />
     <ProjectReference Include="..\..\External\DiscUtils\Library\DiscUtils.Core\BitMagic.DiscUtils.Core.csproj" />
